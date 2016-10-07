@@ -34,7 +34,7 @@ class DataCrawler:
 
     def pause(self):
         """ pause for a few seconds """
-        time.sleep(random.randint(6,10))
+        time.sleep(random.randint(6,8))
 
     def crawl(self, url):
         """ crawl data from tripadvisor official website """
@@ -55,8 +55,15 @@ class DataCrawler:
                 # let drive load url & expand all 'more'
                 self.driver.get(url)
                 
-                #self.driver.implicitly_wait(200)
-                #WebDriverWait(self.driver, timeout=20).until(lambda x: x.find_element_by_class_name('ui_close_x'))
+                if self.first_entry == 1:
+                    #WebDriverWait(self.driver, timeout=20).until(lambda x: x.find_element_by_class_name('ui_close_x'))
+                    self.driver.execute_script("if (document.querySelector('.ui_close_x')) {document.querySelector('.ui_close_x').click()};")
+                    self.driver.execute_script("document.querySelector('.ulBlueLinks').click();")
+                
+                
+                #self.pause()
+                
+
                 #self.driver.execute_script("if (document.querySelector('.ui_close_x')) {document.querySelector('.ui_close_x').click()}; var element = document.querySelectorAll('.moreLink')[0]; element.click();")
                 #self._wait_for_engine_started(self.driver)
                 self.driver.execute_script("document.querySelector('.ulBlueLinks').click();")
@@ -65,7 +72,7 @@ class DataCrawler:
                 #print "Page is ready!"
                 # Put page_source in beautiful soup
                 self.pause()
-                WebDriverWait(self.driver, timeout=20).until(lambda x: x.find_element_by_class_name('entry'))
+                WebDriverWait(self.driver, timeout=25).until(lambda x: x.find_element_by_class_name('entry'))
 
                 soup = BeautifulSoup(self.driver.page_source, "html.parser")
 
@@ -162,8 +169,11 @@ class DataCrawler:
         attraction_ordered_dict["rating_stats"] = NoIndent(rating_stats_dict)
 
         review_ordered_dict_list = []
+        review_cnt = 0
         for review_info in self.review_info_list:
             review_ordered_dict = OrderedDict()
+            review_cnt += 1
+            review_ordered_dict["index"] = review_cnt
             review_ordered_dict["title"] = review_info[0]
             review_ordered_dict["rating"] = review_info[1]
             review_ordered_dict["review"] = review_info[2]
