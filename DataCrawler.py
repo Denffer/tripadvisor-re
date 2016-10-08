@@ -54,7 +54,8 @@ class DataCrawler:
 
                 # let drive load url & expand all 'more'
                 self.driver.get(url)
-                
+                    
+
                 if self.first_entry == 1:
                     #WebDriverWait(self.driver, timeout=20).until(lambda x: x.find_element_by_class_name('ui_close_x'))
                     self.driver.execute_script("if (document.querySelector('.ui_close_x')) {document.querySelector('.ui_close_x').click()};")
@@ -94,7 +95,7 @@ class DataCrawler:
                     # get avg_rating
                     self.avg_rating = soup.find("div", {"class": "rs rating"}).find("img")['content']
                     # get review_count
-                    self.review_count = soup.find("div", {"class": "rs rating"}).find("a")['content']
+                    self.review_count = soup.find("label", {"for": "taplc_prodp13n_hr_sur_review_filter_controls_0_filterLang_en"}).find("span").getText().replace("(","").replace(")","")
                     # get ranking
                     self.ranking = soup.find("div", {"class": "slim_ranking"}).find("b").getText().strip("#")
                     # get rating statistics
@@ -104,7 +105,6 @@ class DataCrawler:
                     # get location
                     self.location = soup.find("div", {"class": "slim_ranking"}).find("a").getText()[16:]
                     self.first_entry = 0
-
                 
                 #for div in soup.findAll("div", {"class": "innerBubble"}):
                 for div in soup.findAll("div", {"class": "dyn_full_review"}):
@@ -112,12 +112,12 @@ class DataCrawler:
                     #print "title:" + title
                     rating = div.find("div", {"class": "rating"}).find("img")['alt'][0]
                     #print "rating:" + rating
-                    review = div.find("div", {"class": "entry"}).find("p", recursive=False).getText().strip("\n")
+                    review = div.find("div", {"class": "entry"}).find("p").getText().strip("\n")
                     print "review:" + review
                     self.review_info_list.append([title, rating, review])
 
 
-                if int(self.current_page) <= int(self.last_page):
+                if int(self.current_page) < int(self.last_page):
 
                     if "-Reviews-or" in url:
                         insert_position = url.find("-Reviews-or")
