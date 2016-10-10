@@ -11,8 +11,8 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d2660762-Reviews-Sarto_di_Moda-Bangkok.html"
-        self.dst = 'data/bangkok/attraction_shop39.json'
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d311043-Reviews-Temple_of_the_Reclining_Buddha_Wat_Pho-Bangkok.html"
+        self.dst = 'data/bangkok/attraction_1.json'
         self.current_page = 0
         self.last_page = 1
         self.first_entry = 1
