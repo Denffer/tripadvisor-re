@@ -11,11 +11,8 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d4322781-Reviews-Train_night_market-Bangkok.html"
-        #self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d1996018-Reviews-Rattanakosin_Exhibition_Hall-Bangkok.html"
-        #self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d2209608-Reviews-Wat_Bowonniwet_Vihara-Bangkok.html"
-        #self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d311043-Reviews-Temple_of_the_Reclining_Buddha_Wat_Pho-Bangkok.html"
-        self.dst = 'data/attraction_35.json'
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d311046-Reviews-Temple_of_the_Golden_Buddha_Wat_Traimit-Bangkok.html"
+        self.dst = 'data/attraction_11.json'
         self.current_page = 0
         self.last_page = 1
         self.first_entry = 1
@@ -40,7 +37,8 @@ class DataCrawler:
     def crawl(self, url):
         """ crawl data from tripadvisor official website """
 
-        sys.stdout.write("\rReaching into: %s"%(url))
+        print "Reaching into: " + url
+        #sys.stdout.write("\rReaching into: %s"%(url))
         try:
             connection = urllib.urlopen(url).getcode()
             if connection == 503:
@@ -50,7 +48,7 @@ class DataCrawler:
                 print "Error:", connection
                 menu.append("Error_404")
             else:
-                print "\nConnection Successful:", connection
+                print "Connection Successful:", connection
 
                 # let drive load url
                 self.driver.get(url)
@@ -118,7 +116,7 @@ class DataCrawler:
                         insert_position = url.find("-Reviews-")
                         next_url = url[:insert_position+9] + "or" + str(self.current_page*10) + "-" + url[insert_position+9:]
 
-                    sys.stdout.write("\rStatus: %s / %s"%(self.current_page, self.last_page))
+                    sys.stdout.write("\rStatus: %s / %s\n"%(self.current_page, self.last_page))
                     sys.stdout.flush()
 
                     #self.pause()
