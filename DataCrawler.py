@@ -11,12 +11,11 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d311046-Reviews-Temple_of_the_Golden_Buddha_Wat_Traimit-Bangkok.html"
-        self.dst = 'data/attraction_11.json'
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d2660762-Reviews-Sarto_di_Moda-Bangkok.html"
+        self.dst = 'data/bangkok/attraction_shop39.json'
         self.current_page = 0
         self.last_page = 1
         self.first_entry = 1
-        self.soup = ""
 
         self.location = ""
         self.attraction_name = ""
@@ -24,7 +23,6 @@ class DataCrawler:
         self.avg_rating = ""
         self.rating_stats = ""
         self.review_count = ""
-
         self.review_info_list = []
 
         # Activate Chrome Driver
@@ -32,13 +30,12 @@ class DataCrawler:
 
     def pause(self):
         """ pause for a few seconds """
-        time.sleep(random.randint(4,7))
+        time.sleep(random.randint(5,7))
 
     def crawl(self, url):
         """ crawl data from tripadvisor official website """
 
         print "Reaching into: " + url
-        #sys.stdout.write("\rReaching into: %s"%(url))
         try:
             connection = urllib.urlopen(url).getcode()
             if connection == 503:
@@ -49,7 +46,6 @@ class DataCrawler:
                 menu.append("Error_404")
             else:
                 print "Connection Successful:", connection
-
                 # let drive load url
                 self.driver.get(url)
 
@@ -57,21 +53,14 @@ class DataCrawler:
                      # execute javascript to click on all 'more'
                     self.driver.execute_script("if (document.querySelector('.ui_close_x')) {document.querySelector('.ui_close_x').click()};")
                     self.driver.execute_script("document.querySelector('.ulBlueLinks').click();")
-
-                    #self.pause()
                 else:
                     pass
 
                 self.driver.execute_script("document.querySelector('.ulBlueLinks').click();")
 
-                # Put page_source in beautiful soup
-
-                #WebDriverWait(self.driver, timeout=10).until(lambda x: x.find_element_by_class_name('entry'))
-
                 self.pause()
+                # Put page_source in beautiful soup
                 soup = BeautifulSoup(self.driver.page_source, "html.parser")
-
-
 
                 if self.first_entry == 1:
                     # get last page
@@ -91,7 +80,8 @@ class DataCrawler:
                     for li in soup.find("div", {"class": "histogramCommon simpleHistogram wrap"}).find("ul").findAll("li"):
                         self.rating_stats.append(li.find("div", {"class": "valueCount fr part"}).getText())
                     # get location
-                    self.location = soup.find("div", {"class": "slim_ranking"}).find("a").getText()[16:]
+                    tmp_text = soup.find("div", {"class": "slim_ranking"}).find("a").getText()
+                    self.location = re.search('in (\w+)', tmp_text).group(1)
                     self.first_entry = 0
                 else:
                     pass
@@ -99,13 +89,44 @@ class DataCrawler:
                 # add 1 current page
                 self.current_page += 1
 
-                # get full review
-                for div in soup.findAll("div", {"class": "dyn_full_review"}):
-                    title = div.find("span", {"class": "noQuotes"}).getText()
-                    rating = div.find("div", {"class": "rating"}).find("img")['alt'][0]
-                    review = div.find("div", {"class": "entry"}).find("p").getText().strip("\n")
-                    print "review:" + review
-                    self.review_info_list.append([title, rating, review])
+                review_cnt = 0
+                # Crawl the first review out of ten reviews
+                try:
+                    WebDriverWait(self.driver, timeout=10).until(lambda x: x.find_element_by_class_name('track_back'))
+                    for div in soup.findAll("div", {"class": "track_back"}):
+                        review_cnt += 1
+                        try:
+                            WebDriverWait(self.driver, timeout=10).until(lambda x: x.find_element_by_class_name('dyn_full_review'))
+                            review = div.find("div", {"class": "dyn_full_review"}).find("div", {"class": "entry"}).find("p").getText().strip("\n")
+                            print str(review_cnt) + ". full review: " + review
+                        except:
+                            review = div.find("div", {"class": "entry"}).find("p").getText().strip("\n")
+                            print str(review_cnt) + ". basic review: " + review
+
+                        title = div.find("span", {"class": "noQuotes"}).getText()
+                        rating = div.find("div", {"class": "rating"}).find("img")['alt'][0]
+                        self.review_info_list.append([title, rating, review])
+                except:
+                    print "No div of reviewSelector track_back is found"
+
+                # Crawl the remaining nine reviews out of ten reviews
+                try:
+                    WebDriverWait(self.driver, timeout=10).until(lambda x: x.find_element_by_class_name('reviewSelector  '))
+                    for div in soup.findAll("div", {"class": "reviewSelector  "}):
+                        review_cnt += 1
+                        try:
+                            WebDriverWait(self.driver, timeout=10).until(lambda x: x.find_element_by_class_name('dyn_full_review'))
+                            review = div.find("div", {"class": "dyn_full_review"}).find("div", {"class": "entry"}).find("p").getText().strip("\n")
+                            print str(review_cnt) + ". full review: " + review
+                        except:
+                            review = div.find("div", {"class": "entry"}).find("p").getText().strip("\n")
+                            print str(review_cnt) + ". basic review: " + review
+
+                        title = div.find("span", {"class": "noQuotes"}).getText()
+                        rating = div.find("div", {"class": "rating"}).find("img")['alt'][0]
+                        self.review_info_list.append([title, rating, review])
+                except:
+                    print "No div of reviewSelector is found"
 
                 if int(self.current_page) < int(self.last_page):
 
@@ -119,18 +140,26 @@ class DataCrawler:
                     sys.stdout.write("\rStatus: %s / %s\n"%(self.current_page, self.last_page))
                     sys.stdout.flush()
 
-                    #self.pause()
                     self.crawl(next_url)
                 else:
-                    print "Page error:", sys.exc_info()[0]
+                    print "No Next Page is Detected"
                     pass
         except:
-            print "Unexpected error:", sys.exc_info()[0]
+            print "Unexpected Error:", sys.exc_info()[0]
             raise
+
+    def create_dirs(self):
+        """ create the directory if not exist"""
+        directory = "data/" + self.location
+        dir1 = os.path.dirname(directory)
+
+        if not os.path.exists(dir1):
+            os.makedirs(dir1)
 
     def render(self):
         """ put things in order and render json file """
         self.crawl(self.url)
+        self.create_dirs()
 
         print "-"*100
         print "Putting data in ordered json format"
