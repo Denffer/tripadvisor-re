@@ -25,6 +25,7 @@ class DataCrawler:
         self.review_count = ""
         self.review_info_list = []
 
+        self.verbose = 0
         # Activate Chrome Driver
         self.driver = webdriver.Chrome()
 
@@ -82,6 +83,14 @@ class DataCrawler:
                     # get location
                     tmp_text = soup.find("div", {"class": "slim_ranking"}).find("a").getText()
                     self.location = re.search('in (\w+)', tmp_text).group(1)
+
+                    if self.verbose:
+                        print "Attraction name: " + self.attraction_name
+                        print "avg_rating: " + self.avg_rating
+                        print "review_count: " + self.review_count
+                        print "ranking" + self.ranking
+                        print "rating_stats" + self.rating_stats
+
                     self.first_entry = 0
                 else:
                     pass
