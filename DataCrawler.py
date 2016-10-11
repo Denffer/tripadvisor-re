@@ -11,8 +11,8 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g187147-d189683-Reviews-River_Seine-Paris_Ile_de_France.html"
-        self.dst = 'data/paris/attraction_9.json'
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g187147-d189284-Reviews-Montmartre-Paris_Ile_de_France.html"
+        self.dst = 'data/paris/attraction_20.json'
         self.current_page = 0
         self.last_page = 1
         self.first_entry = 1
@@ -102,6 +102,7 @@ class DataCrawler:
                 review_cnt = 0
                 # Crawl the first review out of ten reviews
                 try:
+                    self.driver.execute_script("if (document.querySelector('.ui_close_x')) {document.querySelector('.ui_close_x').click()};")
                     WebDriverWait(self.driver, timeout=10).until(lambda x: x.find_element_by_class_name('track_back'))
                     for div in soup.findAll("div", {"class": "track_back"}):
                         review_cnt += 1
@@ -121,6 +122,7 @@ class DataCrawler:
 
                 # Crawl the remaining nine reviews out of ten reviews
                 try:
+                    self.driver.execute_script("if (document.querySelector('.ui_close_x')) {document.querySelector('.ui_close_x').click()};")
                     WebDriverWait(self.driver, timeout=10).until(lambda x: x.find_element_by_class_name('reviewSelector  '))
                     for div in soup.findAll("div", {"class": "reviewSelector  "}):
                         review_cnt += 1
