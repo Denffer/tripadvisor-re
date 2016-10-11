@@ -11,8 +11,8 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d7106382-Reviews-Amari_Tailor-Bangkok.html"
-        self.dst = 'data/bangkok/attraction_shop16.json'
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g187147-d2397509-Reviews-Tours_de_la_Cathedrale_Notre_Dame-Paris_Ile_de_France.html"
+        self.dst = 'data/paris/attraction_16.json'
         self.current_page = 0
         self.last_page = 1
         self.first_entry = 1
@@ -50,21 +50,19 @@ class DataCrawler:
                 # let drive load url
                 self.driver.get(url)
 
-                if self.first_entry == 1:
-                     # execute javascript to click on all 'more'
+                if self.first_entry:
                     self.driver.execute_script("if (document.querySelector('.ui_close_x')) {document.querySelector('.ui_close_x').click()};")
                     self.driver.execute_script("document.querySelector('.ulBlueLinks').click();")
                 else:
                     pass
 
+                self.driver.execute_script("if (document.querySelector('.ui_close_x')) {document.querySelector('.ui_close_x').click()};")
+                # execute javascript to click on all 'more'
                 self.driver.execute_script("document.querySelector('.ulBlueLinks').click();")
 
                 self.pause()
                 # Put page_source in beautiful soup
                 soup = BeautifulSoup(self.driver.page_source, "html.parser")
-                f = open("soup.txt", "w+")
-                f.write(str(soup))
-
 
                 if self.first_entry == 1:
                     # get last page
@@ -139,26 +137,29 @@ class DataCrawler:
                         self.review_info_list.append([title, rating, review])
                 except:
                     print "No div of reviewSelector is found"
+                try:
+                    if int(self.current_page) < int(self.last_page):
 
-                if int(self.current_page) < int(self.last_page):
+                        if "-Reviews-or" in url:
+                            head_position = url.find("-Reviews-or")
+                            tail_position = url.find("0-")
+                            next_url = url[:head_position+11] + str(self.current_page*10) + "-" + url[tail_position+2:]
+                        else:
+                            head_position = url.find("-Reviews-")
+                            next_url = url[:head_position+9] + "or" + str(self.current_page*10) + "-" + url[head_position+9:]
 
-                    if "-Reviews-or" in url:
-                        head_position = url.find("-Reviews-or")
-                        tail_position = url.find("0-")
-                        next_url = url[:head_position+11] + str(self.current_page*10) + "-" + url[tail_position+2:]
+                        sys.stdout.write("\rStatus: %s / %s\n"%(self.current_page, self.last_page))
+                        sys.stdout.flush()
+
+                        self.crawl(next_url)
                     else:
-                        head_position = url.find("-Reviews-")
-                        next_url = url[:head_position+9] + "or" + str(self.current_page*10) + "-" + url[head_position+9:]
-
-                    sys.stdout.write("\rStatus: %s / %s\n"%(self.current_page, self.last_page))
-                    sys.stdout.flush()
-
-                    self.crawl(next_url)
-                else:
-                    print "No Next Page is Detected"
+                        print "No Next Page is Detected"
+                        pass
+                except:
+                    print "Page Error: ", sys.exc_info()[0]
                     pass
         except:
-            print "Unexpected Error:", sys.exc_info()[0]
+            print "Unexpected Error: ", sys.exc_info()[0]
             raise
 
     def create_dirs(self):
