@@ -11,8 +11,8 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g187147-d2397509-Reviews-Tours_de_la_Cathedrale_Notre_Dame-Paris_Ile_de_France.html"
-        self.dst = 'data/paris/attraction_16.json'
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g187147-d189683-Reviews-River_Seine-Paris_Ile_de_France.html"
+        self.dst = 'data/paris/attraction_9.json'
         self.current_page = 0
         self.last_page = 1
         self.first_entry = 1
@@ -141,9 +141,7 @@ class DataCrawler:
                     if int(self.current_page) < int(self.last_page):
 
                         if "-Reviews-or" in url:
-                            head_position = url.find("-Reviews-or")
-                            tail_position = url.find("0-")
-                            next_url = url[:head_position+11] + str(self.current_page*10) + "-" + url[tail_position+2:]
+                            next_url = re.sub(r"-or\d+0-", "-or" + str(self.current_page*10) + "-", url)
                         else:
                             head_position = url.find("-Reviews-")
                             next_url = url[:head_position+9] + "or" + str(self.current_page*10) + "-" + url[head_position+9:]
