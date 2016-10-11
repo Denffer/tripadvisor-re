@@ -11,8 +11,8 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d311043-Reviews-Temple_of_the_Reclining_Buddha_Wat_Pho-Bangkok.html"
-        self.dst = 'data/bangkok/attraction_1.json'
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d7106382-Reviews-Amari_Tailor-Bangkok.html"
+        self.dst = 'data/bangkok/attraction_shop16.json'
         self.current_page = 0
         self.last_page = 1
         self.first_entry = 1
@@ -62,6 +62,9 @@ class DataCrawler:
                 self.pause()
                 # Put page_source in beautiful soup
                 soup = BeautifulSoup(self.driver.page_source, "html.parser")
+                f = open("soup.txt", "w+")
+                f.write(str(soup))
+
 
                 if self.first_entry == 1:
                     # get last page
@@ -140,11 +143,12 @@ class DataCrawler:
                 if int(self.current_page) < int(self.last_page):
 
                     if "-Reviews-or" in url:
-                        insert_position = url.find("-Reviews-or")
-                        next_url = url[:insert_position+11] + str(self.current_page*10) + "-" + url[insert_position+12+len(str(self.current_page*10)):]
+                        head_position = url.find("-Reviews-or")
+                        tail_position = url.find("0-")
+                        next_url = url[:head_position+11] + str(self.current_page*10) + "-" + url[tail_position+2:]
                     else:
-                        insert_position = url.find("-Reviews-")
-                        next_url = url[:insert_position+9] + "or" + str(self.current_page*10) + "-" + url[insert_position+9:]
+                        head_position = url.find("-Reviews-")
+                        next_url = url[:head_position+9] + "or" + str(self.current_page*10) + "-" + url[head_position+9:]
 
                     sys.stdout.write("\rStatus: %s / %s\n"%(self.current_page, self.last_page))
                     sys.stdout.flush()
