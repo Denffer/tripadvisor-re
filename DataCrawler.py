@@ -12,7 +12,7 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d2209608-Reviews-Wat_Bowonniwet_Vihara-Bangkok.html"
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g298570-d451274-Reviews-National_Mosque_Masjid_Negara-Kuala_Lumpur_Wilayah_Persekutuan.html"
         #self.attraction_number = "29"
         self.file_path = ""
 
@@ -96,7 +96,7 @@ class DataCrawler:
                         self.rating_stats.append(li.find("div", {"class": "valueCount fr part"}).getText())
                     # get location
                     tmp_text = soup.find("div", {"class": "slim_ranking"}).find("a").getText()
-                    self.location = re.search('in (\w+)', tmp_text).group(1)
+                    self.location = re.search('in (\w+.*)', tmp_text).group(1)
 
                     self.first_entry = 0
                     self.current_page = soup.find("span", {"class": "pageNum current"}).getText()
@@ -219,10 +219,10 @@ class DataCrawler:
 
     def create_dir(self):
         """ create the directory if not exist"""
-        directory = "data/" + self.location.encode('utf-8').lower()
+        directory = "data/" + self.location.encode('utf-8').lower() + "/"
         dir1 = os.path.dirname(directory)
-
         if not os.path.exists(dir1):
+            print "Making directory: " + directory
             os.makedirs(dir1)
 
     def render(self):
