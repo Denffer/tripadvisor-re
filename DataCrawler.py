@@ -107,8 +107,8 @@ class DataCrawler:
                 self.pause()
                 soup = BeautifulSoup(self.driver.page_source, "html.parser")
 
-                print "This is " + self.attraction_type + " " + self.ranking + " in " + self.location
-                print "Attraction Name: " + self.attraction_name + " | Super Attraction Name: " + self.super_attraction_name
+                print "This is " + self.file_path
+                print "Attraction Name: " + self.attraction_name + " | Attraction Type: " + self.attraction_type + " | Super Attraction Name: " + self.super_attraction_name
                 # add 1 current page
                 self.current_page = int(self.current_page) + 1
 
