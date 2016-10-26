@@ -12,17 +12,18 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d4049370-Reviews-The_Paseo_Mall-Bangkok.html"
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g294217-d593230-Reviews-Deep_Water_Bay-Hong_Kong.html"
 
         self.super_attraction_ranking = ""
         self.super_attraction_name = ""
-        self.location = "" # Change this if the location is altered in the website
+        self.location = "" # Customize location
+        self.ranking = "" # Customize ranking
 
         self.file_path, self.next_url = "", ""
         self.current_page, self.last_page = 0, 0
         self.previous_review_ordered_dict_list = []
 
-        self.attraction_name, self.attraction_type, self.ranking, self.avg_rating, self.rating_stats, self.review_count = "", "", "", "", "", ""
+        self.attraction_name, self.attraction_type, self.avg_rating, self.rating_stats, self.review_count = "", "", "", "", ""
         self.review_info_list = []
 
         self.driver = webdriver.Chrome()  # Activate Chrome Driver
@@ -77,7 +78,8 @@ class DataCrawler:
                     # get review_count
                     self.review_count = soup.find("label", {"for": "taplc_prodp13n_hr_sur_review_filter_controls_0_filterLang_en"}).find("span").getText().replace("(","").replace(")","")
                     # get ranking
-                    self.ranking = soup.find("div", {"class": "slim_ranking"}).find("b").getText().strip("#")
+                    if not self.ranking:
+                        self.ranking = soup.find("div", {"class": "slim_ranking"}).find("b").getText().strip("#")
                     # get rating statistics
                     self.rating_stats = []
                     for li in soup.find("div", {"class": "histogramCommon simpleHistogram wrap"}).find("ul").findAll("li"):
