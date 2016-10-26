@@ -12,24 +12,20 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d546030-Reviews-Central_Pinklao_Shopping_Complex-Bangkok.html"
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d4049370-Reviews-The_Paseo_Mall-Bangkok.html"
 
         self.super_attraction_ranking = ""
         self.super_attraction_name = ""
+        self.location = "" # Change this if the location is altered in the website
 
-        self.file_path = ""
-        self.next_url = ""
-        #self.file_exist_flag = 0
-        self.current_page = 0
-        self.last_page = 1
+        self.file_path, self.next_url = "", ""
+        self.current_page, self.last_page = 0, 0
         self.previous_review_ordered_dict_list = []
 
-        self.location, self.attraction_name, self.attraction_type, self.ranking, self.avg_rating, self.rating_stats, self.review_count = "", "", "", "", "", "", ""
+        self.attraction_name, self.attraction_type, self.ranking, self.avg_rating, self.rating_stats, self.review_count = "", "", "", "", "", ""
         self.review_info_list = []
 
-        self.verbose = 0
-        # Activate Chrome Driver
-        self.driver = webdriver.Chrome()
+        self.driver = webdriver.Chrome()  # Activate Chrome Driver
 
     def pause(self):
         """ pause for a few seconds """
@@ -73,9 +69,6 @@ class DataCrawler:
 
                 """ Check if this is the first entry """
                 if not self.attraction_name:
-                    # get last page
-                    for a in soup.find("div", {"class": "pageNumbers"}).findAll("a"):
-                        self.last_page = a.getText()
 
                     # get attraction_name
                     self.attraction_name = soup.find("div", {"class": "heading_name_wrapper"}).find("h1").getText().replace(" ", "_").strip("\n")
@@ -91,12 +84,18 @@ class DataCrawler:
                         self.rating_stats.append(li.find("div", {"class": "valueCount fr part"}).getText())
                     # get attraction_type & location
                     tmp_text = soup.find("div", {"class": "slim_ranking"}).find("a").getText()
-                    self.location = re.search('in (\w+.*)', tmp_text).group(1).replace(" ","_")
                     self.attraction_type = re.search('(\w+.*) in', tmp_text).group(1).replace(" ","_")
+                    if not self.location:
+                        self.location = re.search('in (\w+.*)', tmp_text).group(1).replace(" ","_")
 
+                    # get current_page
                     self.current_page = soup.find("span", {"class": "pageNum current"}).getText()
                     self.current_page = int(self.current_page) - 1
-                    #print self.current_page
+                    # get last_page
+                    for a in soup.find("div", {"class": "pageNumbers"}).findAll("a"):
+                        self.last_page = a.getText()
+
+                    # Check if file exists
                     self.check_file()
                 else:
                     pass
@@ -185,13 +184,13 @@ class DataCrawler:
             if os.path.isfile(self.file_path):
                 f = open(self.file_path, 'r')
                 print "The file in the path: " + self.file_path + " is found"
-                data = json.load(f)
 
+                data = json.load(f)
                 for review_dict in data["reviews"]:
                     self.review_info_list.append([review_dict["title"], review_dict["rating"], review_dict["review"]])
-                # file exist so review count would not start from 1
-                #self.file_exist_flag = 1
+
                 print "Continue to crawl from: " + self.url
+                print "-"*120
             else:
                 print "NO file: " + self.file_path + " is found"
                 print "Start Crawling from the beginning"
@@ -233,7 +232,9 @@ class DataCrawler:
             attraction_ordered_dict["next_url"] = self.next_url
         attraction_ordered_dict["location"] = self.location
         if self.super_attraction_name:
-            attraction_ordered_dict["attraction_name"] = self.attraction_name
+            attraction_ordered_dict["super_attraction_name"] = self.super_attraction_name
+        if self.super_attraction_ranking:
+            attraction_ordered_dict["super_attraction_ranking"] = self.super_attraction_ranking
         attraction_ordered_dict["attraction_name"] = self.attraction_name
         attraction_ordered_dict["attraction_type"] = self.attraction_type
         attraction_ordered_dict["ranking"] = self.ranking
