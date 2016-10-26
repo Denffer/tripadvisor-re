@@ -12,25 +12,19 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g298570-d451274-Reviews-National_Mosque_Masjid_Negara-Kuala_Lumpur_Wilayah_Persekutuan.html"
-        #self.attraction_number = "29"
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g293916-d546030-Reviews-Central_Pinklao_Shopping_Complex-Bangkok.html"
+
+        self.super_attraction_ranking = ""
+        self.super_attraction_name = ""
+
         self.file_path = ""
-
-        self.next_url = ''
-        self.url_flag = 1
-        self.file_exist_flag = 0
-
+        self.next_url = ""
+        #self.file_exist_flag = 0
         self.current_page = 0
         self.last_page = 1
-        self.first_entry = 1
         self.previous_review_ordered_dict_list = []
 
-        self.location = "Default Value"
-        self.attraction_name = ""
-        self.ranking = "Default Value"
-        self.avg_rating = ""
-        self.rating_stats = ""
-        self.review_count = ""
+        self.location, self.attraction_name, self.attraction_type, self.ranking, self.avg_rating, self.rating_stats, self.review_count = "", "", "", "", "", "", ""
         self.review_info_list = []
 
         self.verbose = 0
@@ -77,13 +71,14 @@ class DataCrawler:
                 self.pause()
                 soup = BeautifulSoup(self.driver.page_source, "html.parser")
 
-                if self.first_entry:
+                """ Check if this is the first entry """
+                if not self.attraction_name:
                     # get last page
                     for a in soup.find("div", {"class": "pageNumbers"}).findAll("a"):
                         self.last_page = a.getText()
 
                     # get attraction_name
-                    self.attraction_name = soup.find("div", {"class": "heading_name_wrapper"}).find("h1").getText().strip("\n")
+                    self.attraction_name = soup.find("div", {"class": "heading_name_wrapper"}).find("h1").getText().replace(" ", "_").strip("\n")
                     # get avg_rating
                     self.avg_rating = soup.find("div", {"class": "rs rating"}).find("img")['content']
                     # get review_count
@@ -94,11 +89,11 @@ class DataCrawler:
                     self.rating_stats = []
                     for li in soup.find("div", {"class": "histogramCommon simpleHistogram wrap"}).find("ul").findAll("li"):
                         self.rating_stats.append(li.find("div", {"class": "valueCount fr part"}).getText())
-                    # get location
+                    # get attraction_type & location
                     tmp_text = soup.find("div", {"class": "slim_ranking"}).find("a").getText()
-                    self.location = re.search('in (\w+.*)', tmp_text).group(1)
+                    self.location = re.search('in (\w+.*)', tmp_text).group(1).replace(" ","_")
+                    self.attraction_type = re.search('(\w+.*) in', tmp_text).group(1).replace(" ","_")
 
-                    self.first_entry = 0
                     self.current_page = soup.find("span", {"class": "pageNum current"}).getText()
                     self.current_page = int(self.current_page) - 1
                     #print self.current_page
@@ -111,19 +106,17 @@ class DataCrawler:
                 self.pause()
                 soup = BeautifulSoup(self.driver.page_source, "html.parser")
 
-                print "This is attraction " + self.ranking + " in " + self.location
+                print "This is " + self.attraction_type + " " + self.ranking + " in " + self.location
+                print "Attraction Name: " + self.attraction_name + " | Super Attraction Name: " + self.super_attraction_name
                 # add 1 current page
                 self.current_page = int(self.current_page) + 1
 
                 review_cnt = 0
                 # Crawl the first review out of ten reviews
                 try:
-                    #self.driver.execute_script("if (document.querySelector('.ui_close_x')) {document.querySelector('.ui_close_x').click()};")
-                    #WebDriverWait(self.driver, timeout=3).until(lambda x: x.find_element_by_class_name('track_back'))
                     div = soup.find("div", {"class": "track_back"})
                     review_cnt += 1
                     try:
-                        #WebDriverWait(self.driver, timeout=10).until(lambda x: x.find_element_by_class_name('dyn_full_review'))
                         review = div.find("div", {"class": "dyn_full_review"}).find("div", {"class": "entry"}).find("p").getText().strip("\n")
                         print str(review_cnt) + ". full review: " + review
                     except:
@@ -138,12 +131,9 @@ class DataCrawler:
 
                 # Crawl the remaining nine reviews out of ten reviews
                 try:
-                    #self.driver.execute_script("if (document.querySelector('.ui_close_x')) {document.querySelector('.ui_close_x').click()};")
-                    #WebDriverWait(self.driver, timeout=3).until(lambda x: x.find_element_by_class_name('reviewSelector  '))
                     for div in soup.findAll("div", {"class": "reviewSelector  "}):
                         review_cnt += 1
                         try:
-                            #WebDriverWait(self.driver, timeout=10).until(lambda x: x.find_element_by_class_name('dyn_full_review'))
                             review = div.find("div", {"class": "dyn_full_review"}).find("div", {"class": "entry"}).find("p").getText().strip("\n")
                             print str(review_cnt) + ". full review: " + review
                         except:
@@ -169,15 +159,14 @@ class DataCrawler:
                         sys.stdout.write("\rStatus: %s / %s\n"%(self.current_page, self.last_page))
                         sys.stdout.flush()
                         print "-"*120
-
                         self.crawl(self.next_url)
                     else:
                         sys.stdout.write("\rStatus: %s / %s\n"%(self.current_page, self.last_page))
                         sys.stdout.flush()
                         print "-"*120
                         print "No Next Page is Detected"
-                        self.url_flag = 0
-                        #pass
+                        self.next_url = ""
+
                 except:
                     self.PrintException()
                     pass
@@ -186,9 +175,12 @@ class DataCrawler:
             pass
 
     def check_file(self):
-        """ check if the file is existed and continue to crawl"""
-        self.file_path = "data/" + self.location.encode('utf-8').lower() + "/attraction_" + self.ranking + ".json"
-        print "Checking the existence of the file: " + self.file_path
+        """ check if the file is existed and continue to crawl """
+        if self.super_attraction_name:
+            self.file_path = "data/" + self.location.encode('utf-8').lower() + "/attraction_" + self.super_attraction_ranking + "/tour" + "_" + self.ranking + ".json"
+        else:
+            self.file_path = "data/" + self.location.encode('utf-8').lower() + "/attraction_" + self.ranking + ".json"
+        print "Checking if the file exists: " + self.file_path
         try:
             if os.path.isfile(self.file_path):
                 f = open(self.file_path, 'r')
@@ -198,10 +190,10 @@ class DataCrawler:
                 for review_dict in data["reviews"]:
                     self.review_info_list.append([review_dict["title"], review_dict["rating"], review_dict["review"]])
                 # file exist so review count would not start from 1
-                self.file_exist_flag = 1
+                #self.file_exist_flag = 1
                 print "Continue to crawl from: " + self.url
             else:
-                print "No file in the path:" + self.file_path + " is found"
+                print "NO file: " + self.file_path + " is found"
                 print "Start Crawling from the beginning"
                 print "-"*120
         except:
@@ -218,8 +210,11 @@ class DataCrawler:
         print '    Exception in ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
 
     def create_dir(self):
-        """ create the directory if not exist"""
-        directory = "data/" + self.location.encode('utf-8').lower() + "/"
+        """ create the directory if not exist """
+        if self.super_attraction_name:
+            directory = "data/" + self.location.encode('utf-8').lower() + "/attraction_" + self.super_attraction_ranking + "/"
+        else:
+            directory = "data/" + self.location.encode('utf-8').lower() + "/"
         dir1 = os.path.dirname(directory)
         if not os.path.exists(dir1):
             print "Making directory: " + directory
@@ -234,10 +229,13 @@ class DataCrawler:
         print "Putting data in ordered json format"
 
         attraction_ordered_dict = OrderedDict()
-        if self.url_flag:
+        if self.next_url:
             attraction_ordered_dict["next_url"] = self.next_url
         attraction_ordered_dict["location"] = self.location
+        if self.super_attraction_name:
+            attraction_ordered_dict["attraction_name"] = self.attraction_name
         attraction_ordered_dict["attraction_name"] = self.attraction_name
+        attraction_ordered_dict["attraction_type"] = self.attraction_type
         attraction_ordered_dict["ranking"] = self.ranking
         attraction_ordered_dict["avg_rating"] = self.avg_rating
         attraction_ordered_dict["rating_stats"] = self.rating_stats
