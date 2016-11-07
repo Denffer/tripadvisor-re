@@ -12,12 +12,12 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g294217-d593230-Reviews-Deep_Water_Bay-Hong_Kong.html"
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g297701-d9778729-Reviews-EBikes_Bali_Electric_Bicycle_Tours-Ubud_Bali.html"
 
-        self.super_attraction_ranking = ""
-        self.super_attraction_name = ""
-        self.location = "" # Customize location
-        self.ranking = "" # Customize ranking
+        self.super_attraction_ranking = "1"
+        self.super_attraction_name = "Bike_Tours"
+        self.location = "ubud"
+        self.ranking = "8"
 
         self.file_path, self.next_url = "", ""
         self.current_page, self.last_page = 0, 0
@@ -241,7 +241,6 @@ class DataCrawler:
         attraction_ordered_dict["attraction_type"] = self.attraction_type
         attraction_ordered_dict["ranking"] = self.ranking
         attraction_ordered_dict["avg_rating"] = self.avg_rating
-        attraction_ordered_dict["rating_stats"] = self.rating_stats
         attraction_ordered_dict["review_count"] = self.review_count
         rating_stats_dict = OrderedDict()
         rating_stats_dict["excellent"] = self.rating_stats[0]
@@ -265,10 +264,9 @@ class DataCrawler:
 
         attraction_ordered_dict["reviews"] = review_ordered_dict_list
 
-        print "Writing data to:", self.file_path
-        f = open(self.file_path, 'w+')
-        f.write( json.dumps( attraction_ordered_dict, indent = 4, cls=NoIndentEncoder))
-        self.driver.close()
+        print "Writing data to: " + self.dst + "/" + file_name
+        f = open(self.dst + "/" + file_name, 'w+')
+        f.write(json.dumps(attraction_ordered_dict, indent = 4, cls=NoIndentEncoder))
         print "Done"
 
 class NoIndent(object):
