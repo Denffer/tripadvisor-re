@@ -9,11 +9,14 @@ class PreProcess:
 
     def __init__(self):
         """ initialze the paths """
-        self.src = "data/test/"
+        self.src = "data/raw_data/"
         self.dst = "data/reviews/"
 
+        self.review_count = 0
+        self.dst2 = "data/raw_data/"
+
     def walk(self):
-        """ recursively load data from /data | search every file under any directory, if any """
+        """ recursively load data from ./data | search every file under any directory, if any """
 
         # the function os.walk will get the name of dirpath, dirs and files
         for dirpath, dir_list, file_list in os.walk(self.src):
@@ -57,8 +60,17 @@ class PreProcess:
             print "Saving json file: " + '\033[1m' + file_name + '\033[0m' +" into data/reviews/"
 
             attraction_ordered_dict = OrderedDict()
-            attraction_ordered_dict["location"] = attraction["location"].lower()
-            attraction_ordered_dict["attraction_name"] = attraction["attraction_name"].lower()
+
+            """ Refine location | E.g. Hong_Kong, (Nickname). ->  Hong-Kong """ #FIXME on whether to lower()
+            location = attraction["location"].replace("_","-").replace("&","and").replace("\'","").replace(".","")
+            location = re.sub(r'\(.*?\)', r'', location)
+            attraction_ordered_dict["location"] = location
+
+            """ Refine attraction_name | E.g. Happy'_Temple, (Nickname). -> Happy-Temple """
+            attraction_name = attraction["attraction_name"].replace("_","-").replace("&","and").replace("\'", "").replace(".","")
+            attraction_name = re.sub(r'\(.*?\)', r'', attraction_name)
+            attraction_ordered_dict["attraction_name"] = attraction_name
+
             attraction_ordered_dict["ranking"] = attraction["ranking"]
             attraction_ordered_dict["avg_rating"] = attraction["avg_rating"]
             attraction_ordered_dict["review_count"] = attraction["review_count"]
@@ -78,9 +90,9 @@ class PreProcess:
                 review_ordered_dict = OrderedDict()
                 review_cnt += 1
                 review_ordered_dict["index"] = review_cnt
-                review_ordered_dict["title"] = review_dict["title"]
                 review_ordered_dict["rating"] = review_dict["rating"]
-                review_ordered_dict["review"] = review_dict["review"]
+                """ This is the part where 'title' and 'review' are merged """
+                review_ordered_dict["review"] = review_dict["title"] + ". " + review_dict["review"]
                 review_ordered_dict_list.append(review_ordered_dict)
 
             attraction_ordered_dict["reviews"] = review_ordered_dict_list
@@ -94,11 +106,20 @@ class PreProcess:
             print "Mering all the tours .."
 
             attraction_ordered_dict = OrderedDict()
-            attraction_ordered_dict["location"] = tour_list[0]["location"].lower()
-            attraction_ordered_dict["attraction_name"] = tour_list[0]["super_attraction_name"].lower() + "_" + tour_list[0]["location"].lower()
+
+            """ Refine location | E.g. Hong_Kong, (Nickname). ->  Hong-Kong """ #FIXME on whether to lower()
+            location = tour_list[0]["location"].replace("_","-").replace("&","and").replace("\'","").replace(".","")
+            location = re.sub(r'\(.*?\)', r'', location)
+            attraction_ordered_dict["location"] = location
+
+            """ Refine attraction_name | E.g. Happy'_Temple, (Nickname). -> Happy-Temple """
+            attraction_name = tour_list[0]["super_attraction_name"].replace("_","-").replace("&","and").replace("\'", "").replace(".","")
+            attraction_name = re.sub(r'\(.*?\)', r'', attraction_name)
+            attraction_ordered_dict["attraction_name"] = attraction_name
+
             attraction_ordered_dict["ranking"] = tour_list[0]["super_attraction_ranking"]
 
-            avg_rating_list, review_count_list = [], []
+            avg_rating_list, sub_attraction_list, review_count_list = [], [], []
             excellent_list, very_good_list, average_list, poor_list, terrible_list = [], [], [], [], []
             review_dict_list = []
             for tour in tour_list:
@@ -111,6 +132,10 @@ class PreProcess:
                 poor_list.append(tour["rating_stats"]["poor"])
                 terrible_list.append(tour["rating_stats"]["terrible"])
 
+                """ Refine attraction_name | E.g. Happy'_Temple, (Nickname). -> Happy-Temple """
+                sub_attraction_name = tour["attraction_name"].replace("_","-").replace("&","and").replace("\'", "").replace(".","")
+                sub_attraction_name = re.sub(r'\(.*?\)', r'', sub_attraction_name)
+                sub_attraction_list.append(sub_attraction_name)
                 review_dict_list.extend(tour["reviews"])
 
             avg_rating = round(sum([float(i) for i in avg_rating_list])/len(avg_rating_list))
@@ -127,15 +152,17 @@ class PreProcess:
             rating_stats_dict["terrible"] = sum([int(str(i).replace(",","")) for i in terrible_list])
             attraction_ordered_dict["rating_stats"] = NoIndent(rating_stats_dict)
 
+            attraction_ordered_dict["sub_attraction_list"] = NoIndent(sub_attraction_list)
+
             review_ordered_dict_list = []
             review_cnt = 0
             for review_dict in review_dict_list:
                 review_ordered_dict = OrderedDict()
                 review_cnt += 1
                 review_ordered_dict["index"] = review_cnt
-                review_ordered_dict["title"] = review_dict["title"]
                 review_ordered_dict["rating"] = review_dict["rating"]
-                review_ordered_dict["review"] = review_dict["review"]
+                """ This is the part where 'title' and 'review' are merged """
+                review_ordered_dict["review"] = review_dict["title"] + ". " + review_dict["review"]
                 review_ordered_dict_list.append(review_ordered_dict)
 
             attraction_ordered_dict["reviews"] = review_ordered_dict_list
