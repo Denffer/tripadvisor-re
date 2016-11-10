@@ -13,7 +13,7 @@ class PreProcess:
         self.dst = "data/reviews/"
 
         self.review_count = 0
-        self.dst2 = "data/raw_data/"
+        self.dst_log = "data/reviews/_log.txt"
 
     def walk(self):
         """ recursively load data from ./data | search every file under any directory, if any """
@@ -88,6 +88,7 @@ class PreProcess:
             review_cnt = 0
             for review_dict in attraction["reviews"]:
                 review_ordered_dict = OrderedDict()
+                self.review_count += 1
                 review_cnt += 1
                 review_ordered_dict["index"] = review_cnt
                 review_ordered_dict["rating"] = review_dict["rating"]
@@ -158,6 +159,7 @@ class PreProcess:
             review_cnt = 0
             for review_dict in review_dict_list:
                 review_ordered_dict = OrderedDict()
+                self.review_count += 1
                 review_cnt += 1
                 review_ordered_dict["index"] = review_cnt
                 review_ordered_dict["rating"] = review_dict["rating"]
@@ -173,6 +175,12 @@ class PreProcess:
 
         else:
             self.PrintException()
+
+    def render_log(self):
+        """ Save log in ./data/raw_data/ for future reference (to be added) """
+        print "Saving log file to", '\033[1m' + self.dst_log + '\033[0m'
+        f = open(self.dst_log, 'w+')
+        f.write("Total Review Count: " + str(self.review_count))
 
     def PrintException(self):
         exc_type, exc_obj, tb = sys.exc_info()
@@ -211,4 +219,5 @@ class NoIndentEncoder(json.JSONEncoder):
 if __name__ == '__main__':
     preprocess = PreProcess()
     preprocess.walk()
+    preprocess.render_log()
 
