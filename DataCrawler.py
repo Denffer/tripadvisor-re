@@ -12,12 +12,12 @@ class DataCrawler:
 
     def __init__(self):
         """ Initialize Values """
-        self.url = "https://www.tripadvisor.com/Attraction_Review-g297701-d9778729-Reviews-EBikes_Bali_Electric_Bicycle_Tours-Ubud_Bali.html"
+        self.url = "https://www.tripadvisor.com/Attraction_Review-g294314-d2547689-Reviews-or1620-Alpaca_Expeditions-Cusco_Cusco_Region.html"
 
-        self.super_attraction_ranking = "1"
-        self.super_attraction_name = "Bike_Tours"
-        self.location = "ubud"
-        self.ranking = "8"
+        self.super_attraction_ranking = "5"
+        self.super_attraction_name = "Cultural_Tours"
+        self.location = "Cusco"
+        self.ranking = "1"
 
         self.file_path, self.next_url = "", ""
         self.current_page, self.last_page = 0, 0
@@ -264,8 +264,8 @@ class DataCrawler:
 
         attraction_ordered_dict["reviews"] = review_ordered_dict_list
 
-        print "Writing data to: " + self.dst + "/" + file_name
-        f = open(self.dst + "/" + file_name, 'w+')
+        print "Writing data to: " + self.file_path
+        f = open(self.file_path, 'w+')
         f.write(json.dumps(attraction_ordered_dict, indent = 4, cls=NoIndentEncoder))
         print "Done"
 
