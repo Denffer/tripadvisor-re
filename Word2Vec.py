@@ -51,9 +51,13 @@ class Word2Vec:
     def create_folder(self):
         """ create folder (1) coreProcess_input """
         dir1 = os.path.dirname("data/coreProcess/")
+        dir2 = os.path.dirname("data/lower_dimension/")
         if not os.path.exists(dir1):   # if the directory does not exist
             print "Creating directory:", dir1
             os.makedirs(dir1)          # create the directory
+        if not os.path.exists(dir2):   # if the directory does not exist
+            print "Creating directory:", dir2
+            os.makedirs(dir2)          # create the directory
 
     def render(self):
         """ render into two files """
@@ -61,15 +65,17 @@ class Word2Vec:
         self.create_folder()
 
         print "-"*80
-        print "Writing data to", self.dst_uw
+        print "Writing data to " + "\033[1m" + self.dst_uw + "\033[0m"
         with open(self.dst_uw, 'w+') as f_uw:
             for word in unique_words:
                 f_uw.write( word + "\n")
 
-        print "Writing data to", self.dst_v200
+        print "Writing data to " + "\033[1m" + self.dst_v200 + "\033[0m"
         with open(self.dst_v200, 'w+') as f_v200:
             for vector in vectors200:
-                f_v200.write(str(vector) + '\n')
+                for dimension in vector:
+                    f_v200.write(str(dimension) + ' ')
+                f_v200.write("\n")
 
 if __name__ == '__main__':
     word2vec = Word2Vec()
