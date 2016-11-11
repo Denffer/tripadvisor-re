@@ -150,7 +150,7 @@ def tsne(X = Math.array([]), no_dims = 2, initial_dims = 200, perplexity = 1.0):
 	return Y;
 
 if __name__ == "__main__":
-	X = Math.loadtxt("data/lower_dimension/vectiors200.txt")
+	X = Math.loadtxt("data/lower_dimension/vectors200.txt")
 	Y = tsne(X, 2, 200, 1.0)
 
         f = open("data/coreProcess/vector2.txt", "w+")
