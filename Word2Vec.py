@@ -15,7 +15,7 @@ class Word2Vec:
         print "Loading data from:", self.src
 
         with open(self.src) as f:
-            corpus = f.read()
+            corpus = f.readlines()
 
         #print corpus
         return corpus
@@ -26,6 +26,7 @@ class Word2Vec:
 
         sentences = []
         for sentence in corpus:
+            #print sentence
             sentences.append(sentence.split())
 
         #print sentences
@@ -37,7 +38,7 @@ class Word2Vec:
 
         print '-'*80
         print "Running Word2Vec"
-        model = gensim.models.Word2Vec(sentences, min_count=3, size=200, window = 10, workers=4)
+        model = gensim.models.Word2Vec(sentences, min_count=5, size=200, window = 10, workers=4)
         unique_words = list(model.vocab.keys())
 
         vectors200 = []
@@ -51,6 +52,7 @@ class Word2Vec:
         """ create folder (1) coreProcess_input """
         dir1 = os.path.dirname("data/coreProcess/")
         if not os.path.exists(dir1):   # if the directory does not exist
+            print "Creating directory:", dir1
             os.makedirs(dir1)          # create the directory
 
     def render(self):
