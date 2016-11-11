@@ -31,7 +31,7 @@ class Merger:
                     corpus.append(file.read())
 
                 if self.verbose:
-                    sys.stdout.write("\rStatus: %s / %s"%(file_cnt, length))
+                    sys.stdout.write("\rStatus: %s / %s\n"%(file_cnt, length))
                     sys.stdout.flush()
 
         return corpus
@@ -53,7 +53,7 @@ class Merger:
                 sentiment_statistics.append(json.load(open(dirpath+f)))
 
                 if self.verbose:
-                    sys.stdout.write("\rStatus: %s / %s"%(file_cnt, length))
+                    sys.stdout.write("\rStatus: %s / %s\n"%(file_cnt, length))
                     sys.stdout.flush()
 
         #print sentiment_statistics
@@ -65,7 +65,7 @@ class Merger:
         """
         sentiment_statistics = self.get_sentiment_statistics()
 
-        print '\n' + '-'*80
+        print '-'*80
         print "Accumulating sentiment_statistics' counts"
 
         count_list = np.zeros(len(sentiment_statistics[0]))
