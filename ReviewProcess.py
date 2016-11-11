@@ -6,9 +6,9 @@ import unicodedata, linecache
 
 class ReviewProcess:
     """ This program aims to transform all json files in data/reviews/ into
-        (1) backend_reviews.txt in 'data/backend_reviews'
-        (2) location_*.json in 'data/frontend_reviews'
-        (3) sentiment_statistics_location_*.json in the 'data/statistics'
+        (1) backend_reviews.txt in 'data/backend_reviews/'
+        (2) location_*.json in 'data/frontend_reviews/'
+        (3) sentiment_statistics_location_*.json in the 'data/statistics/'
     """
 
     def __init__(self):
@@ -280,7 +280,7 @@ class ReviewProcess:
 
         frontend_orderedDict["reviews"] = review_ordered_dict_list
 
-        frontend_json = open(self.dst_frontend + filename, "w+")
+        frontend_json = open(self.dst_frontend + filename + ".json", "w+")
         frontend_json.write(json.dumps( frontend_orderedDict, indent = 4, cls=NoIndentEncoder))
         frontend_json.close()
 
@@ -288,7 +288,7 @@ class ReviewProcess:
             print filename, "'s frontend is complete"
 
         """ (2) save location_*.txt in ./backend_reviews """
-        backend_txt = open(self.dst_backend + filename, "w+")
+        backend_txt = open(self.dst_backend + filename + ".txt", "w+")
         for review in self.backend_reviews:
             backend_txt.write(review.encode("utf-8") + '\n')
         backend_txt.close()
@@ -299,7 +299,7 @@ class ReviewProcess:
         """ (1) save location_*.json in ./frontend_reviews """
         """ (3) render restaurant.json containing dictionaries of each positive sentiment word """
 
-        sentiment_statistics_json = open(self.dst_sentiment_statistics + filename, "w+")
+        sentiment_statistics_json = open(self.dst_sentiment_statistics + filename + ".json", "w+")
         sentiment_statistics_json.write(json.dumps(self.sentiment_statistics, indent = 4, cls=NoIndentEncoder))
         sentiment_statistics_json.close()
 
