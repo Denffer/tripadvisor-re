@@ -81,7 +81,7 @@ class ReviewProcess:
 
         location = self.attraction["location"]
         attraction_al = self.attraction_name
-        self.attraction_al = attraction_al.replace(" ", "-") + "_" + location.replace(" ", "-")
+        self.attraction_al = " " + attraction_al.replace(" ", "-") + "_" + location.replace(" ", "-") + " "
 
         if self.verbose:
             print attraction_al
