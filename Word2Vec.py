@@ -7,6 +7,7 @@ class Word2Vec:
         self.src = "data/word2vec_input/corpus.txt"
         self.dst_uw = "data/coreProcess/unique_words.txt"
         self.dst_v200 = "data/coreProcess/vectors200.txt"
+        self.dst_ld_v200 = "data/lower_dimension/vectors200.txt"
 
         self.verbose = 1
 
@@ -73,9 +74,14 @@ class Word2Vec:
         print "Writing data to " + "\033[1m" + self.dst_v200 + "\033[0m"
         with open(self.dst_v200, 'w+') as f_v200:
             for vector in vectors200:
+                f_v200.write(str(vector) + '\n')
+
+        print "Writing data to " + "\033[1m" + self.dst_ld_v200 + "\033[0m"
+        with open(self.dst_ld_v200, 'w+') as f_ld_v200:
+            for vector in vectors200:
                 for dimension in vector:
-                    f_v200.write(str(dimension) + ' ')
-                f_v200.write("\n")
+                    f_ld_v200.write(str(dimension) + ' ')
+                f_ld_v200.write("\n")
 
 if __name__ == '__main__':
     word2vec = Word2Vec()
