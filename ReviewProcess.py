@@ -59,7 +59,7 @@ class ReviewProcess:
 
         attraction_regexr = self.attraction_name
         attraction_regexr = attraction_regexr.split()
-        attraction_regexr[0] = "(" + attraction_regexr[0]
+        attraction_regexr[0] = "\\s(" + attraction_regexr[0]
 
         for i in xrange(len(attraction_regexr)-1):
             attraction_regexr[i] += "\\s*"
@@ -67,8 +67,8 @@ class ReviewProcess:
             attraction_regexr[i] += "|"
 
         attraction_regexr[len(attraction_regexr)-2] = attraction_regexr[len(attraction_regexr)-2] + ")*"
-        attraction_regexr = "".join(attraction_regexr)[:-1]
-        self.attraction_regexr = attraction_regexr + "(s|es|ies)?"
+        attraction_regexr = "".join(attraction_regexr)
+        self.attraction_regexr = attraction_regexr + "(s)?\\s"
 
         if self.verbose:
             print self.attraction_regexr
