@@ -266,7 +266,15 @@ class ReviewProcess:
         frontend_orderedDict["attraction_name"] = self.attraction["attraction_name"]
         frontend_orderedDict["ranking"] = self.attraction["ranking"]
         frontend_orderedDict["avg_rating"] = self.attraction["avg_rating"]
-        frontend_orderedDict["rating_stats"] = NoIndent(self.attraction["rating_stats"])
+
+        rating_stats_dict = OrderedDict()
+        rating_stats_dict["excellent"] = self.attraction["rating_stats"]["excellent"]
+        rating_stats_dict["very good"] = self.attraction["rating_stats"]["very good"]
+        rating_stats_dict["average"] = self.attraction["rating_stats"]["average"]
+        rating_stats_dict["poor"] = self.attraction["rating_stats"]["poor"]
+        rating_stats_dict["terrible"] = self.attraction["rating_stats"]["terrible"]
+        frontend_orderedDict["rating_stats"] = NoIndent(rating_stats_dict)
+
         frontend_orderedDict["mentioned_count"] = len(self.frontend_reviews)
 
         review_ordered_dict_list = []
