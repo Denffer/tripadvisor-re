@@ -73,9 +73,10 @@ class PreProcess:
             attraction_ordered_dict["location"] = location
 
             """ Refine attraction_name | E.g. Happy'_Temple_(Nickname). -> Happy-Temple """
-            attraction_name = attraction["attraction_name"].replace("_","-").replace("&","and").replace("\'", "").replace(".","")
+            attraction_name = attraction["attraction_name"].replace("_","-").replace("-"," ").replace("\'", "").replace(".","").replace(",","")
+            attraction_name = re.sub(r'\s+', r' ', attraction_name)
             attraction_name = re.sub(r'\(.*?\)', r'', attraction_name)
-            attraction_name = attraction_name.replace("-", " ").strip().replace(" ", "-")
+            attraction_name = attraction_name.strip().replace(" ", "-")
             attraction_ordered_dict["attraction_name"] = attraction_name
 
             attraction_ordered_dict["ranking"] = attraction["ranking"]
@@ -125,9 +126,10 @@ class PreProcess:
             attraction_ordered_dict["location"] = location
 
             """ Refine attraction_name | E.g. Happy'_Temple, (Nickname). -> Happy-Temple """
-            attraction_name = tour_list[0]["super_attraction_name"].replace("_","-").replace("&","and").replace("\'", "").replace(".","")
+            attraction_name = tour_list[0]["super_attraction_name"].replace("_"," ").replace("-"," ").replace("\'", "").replace(".",""),replace(",","")
+            attraction_name = re.sub(r'\s+', r' ', attraction_name)
             attraction_name = re.sub(r'\(.*?\)', r'', attraction_name)
-            attraction_name = attraction_name.replace("-", " ").strip().replace(" ", "-")
+            attraction_name = attraction_name.strip().replace(" ", "-")
             attraction_ordered_dict["attraction_name"] = attraction_name
 
             attraction_ordered_dict["ranking"] = tour_list[0]["super_attraction_ranking"]
