@@ -14,7 +14,7 @@ class ReviewProcess:
     def __init__(self):
         self.src = sys.argv[1]  # E.g. data/reviews/bangkok_3.json
         print "Processing " + "\033[1m" + self.src + "\033[0m"
-        self.verbose = 1
+        self.verbose = 0
 
         self.attraction = {}
         self.attraction_name = ""
@@ -147,7 +147,7 @@ class ReviewProcess:
 
             # Ensure words and punctuation are separated
             text = text.replace("!"," ! ").replace("@"," @ ").replace("#"," # ").replace("$"," $ ").replace("%"," % ")
-            text = text.replace("^"," ^ ").replace("&"," & ").replace("*"," * ").replace("("," ( ").replace(")"," ) ")
+            text = text.replace("^"," ^ ").replace("*"," * ").replace("("," ( ").replace(")"," ) ")
             text = text.replace(":"," : ").replace(";"," ; ").replace("."," . ").replace(","," , ").replace("=", " = ")
             text = text.replace("+"," + ").replace("-"," - ").replace("|"," | ").replace("\\"," \ ").replace("/"," / ")
             text = text.replace("~"," ~ ").replace("_", "").replace(">"," > ").replace("<", " < ").replace("?", " ? ")
@@ -189,7 +189,7 @@ class ReviewProcess:
                 review_cnt += 1
                 review = re.sub(self.attraction_regexr, self.attraction_marked, review, flags = re.IGNORECASE)
                 review = review.replace(" ! ","! ").replace(" @ ","@ ").replace(" # ","# ").replace(" $ ","$ ").replace(" % ","% ")
-                review = review.replace(" ^ ","^ ").replace(" & ","& ").replace(" * ","* ").replace(" ( ","( ").replace(" ) ",") ")
+                review = review.replace(" ^ ","^ ").replace(" * ","* ").replace(" ( ","( ").replace(" ) ",") ")
                 review = review.replace(" : ",": ").replace(" ; ","; ").replace(" . ",". ").replace(" , ",", ").replace(" = ", "= ")
                 review = review.replace(" + ","+ ").replace(" - ","- ").replace(" | ","| ")
                 review = review.replace(" ~ ","~ ").replace(" > ","> ").replace(" < ", "< ").replace(" ? ", "? ")
