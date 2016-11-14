@@ -14,7 +14,7 @@ class ReviewProcess:
     def __init__(self):
         self.src = sys.argv[1]  # E.g. data/reviews/bangkok_3.json
         print "Processing " + "\033[1m" + self.src + "\033[0m"
-        self.verbose = 0
+        self.verbose = 1
 
         self.attraction = {}
         self.attraction_name = ""
@@ -59,16 +59,31 @@ class ReviewProcess:
 
         attraction_regexr = self.attraction_name
         attraction_regexr = attraction_regexr.split()
-        attraction_regexr[0] = "\\s(" + attraction_regexr[0]
+        if attraction_regexr[-1] == "tours":
+            attraction_regexr[0] = "\\s(the\\s|this\\s|" + attraction_regexr[0]
 
-        for i in xrange(len(attraction_regexr)-1):
-            attraction_regexr[i] += "\\s*"
-        for i in xrange(len(attraction_regexr)-2):
-            attraction_regexr[i] += "|"
+            for i in xrange(len(attraction_regexr)-1):
+                attraction_regexr[i] += "\\s"
+            for i in xrange(len(attraction_regexr)-2):
+                attraction_regexr[i] += "|"
 
-        attraction_regexr[len(attraction_regexr)-2] = attraction_regexr[len(attraction_regexr)-2] + ")*"
-        attraction_regexr = "".join(attraction_regexr)
-        self.attraction_regexr = attraction_regexr + "(s)?\\s"
+            attraction_regexr[len(attraction_regexr)-2] = attraction_regexr[len(attraction_regexr)-2] + ")*"
+            attraction_regexr[-1] = attraction_regexr[-1][:-1] # tours -> tour
+            attraction_regexr = "".join(attraction_regexr)
+            self.attraction_regexr = attraction_regexr + "(s)?\\s"
+        else:
+            attraction_regexr[0] = "\\s(the\\s|this\\s|" + attraction_regexr[0]
+
+            for i in xrange(len(attraction_regexr)-1):
+                attraction_regexr[i] += "\\s"
+            for i in xrange(len(attraction_regexr)-2):
+                attraction_regexr[i] += "|"
+
+            attraction_regexr[len(attraction_regexr)-2] = attraction_regexr[len(attraction_regexr)-2] + ")*"
+            if attraction_regexr[-1][-1] == "s":
+                attraction_regexr[-1] = attraction_regexr[-1][:-1] + "(s)?\\s"# temples -> temple(s)
+            attraction_regexr[-1] = "(" + attraction_regexr[-1] + "|place)\\s"
+            self.attraction_regexr = "".join(attraction_regexr)
 
         if self.verbose:
             print self.attraction_regexr
@@ -84,7 +99,7 @@ class ReviewProcess:
         self.attraction_al = " " + attraction_al.replace(" ", "-") + "_" + location.replace(" ", "-") + " "
 
         if self.verbose:
-            print attraction_al
+            print self.attraction_al
 
     def get_attraction_marked(self):
         """ mark attraction_name for further frontend display """
@@ -97,7 +112,7 @@ class ReviewProcess:
         self.attraction_marked = " <mark>" + attraction_marked + "</mark> "
 
         if self.verbose:
-            print attraction_marked
+            print self.attraction_marked
 
     def get_lexicon(self):
         """ return positive_list containing dictionaries of positive words """
