@@ -13,7 +13,7 @@ class ReviewProcess:
 
     def __init__(self):
         self.src = sys.argv[1]  # E.g. data/reviews/bangkok_3.json
-        print "Processing " + "\033[1m" + self.src + "\033[0m"
+        print "Processing " + self.src[:12] +"\033[1m" + self.src[12:] + "\033[0m"
         self.verbose = 0
 
         self.attraction = {}
@@ -270,7 +270,7 @@ class ReviewProcess:
         """ create directory under data/backend_revies/ """
         dir1 = os.path.dirname(self.dst_backend + location)
         if not os.path.exists(dir1):
-            print "Create Directory: " + dir1
+            print "Create Directory: " + dir1 + "/"
             os.makedirs(dir1)
 
     def render(self):
