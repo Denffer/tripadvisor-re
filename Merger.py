@@ -51,7 +51,7 @@ class Merger:
         f_corpus = open(self.dst_corpora + "/" + filename, 'w+') # br stands for backend_review
         for review in corpus:
             review_cnt += 1
-            f_corpus.write(review.strip('\n'))
+            f_corpus.write(review)
 
             sys.stdout.write("\rStatus: %s / %s"%(review_cnt, corpus_length))
             sys.stdout.flush()
