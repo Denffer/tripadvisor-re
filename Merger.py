@@ -1,4 +1,4 @@
-import json, os, sys, uuid
+import json, os, sys, uuid, re
 from collections import OrderedDict
 import numpy as np
 from operator import itemgetter
@@ -12,29 +12,51 @@ class Merger:
         self.src_br = "data/backend_reviews/"
         self.src_ss = "data/sentiment_statistics/"
 
-        self.dst_br = "data/word2vec_input/corpus.txt"
-        self.dst_ss = "data/coreProcess/sentiment_statistics.json"
+        self.dst_corpora = "data/corpora/"
+        self.dst_ss = "data/line/sentiment_statistics.json"
 
-        self.verbose = 1
-
-    def get_corpus(self):
+    def get_corpora(self):
         """ load all reviews in data/backend_reviews/ and merge them """
         corpus = []
         for dirpath, dir_list, file_list in os.walk(self.src_br):
+            print "Walking into directory: " + str(dirpath)
 
-            file_cnt = 0
-            length = len(file_list)
-            for f in file_list:
-                file_cnt += 1
-                print "Merging " + str(dirpath) + str(f) + " into corpus"
-                with open(dirpath+f) as file:
-                    corpus.append(file.read())
+            corpus = []
+            # in case there is a goddamn .DS_Store file
+            if len(file_list) > 0:
+                print "Files found: " + str(file_list)
 
-                if self.verbose:
-                    sys.stdout.write("\rStatus: %s / %s\n"%(file_cnt, length))
-                    sys.stdout.flush()
+                file_cnt = 0
+                length = len(file_list)
+                for f in file_list:
+                    if str(f) != ".DS_Store":
+                        file_cnt += 1
+                        print "Merging " + str(dirpath) + "/" + str(f)
+                        with open(dirpath +"/"+ f) as file:
+                            corpus.append(file.read())
 
-        return corpus
+                filename = re.sub('\_[0-9]+', '', file_list[0])
+                self.render_corpus(corpus, filename)
+
+            else:
+                print "No file is found"
+                print "-"*80
+
+    def render_corpus(self, corpus, filename):
+        """ london1~20.txt -> london.txt | bangkok1~20.txt -> london.txt """
+
+        print "Saving data to: " + self.dst_corpora + "\033[1m" + str(filename) + "\033[0m"
+        review_cnt = 0
+        corpus_length = len(corpus)
+        f_corpus = open(self.dst_corpora + "/" + filename, 'w+') # br stands for backend_review
+        for review in corpus:
+            review_cnt += 1
+            f_corpus.write(review.strip('\n'))
+
+            sys.stdout.write("\rStatus: %s / %s"%(review_cnt, corpus_length))
+            sys.stdout.flush()
+
+        print "\n" + "-"*80
 
     def get_sentiment_statistics(self):
         """ open and append *.json in data/sentiment_statistics into sentiment_statistics.json """
@@ -42,19 +64,15 @@ class Merger:
         src_files = []
         sentiment_statistics = []
         for dirpath, dir_list, file_list in os.walk(self.src_ss):
-            print '\n' + '-'*80
             print "Loading data from:", dirpath
 
             file_cnt = 0
             length = len(file_list)
             for f in file_list:
-                file_cnt += 1
-                print "Merging " + str(dirpath) + str(f) + " into sentiment_statistics"
-                sentiment_statistics.append(json.load(open(dirpath+f)))
-
-                if self.verbose:
-                    sys.stdout.write("\rStatus: %s / %s\n"%(file_cnt, length))
-                    sys.stdout.flush()
+                if f != ".DS_Store":
+                    file_cnt += 1
+                    print "Opening " + str(dirpath) + str(f) + " into sentiment_statistics"
+                    sentiment_statistics.append(json.load(open(dirpath+f)))
 
         #print sentiment_statistics
         return sentiment_statistics
@@ -65,8 +83,7 @@ class Merger:
         """
         sentiment_statistics = self.get_sentiment_statistics()
 
-        print '-'*80
-        print "Accumulating sentiment_statistics' counts"
+        print "Merging sentiment_statistics' counts"
 
         count_list = np.zeros(len(sentiment_statistics[0]))
         ss_cnt = 0
@@ -95,44 +112,15 @@ class Merger:
             sys.stdout.write("\rStatus: %s / %s"%(swl_cnt, swl_length))
             sys.stdout.flush()
 
-        print "\n" + "Sorting it by count"
-        # sort sentiment_statistics by count
+        #Sorting by count
         sentiment_statistics = sorted(sentiment_word_dict_list, key=itemgetter('count'), reverse = True)
-        print "Sorting Done"
-
         return sentiment_statistics
 
-    def create_dirs(self):
-        """ create the directory if not exist"""
-        dir1 = os.path.dirname(self.dst_br)
-        dir2 = os.path.dirname(self.dst_ss)
-
-        if not os.path.exists(dir1):
-            os.makedirs(dir1)
-        if not os.path.exists(dir2):
-            os.makedirs(dir2)
-
-    def render(self):
+    def save_sentiment_statistics(self):
         """ put keys in order and render json file """
 
-        corpus = self.get_corpus()
         sentiment_statistics = self.get_merged_sentiment_statistics()
-
-        self.create_dirs()
-
-        print "-"*80 + "\n" +"Writing data to:", self.dst_br
-
-        review_cnt = 0
-        corpus_length = len(corpus)
-        f_br = open(self.dst_br, 'w+') # br stands for backend_review
-        for review in corpus:
-            review_cnt += 1
-            f_br.write(review + "\n")
-
-            sys.stdout.write("\rStatus: %s / %s"%(review_cnt, corpus_length))
-            sys.stdout.flush()
-
-        print "\n" + "Writing data to:", self.dst_ss
+        print "\nSaving data to:", self.dst_ss[:10] + "\033[1m" + self.dst_ss[10:] + "\033[0m"
 
         ss_cnt = 0
         ss_length = len(sentiment_statistics)
@@ -145,14 +133,20 @@ class Merger:
             ordered_dict["count"] = word_dict["count"]
             ordered_dict_list.append(NoIndent(ordered_dict))
 
-            sys.stdout.write("\rStatus: %s / %s"%(ss_cnt, ss_length))
-            sys.stdout.flush()
-
         f_ss = open(self.dst_ss, 'w+')
         f_ss.write( json.dumps( ordered_dict_list, indent = 4, cls=NoIndentEncoder))
 
-        print "\n" + "-"*80
         print "Done"
+
+    def create_dirs(self):
+        """ create the directory if not exist"""
+        dir1 = os.path.dirname(self.dst_corpora)
+        dir2 = os.path.dirname(self.dst_ss)
+
+        if not os.path.exists(dir1):
+            os.makedirs(dir1)
+        if not os.path.exists(dir2):
+            os.makedirs(dir2)
 
 class NoIndent(object):
     def __init__(self, value):
@@ -181,5 +175,7 @@ class NoIndentEncoder(json.JSONEncoder):
 
 if __name__ == '__main__':
     merger = Merger()
-    merger.render()
+    merger.create_dirs()
+    merger.get_corpora()
+    merger.save_sentiment_statistics()
 
