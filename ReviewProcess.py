@@ -266,6 +266,13 @@ class ReviewProcess:
         if not os.path.exists(dir3):
             os.makedirs(dir3)
 
+    def create_dir(self, location):
+        """ create directory under data/backend_revies/ """
+        dir1 = os.path.dirname(self.dst_backend + location)
+        if not os.path.exists(dir1):
+            print "Create Directory: " + dir1
+            os.makedirs(dir1)
+
     def render(self):
         """ render frontend_review & backend_reviews & sentiment_statistics """
         self.create_dirs()
@@ -311,7 +318,9 @@ class ReviewProcess:
             print filename, "'s frontend is complete"
 
         """ (2) save location_*.txt in ./backend_reviews """
-        backend_txt = open(self.dst_backend + filename + ".txt", "w+")
+
+        self.create_dir(self.attraction["location"] + "/")
+        backend_txt = open(self.dst_backend +"/"+ self.attraction["location"] +"/"+ filename + ".txt", "w+")
         for review in self.backend_reviews:
             backend_txt.write(review.encode("utf-8") + '\n')
         backend_txt.close()
@@ -319,7 +328,6 @@ class ReviewProcess:
         if self.verbose:
             print filename, "'s backend is complete"
 
-        """ (1) save location_*.json in ./frontend_reviews """
         """ (3) render restaurant.json containing dictionaries of each positive sentiment word """
 
         sentiment_statistics_json = open(self.dst_sentiment_statistics + filename + ".json", "w+")
