@@ -91,9 +91,11 @@ class Merger:
         for statistics in sentiment_statistics:
 
             sentiment_word_list = []
+            stemmed_sentiment_word_list = []
             ss_cnt += 1
             for i in xrange(len(statistics)):
                 sentiment_word_list.append(statistics[i]['word'])
+                stemmed_sentiment_word_list.append(statistics[i]['stemmed_word'])
                 count_list[i] += (np.asarray(statistics[i]['count']))
 
             sys.stdout.write("\rStatus: %s / %s"%(ss_cnt, ss_length))
@@ -106,7 +108,7 @@ class Merger:
         for i in xrange(len(sentiment_word_list)):
 
             swl_cnt += 1
-            sentiment_word_dict = {"word": sentiment_word_list[i], "count": int(count_list[i])}
+            sentiment_word_dict = {"stemmed_word": stemmed_sentiment_word_list[i], "word": sentiment_word_list[i], "count": int(count_list[i])}
             sentiment_word_dict_list.append(sentiment_word_dict)
 
             sys.stdout.write("\rStatus: %s / %s"%(swl_cnt, swl_length))
