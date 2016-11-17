@@ -129,6 +129,7 @@ class Merger:
             ss_cnt += 1
             ordered_dict = OrderedDict()
             ordered_dict["index"] = ss_cnt
+            ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
             ordered_dict["word"] = word_dict["word"]
             ordered_dict["count"] = word_dict["count"]
             ordered_dict_list.append(NoIndent(ordered_dict))
