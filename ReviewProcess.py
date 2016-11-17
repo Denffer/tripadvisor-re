@@ -3,6 +3,8 @@ import sys, re, json, os, uuid, itertools
 from operator import itemgetter
 from collections import OrderedDict
 import unicodedata, linecache
+from nltk.stem.snowball import SnowballStemmer
+from nltk.corpus import stopwords
 
 class ReviewProcess:
     """ This program aims to transform all json files in data/reviews/ into
@@ -31,6 +33,9 @@ class ReviewProcess:
         self.dst_frontend = "data/frontend_reviews/"
         self.dst_sentiment_statistics = "data/sentiment_statistics/"
         self.dst_lexicon = "data/lexicon/lexicon.json"
+
+        self.stopwords = set(stopwords.words('english'))
+        self.stemmer = SnowballStemmer("english")
 
     def get_attraction(self):
         """ Load data from data/reviews/*.json """
@@ -122,11 +127,9 @@ class ReviewProcess:
         sentiment_list = []
         with open(self.dst_lexicon) as f:
             lexicon = json.load(f)
-            for word_dict in lexicon:
-                sentiment_list.append(word_dict["word"])
 
-        #print sentiment_list
-        return sentiment_list
+        #print lexicon
+        return lexicon
 
     def get_clean_reviews(self):
         """ Clean reviews """
@@ -193,8 +196,9 @@ class ReviewProcess:
                 review = review.replace(" : ",": ").replace(" ; ","; ").replace(" . ",". ").replace(" , ",", ").replace(" = ", "= ")
                 review = review.replace(" + ","+ ").replace(" - ","- ").replace(" | ","| ")
                 review = review.replace(" ~ ","~ ").replace(" > ","> ").replace(" < ", "< ").replace(" ? ", "? ")
-                review = re.sub("(\s)+", r" ", review)
                 review = review.replace("-"," ")
+                review = re.sub("(\s)+", r" ", review)
+
 
                 #FIXME Temtatively filter out those review with the attraction mentioned
                 if "<mark>" in review:
@@ -218,10 +222,19 @@ class ReviewProcess:
         for review in self.clean_reviews:
             review_cnt += 1
             # lower review to ensure words like 'good' and 'Good' are counted as the same
-            review = review.lower()
+            review = review.lower().replace(" - "," ")
             """ Replacement | E.g. I love happy temple. -> I love Happy-Temple_Bangkok. """
             review = re.sub(self.attraction_regexr, self.attraction_al, review, flags = re.IGNORECASE)
-            self.backend_reviews.append(re.sub("(\s)+", r" ", review))
+            # remove extra spaces
+            review = re.sub("(\s)+", r" ", review)
+            # split review into a list of words
+            words = review.split(" ")
+            # remove stopwords
+            words_stopwords_removed = [w.lower() for w in words if w not in self.stopwords]
+            words_stemmed = [self.stemmer.stem(w) if '_' not in w else w for w in words_stopwords_removed]
+            review = ' '.join(words_stemmed)
+            #print review
+            self.backend_reviews.append(review)
 
             if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
@@ -233,20 +246,22 @@ class ReviewProcess:
             print "\n" + "-"*80
             print "Processing sentiment_statistics"
 
-        sentiment_list = self.get_lexicon()
+        lexicon = self.get_lexicon()
+
         sentiment_statistics = []
         sentiment_index = 0
-        sentiment_length = len(sentiment_list)
+        sentiment_length = len(lexicon)
 
-        for sentiment_word in sentiment_list:
+        for word_dict in lexicon:
             sentiment_index += 1
             sentiment_count = 0
             for review in self.backend_reviews:
-                sentiment_count += review.count(" " + sentiment_word + " ")
+                sentiment_count += review.count(" " + word_dict["stemmed_word"] + " ")
             orderedDict = OrderedDict()
             orderedDict["index"] = sentiment_index
-            orderedDict["word"] = sentiment_word
             orderedDict["count"] = sentiment_count
+            orderedDict["stemmed_word"] = word_dict["stemmed_word"]
+            orderedDict["word"] = word_dict["word"]
             self.sentiment_statistics.append(NoIndent(orderedDict))
 
             if self.verbose:
