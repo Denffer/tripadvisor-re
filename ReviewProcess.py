@@ -223,6 +223,9 @@ class ReviewProcess:
             review_cnt += 1
             # lower review to ensure words like 'good' and 'Good' are counted as the same
             review = review.lower().replace(" - "," ")
+            review = re.sub("\W|\_", r" ", review)
+            # remove extra spaces
+            review = re.sub("(\s)+", r" ", review)
             """ Replacement | E.g. I love happy temple. -> I love Happy-Temple_Bangkok. """
             review = re.sub(self.attraction_regexr, self.attraction_al, review, flags = re.IGNORECASE)
             # remove extra spaces
