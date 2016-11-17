@@ -341,7 +341,7 @@ def create_dirs():
 def main(arguments):
 
     # get file name
-    filename = re.findall("[a-z]+\.txt", str(arguments))
+    filename = re.findall("[a-z|.]+\_*[a-z|.]+\_*[a-z|.]+\.txt", str(arguments))
     print filename
     filename = filename[0]
 
