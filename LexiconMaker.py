@@ -2,6 +2,7 @@ import json, sys, uuid, re
 from collections import OrderedDict
 from operator import itemgetter
 from itertools import groupby
+from nltk.stem.snowball import SnowballStemmer
 
 class LexiconMaker:
     """ This program aims to
@@ -15,7 +16,8 @@ class LexiconMaker:
         self.src3 = "./data/lexicon/vader/vader_sentiment_lexicon.txt"
         self.dst = "./data/lexicon/lexicon.json"
 
-        self.switch = 1
+        self.stemmer = SnowballStemmer("english")
+        self.verbose = 1
 
     def get_source1(self):
         """ append every line into source """
@@ -31,7 +33,7 @@ class LexiconMaker:
                 cnt += 1
                 source.append(line)
 
-                if self.switch:
+                if self.verbose:
                     sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
                     sys.stdout.flush()
 
@@ -53,7 +55,7 @@ class LexiconMaker:
                 cnt += 1
                 source.append(line)
 
-                if self.switch:
+                if self.verbose:
                     sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
                     sys.stdout.flush()
 
@@ -75,7 +77,7 @@ class LexiconMaker:
                 cnt += 1
                 source.append(line)
 
-                if self.switch:
+                if self.verbose:
                     sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
                     sys.stdout.flush()
 
@@ -102,13 +104,13 @@ class LexiconMaker:
                 if lexicon1[-1] in lexicon1[:-1]:
                     lexicon1.pop()
 
-                if self.switch:
+                if self.verbose:
                     sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
                     sys.stdout.flush()
 
         lexicon1 = sorted(lexicon1)
 
-        print "\n" + "Numbers of words in lexcon is:", len(lexicon1)
+        print "\n" + "Numbers of words in this lexcon is: " + "\033[1m" + str(len(lexicon1)) +"\033[0m"
         #print lexicon
         return lexicon1
 
@@ -126,13 +128,13 @@ class LexiconMaker:
             cnt += 1
             lexicon2.append(word.strip())
 
-            if self.switch:
+            if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
                 sys.stdout.flush()
 
         lexicon2 = sorted(lexicon2)
 
-        print "\n"+ "Numbers of words in lexcon is:", len(lexicon2)
+        print "\n" + "Numbers of words in this lexcon is: " + "\033[1m" + str(len(lexicon2)) +"\033[0m"
         #print lexicon2
         return lexicon2
 
@@ -152,15 +154,62 @@ class LexiconMaker:
             if line.split()[1] >= 0:
                 lexicon3.append(line.split()[0])
 
-            if self.switch:
+            if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
                 sys.stdout.flush()
 
-        print "\n" + "Numbers of words in lexcon is:", len(lexicon3)
+        print "\n" + "Numbers of words in this lexcon is: " + "\033[1m" + str(len(lexicon3)) +"\033[0m"
         lexicon3 = sorted(lexicon3)
 
         #print lexicon3
         return lexicon3
+
+    def get_stemmed_lexicon(self, input_lexicon):
+        """ stem lexicon and return a list of {"sentiment_word": sincere, "stemmed_sentiment_word": sincer} """
+        # remove duplicates
+        stemmed_lexicon = sorted([self.stemmer.stem(w) for w in input_lexicon])
+        lexicon = []
+        for word, stemmed_word in zip(stemmed_lexicon, input_lexicon):
+            word_dict = {"word": word, "stemmed_word": stemmed_word}
+            lexicon.append(word_dict)
+
+        print "Stemming and Matching sentiment words"
+        processed_lexicon = []
+        length1 = len(stemmed_lexicon)
+        length2 = len(input_lexicon)
+        w1_cnt = 0
+        for w1 in stemmed_lexicon:
+            w1_cnt += 1
+            w2_cnt = 0
+            word_list = []
+            for w2 in input_lexicon:
+                w2_cnt += 1
+                # Check for duplicates
+                if stemmed_lexicon.count(w1) > 1:
+                    if w1 == self.stemmer.stem(w2):
+                        word_list.append(w2)
+
+                elif stemmed_lexicon.count(w1) == 1:
+                    if w1 == self.stemmer.stem(w2):
+                        word_list.append(w2)
+
+                else:
+                    self.PrintException()
+
+                if self.verbose:
+                    sys.stdout.write("\rStatus: %s / %s | %s / %s"%(w1_cnt, length1, w2_cnt, length2))
+                    sys.stdout.flush()
+
+            if len(word_list) > 0:
+                processed_lexicon.append({"word": word_list, "stemmed_word": w1})
+            else:
+                processed_lexicon.append({"word": word, "stemmed_word": w1})
+
+        # Remove duplicates
+        processed_lexicon = [i for n, i in enumerate(processed_lexicon) if i not in processed_lexicon[n + 1:]]
+
+        #print processed_lexicon
+        return processed_lexicon
 
     def render(self):
         """ put keys in order and render json file """
@@ -173,25 +222,26 @@ class LexiconMaker:
         print "Merging lexicon1 & lexicon2 & lexicon3"
 
         #processed_lexicon = sorted(set(lexicon1).intersection(lexicon2).intersection(lexicon3))
-        tmp_lexicon1 = sorted(set(lexicon1).intersection(lexicon2))
-        tmp_lexicon2 = sorted(set(lexicon2).intersection(lexicon3))
-        tmp_lexicon3 = sorted(set(lexicon3).intersection(lexicon1))
+        lexicon1 = sorted(set(lexicon1).intersection(lexicon2))
+        lexicon2 = sorted(set(lexicon2).intersection(lexicon3))
+        lexicon3 = sorted(set(lexicon3).intersection(lexicon1))
 
-        #tmp_lexicon1.extend(tmp_lexicon2)
-        tmp_lexicon = tmp_lexicon1 + tmp_lexicon2 + tmp_lexicon3
-        processed_lexicon = sorted(set(tmp_lexicon))
+        lexicon = lexicon1 + lexicon2 + lexicon3
+        merged_lexicon = sorted(set(lexicon))
+
+        processed_lexicon = self.get_stemmed_lexicon(merged_lexicon)
+        #print processed_lexicon
 
         cnt = 0
         length = len(processed_lexicon)
         ordered_dict_list = []
-
-        print processed_lexicon
-        for word in processed_lexicon:
+        for word_dict in processed_lexicon:
 
             cnt += 1
             ordered_dict = OrderedDict()
             ordered_dict["index"] = cnt
-            ordered_dict["word"] = word
+            ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
+            ordered_dict["word"] = word_dict["word"]
 
             ordered_dict_list.append(NoIndent(ordered_dict))
 
@@ -201,8 +251,17 @@ class LexiconMaker:
         f = open(self.dst, 'w+')
         f.write( json.dumps(ordered_dict_list, indent = 4, cls=NoIndentEncoder))
 
-        print "\n" + "-"*70
+        print "\n" + "-"*80
         print "Done"
+
+    def PrintException(self):
+        exc_type, exc_obj, tb = sys.exc_info()
+        f = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = f.f_code.co_filename
+        linecache.checkcache(filename)
+        line = linecache.getline(filename, lineno, f.f_globals)
+        print '    Exception in ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
 
 class NoIndent(object):
     def __init__(self, value):
