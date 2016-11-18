@@ -10,8 +10,8 @@ import numpy as np
 from scipy import sparse
 
 logger = logging.getLogger("glove")
-dst_vocab = "data/vocab/"
-dst_cooccur = "data/cooccur/"
+dst_vocab = "data/line/vocab/"
+dst_cooccur = "data/line/cooccur/"
 
 def parse_args():
     parser = ArgumentParser(description=('Build a GloVe vector-space model from the provided corpus'))
@@ -334,16 +334,18 @@ def create_dirs():
     dir2 = os.path.dirname(dst_cooccur)
 
     if not os.path.exists(dir1):
+        print "Creating directory: " + "\033[1m" + dir1 + "\033[0m"
         os.makedirs(dir1)
     if not os.path.exists(dir2):
+        print "Creating directory: " + "\033[1m" + dir2 + "\033[0m"
         os.makedirs(dir2)
 
 def main(arguments):
 
     # get file name
     filename = re.findall("[a-z|.]+\_*[a-z|.]+\_*[a-z|.]+\.txt", str(arguments))
-    print filename
     filename = filename[0]
+    print "Running Glove on: " + "\033[1m" + filename + "\033[0m"
 
     create_dirs()
 
@@ -353,13 +355,13 @@ def main(arguments):
     vocab = get_or_build(arguments.vocab_path, build_vocab, corpus)
     logger.info("Vocab has %i elements.\n", len(vocab))
 
+    print "Saving txt file to: " + dst_vocab + "\033[1m" + filename + "\033[0m"
     inv_vocab={}
     with open(dst_vocab+"/"+filename, 'w') as fp:
         for key, value in vocab.items():
              fp.write('%s %s\n' % (value[0], key))
              inv_vocab[value[0]]=key
 
-    #print inv_vocab
 
     logger.info("Fetching cooccurrence list..")
     corpus.seek(0)
@@ -368,9 +370,11 @@ def main(arguments):
                                  window_size=arguments.window_size,
                                  min_count=arguments.min_count)
 
+    print "Saving txt file to: " + dst_cooccur + "\033[1m" + filename + "\033[0m"
     with open(dst_cooccur+"/"+filename, 'w') as fp:
         fp.write('\n'.join('%s %s %s' % (inv_vocab[x[0]], inv_vocab[x[1]], x[2]) for x in cooccurrences))
 
+
 if __name__ == '__main__':
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     main(parse_args())
