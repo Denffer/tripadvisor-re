@@ -56,16 +56,8 @@ class LowerDimension:
 
         return vectors2
 
-    def create_dir(self):
-        """ create the directory if not exist """
-        dir1 = self.dst
-        if not os.path.exists(dir1):
-            print "Making directory: " + dir1
-            os.makedirs(dir1)
-
     def render(self):
         """ put keys in order and render json file """
-        self.create_dir()
 
         vectors2 = self.get_vectors2()
 
