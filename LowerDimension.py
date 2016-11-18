@@ -1,37 +1,46 @@
-import json, uuid
+import json, uuid, sys, re, os
 import numpy as np
 from sklearn import decomposition
 from sklearn.manifold import TSNE
+from collections import OrderedDict
 
 class LowerDimension:
     """ This program aims to reduce vectors of 200 dimension to 2 dimension (shortcut)"""
 
     def __init__(self):
-        self.src = "./data/coreProcess/vectors200.txt"
-        self.dst = "./data/coreProcess/vectors2.txt"
+        self.src_f = sys.argv[1]
+        self.dst = "data/line/vectors2/"
+
+        self.unique_words = []
 
     def get_vectors200(self):
         """ append every crawled business_list into source """
 
-        print "Loading data from:", self.src
+        print "Loading data from:", "\033[1m" + sys.argv[1] + "\033[0m"
+
 
         vectors200 = []
-        with open(self.src) as f:
+        with open(self.src_f) as f:
+            next(f)
             for line in f:
-                #print line
-                vectors200.append(json.loads(line))
+                vector200 = line.strip("\n").strip().split(" ")
+                self.unique_words.append(vector200[0])
+                vector200 = vector200[1:]
+                vector200 = [float(v) for v in vector200]
+                #print vector200
+                vectors200.append(vector200)
 
         #print vectors200
         return vectors200
 
     def get_vectors50(self):
         """ (1) get vectors200 (2) perform reduction to 50 dimension by pca """
-        vecotrs200 = self.get_vectors200()
+        vectors200 = self.get_vectors200()
 
         print "Reducing vectors200 to vectors50 by pca"
         pca = decomposition.PCA(n_components=50)
-        pca.fit(vecotrs200)
-        vectors50 = pca.transform(vecotrs200).tolist()
+        pca.fit(vectors200)
+        vectors50 = pca.transform(vectors200)
 
         return vectors50
 
@@ -47,17 +56,65 @@ class LowerDimension:
 
         return vectors2
 
+    def create_dir(self):
+        """ create the directory if not exist """
+        dir1 = self.dst
+        if not os.path.exists(dir1):
+            print "Making directory: " + dir1
+            os.makedirs(dir1)
+
     def render(self):
         """ put keys in order and render json file """
+        self.create_dir()
 
         vectors2 = self.get_vectors2()
-        print "Writing data to:", self.dst
 
-        f = open(self.dst, 'w+')
-        for vector in vectors2:
-            f.write(str(vector) + '\n')
+        filename = re.findall("[a-z|.]+\_*[a-z|.]+\_*[a-z|.]+\.txt", str(self.src_f))
+        filename = filename[0][:-4] + ".json"
+        print "Writing data to: " + str(self.dst) + "\033[1m" + str(filename) + "\033[0m"
 
-        print "Done"
+        # f = open(self.dst+"/"+filename, 'w+')
+        # for vector in vectors2:
+        #     f.write(json.dump(str(vector) + '\n')
+
+        v2_ordered_dict_list = []
+        cnt = 0
+        for vector, unique_word in zip(vectors2, self.unique_words):
+            v2_ordered_dict = OrderedDict()
+            cnt += 1
+            v2_ordered_dict["index"] = cnt
+            v2_ordered_dict["word"] = unique_word
+            v2_ordered_dict["vector2"] = str(vector)
+            v2_ordered_dict_list.append(NoIndent(v2_ordered_dict))
+
+        f = open(self.dst+"/"+filename, 'w+')
+        f.write(json.dumps(v2_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
+        print "Done " + str(self.dst) + "\033[1m" + str(filename) + "\033[0m"
+
+class NoIndent(object):
+    def __init__(self, value):
+        self.value = value
+
+class NoIndentEncoder(json.JSONEncoder):
+    def __init__(self, *args, **kwargs):
+        super(NoIndentEncoder, self).__init__(*args, **kwargs)
+        self.kwargs = dict(kwargs)
+        del self.kwargs['indent']
+        self._replacement_map = {}
+
+    def default(self, o):
+        if isinstance(o, NoIndent):
+            key = uuid.uuid4().hex
+            self._replacement_map[key] = json.dumps(o.value, **self.kwargs)
+            return "@@%s@@" % (key,)
+        else:
+            return super(NoIndentEncoder, self).default(o)
+
+    def encode(self, o):
+        result = super(NoIndentEncoder, self).encode(o)
+        for k, v in self._replacement_map.iteritems():
+            result = result.replace('"@@%s@@"' % (k,), v)
+        return result
 
 if __name__ == '__main__':
     lowerDimension = LowerDimension()
