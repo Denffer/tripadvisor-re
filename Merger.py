@@ -41,7 +41,7 @@ class Merger:
 
                 if str(f) != ".DS_Store":
                     filename = re.sub('\_[0-9]+', '', file_list[0])[:-4]
-                    filename = filename.title() + ".txt"
+                    filename = filename + ".txt"
                     self.render_corpus(corpus, filename)
 
             else:
