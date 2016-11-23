@@ -51,7 +51,7 @@ class Merger:
     def render_corpus(self, corpus, filename):
         """ london1~20.txt -> london.txt | bangkok1~20.txt -> london.txt """
 
-        print "Saving data to: " + self.dst_corpora + "\033[1m" + str(filename) + "\033[0m"
+        print "Saving data to: " + self.dst_corpora + "/" + "\033[1m" + str(filename) + "\033[0m"
         review_cnt = 0
         corpus_length = len(corpus)
         f_corpus = open(self.dst_corpora + "/" + filename, 'w+') # br stands for backend_review
@@ -79,7 +79,7 @@ class Merger:
                         os.remove(dirpath+ "/"+ f)
                         break
                     else:
-                        print "Opening " + str(dirpath) + str(f) + " into sentiment_statistics"
+                        print "Appending " + str(dirpath) + "/" + str(f) + " into sentiment_statistics"
                         sentiment_statistics.append(json.load(open(dirpath+"/"+f)))
 
         #print sentiment_statistics
