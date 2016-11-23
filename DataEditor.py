@@ -37,9 +37,10 @@ class DataEditor:
 
     def edit(self, text):
         """ Edit data and return """
-        attraction_name = re.search('"attraction_name": "(.*)"', text).group(1).replace("_"," ").title()
-        text = re.sub(r'"attraction_name": "(.*)"', r'"attraction_name": "' + attraction_name + '"', text)
-        #  text = re.sub(r'"location": "(.*)"', r'"location": "' + location + '"', text)
+        #attraction_name = re.search('"attraction_name": "(.*)"', text).group(1).replace("_"," ").title()
+        #text = re.sub(r'"attraction_name": "(.*)"', r'"attraction_name": "' + attraction_name + '"', text)
+        location = re.search('"location": "(.*)"', text).group(1).title()
+        text = re.sub(r'"location": "(.*)"', r'"location": "' + location + '"', text)
 
         return text
 
