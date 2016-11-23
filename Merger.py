@@ -69,10 +69,10 @@ class Merger:
 
         sentiment_statistics = []
         for dirpath, dir_list, file_list in os.walk(self.src_ss):
-            print "Walking into from:", dirpath
+            print "Walking into:", dirpath
 
             if len(file_list) > 0:
-                print "Files found: " + str(file_list)
+                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
                 for f in file_list:
                     if f == ".DS_Store":
                         print "Removing " + dirpath + "/" + str(f)
@@ -82,6 +82,9 @@ class Merger:
                         print "Appending " + str(dirpath) + "/" + str(f) + " into sentiment_statistics"
                         sentiment_statistics.append(json.load(open(dirpath+"/"+f)))
 
+            else:
+                print "No file is found"
+            print "-"*70
         #print sentiment_statistics
         return sentiment_statistics
 
@@ -220,6 +223,8 @@ class Merger:
             os.makedirs(dir1)
         if not os.path.exists(dir2):
             os.makedirs(dir2)
+
+        print "-"*70
 
 class NoIndent(object):
     def __init__(self, value):
