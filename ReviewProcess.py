@@ -337,10 +337,10 @@ class ReviewProcess:
 
     def render(self):
         """ render frontend_review & backend_reviews & sentiment_statistics """
-        self.create_dirs(self.attraction["location"] + "/")
         if self.verbose:
             print "\n" + "-"*80
             print "Saving files"
+        self.create_dirs(self.attraction["location"] + "/")
 
         filename = sys.argv[1][13:-5] # E.g. data/reviews/ | Amsterdam_18 | .json
 
