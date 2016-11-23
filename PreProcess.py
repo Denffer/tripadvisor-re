@@ -59,9 +59,9 @@ class PreProcess:
 
             # ensure 01 ~ 20
             if int(attraction["ranking"]) < 10:
-                file_name = attraction["location"].lower() + "_0" + attraction["ranking"] + ".json"
+                file_name = attraction["location"] + "_0" + attraction["ranking"] + ".json"
             else:
-                file_name = attraction["location"].lower() + "_" + attraction["ranking"] + ".json"
+                file_name = attraction["location"] + "_" + attraction["ranking"] + ".json"
 
             print "Saving json file: " + '\033[1m' + file_name + '\033[0m' +" into data/reviews/"
 
@@ -112,9 +112,9 @@ class PreProcess:
         elif isinstance(data, list):
             tour_list = data
             if int(tour_list[0]["super_attraction_ranking"]) < 10:
-                file_name = tour_list[0]["location"].lower() + "_0" + tour_list[0]["super_attraction_ranking"] + ".json"
+                file_name = tour_list[0]["location"] + "_0" + tour_list[0]["super_attraction_ranking"] + ".json"
             else:
-                file_name = tour_list[0]["location"].lower() + "_" + tour_list[0]["super_attraction_ranking"] + ".json"
+                file_name = tour_list[0]["location"] + "_" + tour_list[0]["super_attraction_ranking"] + ".json"
 
             print "Mering all the tours .."
 
