@@ -343,7 +343,7 @@ def create_dirs():
 def main(arguments):
 
     # get file name
-    filename = re.findall("[a-z|.]+\_*[a-z|.]+\_*[a-z|.]+\.txt", str(arguments))
+    filename = re.findall("[A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+\.txt", str(arguments))
     filename = filename[0]
     print "Running Glove on: " + "\033[1m" + filename + "\033[0m"
 
