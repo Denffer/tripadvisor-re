@@ -83,11 +83,11 @@ class Correlation:
 
     def get_correlation(self):
         """ get correlation matrix? """
-        dot_correlation_matrix = np.corrcoef(self.dot_matrix.ravel(), self.cooccur_matrix.ravel())[0][1]
+        dot_correlation = np.corrcoef(self.dot_matrix.ravel(), self.cooccur_matrix.ravel())[0][1]
         # print dot_correlation_matrix
-        cos_correlation_matrix = np.corrcoef(self.cosine_matrix.ravel(), self.cooccur_matrix.ravel())[0][1]
+        cos_correlation = np.corrcoef(self.cosine_matrix.ravel(), self.cooccur_matrix.ravel())[0][1]
         # print cos_correlation_matrix
-        return dot_correlation_matrix, cos_correlation_matrix
+        return dot_correlation, cos_correlation
 
     def create_dirs(self):
         """ create the directory if not exist"""
@@ -106,12 +106,12 @@ class Correlation:
         self.get_cooccur_matrix()
         self.create_dirs()
 
-        dot_correlation_matrix, cosine_correlation_matrix = self.get_correlation()
+        dot_correlation, cosine_correlation = self.get_correlation()
 
         f_dot = open("data/correlation/dot_correlation.txt", "w")
-        f_dot.write(json.dumps(dot_correlation_matrix.tolist()))
+        f_dot.write(str(dot_correlation))
         f_cosine = open("data/correlation/cosine_correlation.txt", "w")
-        f_cosine.write(json.dumps(cosine_correlation_matrix.tolist()))
+        f_cosine.write(str(cosine_correlation))
 
         print '-'*80
         print "Done"
