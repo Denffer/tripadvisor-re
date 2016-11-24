@@ -5,19 +5,24 @@ from operator import itemgetter
 
 class Merger:
     """ This program aims to
-        (1) Merge data/backend_reviews/*.txt into corpus.txt
-        (2) Merge data/sentiment_statistics/*.json into sentiment_statistics.json  """
+        (1) Merge data/backend_reviews/location/*.txt into corpora/location.txt
+        (2) Merge data/backend_stars_reviews/location/*.txt into corpus_all/corpus_all.txt
+        (3) Merge data/sentiment_statistics/*.json into sentiment_statistics.json  """
 
     def __init__(self):
         self.src_br = "data/backend_reviews/"
+        self.src_bsr = "data/backend_stars_reviews/"
         self.src_ss = "data/sentiment_statistics/"
 
+        # sc stands for corpus_stars
+        self.dst_cs = "data/corpus_stars/"
+        self.corpus_stars = []
         self.dst_corpora = "data/corpora/"
         self.dst_ss = "data/line/sentiment_statistics.json"
 
     def get_corpora(self):
         """ load all reviews in data/backend_reviews/ and merge them """
-        corpus = []
+        print "Starting to load: " + self.src_br
         for dirpath, dir_list, file_list in os.walk(self.src_br):
             print "Walking into directory: " + str(dirpath)
 
@@ -30,8 +35,8 @@ class Merger:
                 length = len(file_list)
                 for f in file_list:
                     if str(f) == ".DS_Store":
-                        print "Removing " + dirpath + "/" + str(f)
-                        os.remove(dirpath+ "/"+ f)
+                        print "Removing " + dirpath + str(f)
+                        os.remove(dirpath + f)
                         break
                     else:
                         file_cnt += 1
@@ -49,7 +54,7 @@ class Merger:
                 print "-"*80
 
     def render_corpus(self, corpus, filename):
-        """ london1~20.txt -> london.txt | bangkok1~20.txt -> london.txt """
+        """ london1~20.txt -> london.txt | bangkok1~20.txt -> bangkok.txt """
 
         print "Saving data to: " + self.dst_corpora + "/" + "\033[1m" + str(filename) + "\033[0m"
         review_cnt = 0
@@ -58,6 +63,48 @@ class Merger:
         for review in corpus:
             review_cnt += 1
             f_corpus.write(review)
+
+            sys.stdout.write("\rStatus: %s / %s"%(review_cnt, corpus_length))
+            sys.stdout.flush()
+
+        print "\n" + "-"*80
+
+    def get_corpus_stars(self):
+        """ load all reviews in data/backend_stats_reviews/ and merge them into one single file named 'corpus_stars.txt' """
+        print "Starting to load: " + self.src_bsr
+        for dirpath, dir_list, file_list in os.walk(self.src_bsr):
+            print "Walking into directory: " + str(dirpath)
+
+            # in case there is a goddamn .DS_Store file
+            if len(file_list) > 0:
+                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+
+                file_cnt = 0
+                length = len(file_list)
+                for f in file_list:
+                    if str(f) == ".DS_Store":
+                        print "Removing " + dirpath + "/" + str(f)
+                        os.remove(dirpath+ "/"+ f)
+                        break
+                    else:
+                        file_cnt += 1
+                        print "Merging " + str(dirpath) + "/" + str(f)
+                        with open(dirpath +"/"+ f) as file:
+                            self.corpus_stars.append(file.read())
+            else:
+                print "No file is found"
+                print "-"*80
+
+    def render_corpus_stars(self):
+        """ all location1~20.txt -> corpus_stars.txt """
+
+        print "Saving data to: " + self.dst_cs + "\033[1m" + "corpus_stars.txt" + "\033[0m"
+        review_cnt = 0
+        corpus_length = len(self.corpus_stars)
+        f_corpus_stars = open(self.dst_cs + "corpus_stars.txt", 'w+') # br stands for backend_review
+        for review in self.corpus_stars:
+            review_cnt += 1
+            f_corpus_stars.write(review)
 
             sys.stdout.write("\rStatus: %s / %s"%(review_cnt, corpus_length))
             sys.stdout.flush()
@@ -75,8 +122,8 @@ class Merger:
                 print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
                 for f in file_list:
                     if f == ".DS_Store":
-                        print "Removing " + dirpath + "/" + str(f)
-                        os.remove(dirpath+ "/"+ f)
+                        print "Removing " + dirpath + str(f)
+                        os.remove(dirpath + f)
                         break
                     else:
                         print "Appending " + str(dirpath) + "/" + str(f) + " into sentiment_statistics"
@@ -84,7 +131,7 @@ class Merger:
 
             else:
                 print "No file is found"
-            print "-"*70
+            print "-"*80
         #print sentiment_statistics
         return sentiment_statistics
 
@@ -165,7 +212,7 @@ class Merger:
             sys.stdout.write("\rStatus: %s / %s"%(nwl_cnt, nwl_length))
             sys.stdout.flush()
 
-        print "\n" + "-"*70
+        print "\n" + "-"*80
         #Sorting by count
         negative_statistics = sorted(negative_word_dict_list, key=itemgetter('count'), reverse = True)
 
@@ -205,7 +252,6 @@ class Merger:
             ordered_dict["polarity"] = word_dict["polarity"]
             negative_ordered_dict_list.append(NoIndent(ordered_dict))
 
-
         ss_ordered_dict = OrderedDict()
         ss_ordered_dict["positive_statistics"] = positive_ordered_dict_list
         ss_ordered_dict["negative_statistics"] = negative_ordered_dict_list
@@ -217,14 +263,20 @@ class Merger:
     def create_dirs(self):
         """ create the directory if not exist"""
         dir1 = os.path.dirname(self.dst_corpora)
-        dir2 = os.path.dirname(self.dst_ss)
+        dir2 = os.path.dirname(self.dst_cs)
+        dir3 = os.path.dirname(self.dst_ss)
 
         if not os.path.exists(dir1):
+            print "Creating directory: " + dir1
             os.makedirs(dir1)
         if not os.path.exists(dir2):
+            print "Creating directory: " + dir2
             os.makedirs(dir2)
+        if not os.path.exists(dir3):
+            print "Creating directory: " + dir3
+            os.makedirs(dir3)
 
-        print "-"*70
+        print "-"*80
 
 class NoIndent(object):
     def __init__(self, value):
@@ -255,5 +307,7 @@ if __name__ == '__main__':
     merger = Merger()
     merger.create_dirs()
     merger.get_corpora()
+    merger.get_corpus_stars()
+    merger.render_corpus_stars()
     merger.save_sentiment_statistics()
 
