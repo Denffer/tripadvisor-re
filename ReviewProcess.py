@@ -16,7 +16,7 @@ class ReviewProcess:
     def __init__(self):
         self.src = sys.argv[1]  # E.g. data/reviews/bangkok_3.json
         print "Processing " + self.src[:12] +"\033[1m" + self.src[12:] + "\033[0m"
-        self.verbose = 1
+        self.verbose = 0
 
         self.attraction = {}
         self.attraction_name = ""
@@ -27,13 +27,16 @@ class ReviewProcess:
         self.lexicon = []
         self.positive = []
         self.negative = []
+        self.ratings = []
         self.clean_reviews = []
-        self.backend_reviews = []
         self.frontend_reviews = []
+        self.backend_reviews = []
+        self.backend_stars_reviews = []
         self.sentiment_statistics = []
 
-        self.dst_backend = "data/backend_reviews/"
         self.dst_frontend = "data/frontend_reviews/"
+        self.dst_backend = "data/backend_reviews/"
+        self.dst_stars = "data/backend_stars_reviews/"
         self.dst_sentiment_statistics = "data/sentiment_statistics/"
         self.dst_lexicon = "data/lexicon/lexicon.json"
 
@@ -157,15 +160,8 @@ class ReviewProcess:
             text = re.sub(r'[0-9]', ' ', text)
             # Remove extra nextline
             text = re.sub("(\\n)+", r" ", text)
-
+            # space out every sign & symbol & punctuation
             text = re.sub("(\W|\_)",r" \1 ", text)
-            # Ensure words and punctuation are separated # Except for -
-            #  text = text.replace("!"," ! ").replace("@"," @ ").replace("#"," # ").replace("$"," $ ").replace("%"," % ")
-            #  text = text.replace("^"," ^ ").replace("*"," * ").replace("("," ( ").replace(")"," ) ")
-            #  text = text.replace(":"," : ").replace(";"," ; ").replace("."," . ").replace(","," , ").replace("=", " = ")
-            #  text = text.replace("+"," + ").replace("|"," | ").replace("\\"," \ ").replace("/"," / ")
-            #  text = text.replace("~"," ~ ").replace("_", "").replace(">"," > ").replace("<", " < ").replace("?", " ? ")
-            #  text = text.replace("\""," ").replace("[","").replace("]","").replace("{","").replace("}","")
 
             text = re.sub(r"'m", " am", text)
             text = re.sub(r"'re", " are", text)
@@ -181,6 +177,7 @@ class ReviewProcess:
             text = re.sub("(\s)+", r" ", text)
 
             self.clean_reviews.append(text)
+            self.ratings.append(review_dict["rating"])
 
             if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(cnt, review_length))
@@ -197,7 +194,6 @@ class ReviewProcess:
         for word_dict in self.lexicon["negative"]:
             negation = "not-" + word_dict["stemmed_word"]
             text = re.sub("not " + word_dict["stemmed_word"], negation, text, flags = re.IGNORECASE)
-
 
     def get_frontend_reviews(self):
         """ Match attraction by attraction_regexr and replace them by attraction_marked """
@@ -262,6 +258,41 @@ class ReviewProcess:
                 sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
                 sys.stdout.flush()
 
+    def get_backend_stars_reviews(self):
+        """ replace all attraction_name by star_1 & star_2 & star_3 & star_4 & star_5 according to their rating """
+
+        if self.verbose:
+            print "\n" + "-"*80
+            print "Processing backend_stars_reviews"
+
+        stars = [" star_1 ", " star_2 ", " star_3 ", " star_4 ", " star_5 "]
+        review_cnt = 0
+        review_length = len(self.clean_reviews)
+        for review, rating in zip(self.clean_reviews, self.ratings):
+            review_cnt += 1
+            # lower review to ensure words like 'good' and 'Good' are counted as the same
+            review = review.lower()
+            # remove all punctuations
+            review = re.sub("(\W|\_)",r" ", review)
+            # remove extra spaces
+            review = re.sub("(\s)+", r" ", review)
+            """ Replacement | E.g. I love happy temple -> I love star_5 """
+            review = re.sub(self.attraction_regexr, stars[int(rating)-1], review, flags = re.IGNORECASE)
+            # remove extra spaces
+            review = re.sub("(\s)+", r" ", review)
+            # split review into a list of words
+            words = review.split(" ")
+            # remove stopwords
+            words_stopwords_removed = [w.lower() for w in words if w not in self.stopwords]
+            words_stemmed = [self.stemmer.stem(w) if '_' not in w else w for w in words_stopwords_removed]
+            review = ' '.join(words_stemmed)
+            #print review
+            self.backend_stars_reviews.append(review)
+
+            if self.verbose:
+                sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
+                sys.stdout.flush()
+
     def get_sentiment_statistics(self):
         """ count the sentiment words in reviews """
         if self.verbose:
@@ -320,20 +351,22 @@ class ReviewProcess:
 
     def create_dirs(self, location):
         """ create directory under data/backend_revies/ """
-        dir1 = os.path.dirname(self.dst_backend + location)
+        dir1 = os.path.dirname(self.dst_frontend + location)
         if not os.path.exists(dir1):
             print "Creating Directory: " + dir1 + "/"
             os.makedirs(dir1)
-
-        dir2 = os.path.dirname(self.dst_frontend + location)
+        dir2 = os.path.dirname(self.dst_backend + location)
         if not os.path.exists(dir2):
             print "Creating Directory: " + dir2 + "/"
             os.makedirs(dir2)
-
-        dir3 = os.path.dirname(self.dst_sentiment_statistics + location)
+        dir3 = os.path.dirname(self.dst_stars + location)
         if not os.path.exists(dir3):
             print "Creating Directory: " + dir3 + "/"
             os.makedirs(dir3)
+        dir4 = os.path.dirname(self.dst_sentiment_statistics + location)
+        if not os.path.exists(dir4):
+            print "Creating Directory: " + dir4 + "/"
+            os.makedirs(dir4)
 
     def render(self):
         """ render frontend_review & backend_reviews & sentiment_statistics """
@@ -386,11 +419,17 @@ class ReviewProcess:
             backend_txt.write(review.encode("utf-8") + '\n')
         backend_txt.close()
 
+        """ (3) save location_*.txt in ./backend_reviews/location/ """
+
+        stars_txt = open(self.dst_stars +"/"+ self.attraction["location"] +"/"+ filename + ".txt", "w+")
+        for review in self.backend_stars_reviews:
+            stars_txt.write(review.encode("utf-8") + '\n')
+        stars_txt.close()
+
         if self.verbose:
             print filename, "'s backend is complete"
 
-        """ (3) render restaurant.json containing dictionaries of each positive sentiment word """
-
+        """ (4) render location.json containing a dictionaries of two key:list """
         statistics_orderedDict = OrderedDict()
         statistics_orderedDict["positive_statistics"] = self.sentiment_statistics["positive_statistics"]
         statistics_orderedDict["negative_statistics"] = self.sentiment_statistics["negative_statistics"]
@@ -450,6 +489,7 @@ if  __name__ == '__main__':
     process.get_clean_reviews()
     process.get_frontend_reviews()
     process.get_backend_reviews()
+    process.get_backend_stars_reviews()
     process.get_sentiment_statistics()
     process.render()
 
