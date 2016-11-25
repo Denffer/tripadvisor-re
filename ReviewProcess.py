@@ -16,7 +16,7 @@ class ReviewProcess:
     def __init__(self):
         self.src = sys.argv[1]  # E.g. data/reviews/bangkok_3.json
         print "Processing " + self.src[:12] +"\033[1m" + self.src[12:] + "\033[0m"
-        self.verbose = 0
+        self.verbose = 1
 
         self.attraction = {}
         self.attraction_name = ""
@@ -418,6 +418,7 @@ class ReviewProcess:
         for review in self.backend_reviews:
             backend_txt.write(review.encode("utf-8") + '\n')
         backend_txt.close()
+            print filename, "'s backend is complete"
 
         """ (3) save location_*.txt in ./backend_reviews/location/ """
 
@@ -427,7 +428,7 @@ class ReviewProcess:
         stars_txt.close()
 
         if self.verbose:
-            print filename, "'s backend is complete"
+            print filename, "'s backend_stars is complete"
 
         """ (4) render location.json containing a dictionaries of two key:list """
         statistics_orderedDict = OrderedDict()
