@@ -7,7 +7,7 @@ from nltk.stem.snowball import SnowballStemmer
 class LexiconMaker:
     """ This program aims to
     (1) extract useful information out of the raw lexicon
-    (2) render lexicon.json with only positive words
+    (2) render lexicon.json with positive words and negative words
     """
 
     def __init__(self):
