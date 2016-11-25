@@ -83,7 +83,7 @@ class Merger:
                 length = len(file_list)
                 for f in file_list:
                     if str(f) == ".DS_Store":
-                        print "Removing " + dirpath + "/" + str(f)
+                        print "Removing " + dirpath + str(f)
                         os.remove(dirpath+ "/"+ f)
                         break
                     else:
@@ -216,8 +216,8 @@ class Merger:
         #Sorting by count
         negative_statistics = sorted(negative_word_dict_list, key=itemgetter('count'), reverse = True)
 
-	positive_statistics[:] = [dictionary for dictionary in positive_statistics if dictionary.get('count') != 0]
-	negative_statistics[:] = [dictionary for dictionary in negative_statistics if dictionary.get('count') != 0]
+	positive_statistics[:] = [dictionary for dictionary in positive_statistics if dictionary.get('count') > 10]
+	negative_statistics[:] = [dictionary for dictionary in negative_statistics if dictionary.get('count') > 10]
 
         return positive_statistics, negative_statistics
 
