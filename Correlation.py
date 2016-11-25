@@ -14,8 +14,8 @@ class Correlation:
 
     def __init__(self):
         """ initialize path and lists to be used """
-        self.src_hd_vectors = "data/line/vectors200/Amsterdam_1.txt"
-        self.src_cooccur = "data/line/cooccur/Amsterdam_1.txt"
+        self.src_hd_vectors = "data/line/vectors200_stars/corpus_stars.txt"
+        self.src_cooccur = "data/line/cooccur_stars/corpus_stars.txt"
 
         self.unique_words = []
         # hd stands for high dimension
