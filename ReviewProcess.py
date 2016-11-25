@@ -418,6 +418,8 @@ class ReviewProcess:
         for review in self.backend_reviews:
             backend_txt.write(review.encode("utf-8") + '\n')
         backend_txt.close()
+
+        if self.verbose:
             print filename, "'s backend is complete"
 
         """ (3) save location_*.txt in ./backend_reviews/location/ """
