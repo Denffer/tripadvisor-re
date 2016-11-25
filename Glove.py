@@ -11,7 +11,9 @@ from scipy import sparse
 
 logger = logging.getLogger("glove")
 dst_vocab = "data/line/vocab/"
+# dst_vocab = "data/line/vocab_stars/"
 dst_cooccur = "data/line/cooccur/"
+# dst_cooccur = "data/line/cooccur_stars/"
 
 def parse_args():
     parser = ArgumentParser(description=('Build a GloVe vector-space model from the provided corpus'))
