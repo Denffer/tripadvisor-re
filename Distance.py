@@ -135,15 +135,14 @@ class LexiconMaker2:
         print "Putting both cosine_similarities in order"
         #lexicon_ordered_dict = OrderedDict()
 
-        positive_ordered_dict_list = []
+        both_ordered_dict_list = []
         for p_query, n_query in zip(positive, negative):
             query_ordered_dict = OrderedDict()
             query_ordered_dict["query"] = p_query["query"] # n_query will also fit
 
-            cosine_ordered_dict_list = []
+            positive_cosine_ordered_dict_list = []
             index = 0
-            for p_cosine_dict, n_cosine_dict in zip(p_query["top10_positive_cosine_similarities"], n_query["top10_negative_cosine_similarities"]):
-                cosine_ordered_dict = OrderedDict()
+            for p_cosine_dict in p_query["top10_positive_cosine_similarities"]:
 
                 index += 1
                 p_word_dict = OrderedDict()
@@ -154,8 +153,15 @@ class LexiconMaker2:
                 p_word_dict["word"] = p_cosine_dict["word"]["word"]
                 p_word_dict["strength"] = p_cosine_dict["word"]["strength"]
                 p_word_dict["polarity"] = p_cosine_dict["word"]["polarity"]
-                cosine_ordered_dict["positive_sentiment_word"] = NoIndent(p_word_dict)
+                positive_cosine_ordered_dict_list.append(NoIndent(p_word_dict))
 
+            query_ordered_dict["top10_positive"] = positive_cosine_ordered_dict_list
+
+            negative_cosine_ordered_dict_list = []
+            index = 0
+            for n_cosine_dict in n_query["top10_negative_cosine_similarities"]:
+
+                index += 1
                 n_word_dict = OrderedDict()
                 n_word_dict["cosine_similarity"] = n_cosine_dict["cosine_similarity"]
                 n_word_dict["index"] = index
@@ -164,15 +170,44 @@ class LexiconMaker2:
                 n_word_dict["word"] = n_cosine_dict["word"]["word"]
                 n_word_dict["strength"] = n_cosine_dict["word"]["strength"]
                 n_word_dict["polarity"] = n_cosine_dict["word"]["polarity"]
-                cosine_ordered_dict["negative_sentiment_word"] = NoIndent(n_word_dict)
+                negative_cosine_ordered_dict_list.append(NoIndent(n_word_dict))
 
-                cosine_ordered_dict_list.append(cosine_ordered_dict)
+            query_ordered_dict["top10_negative"] = negative_cosine_ordered_dict_list
+            both_ordered_dict_list.append(query_ordered_dict)
 
-            query_ordered_dict["top10_cosine_similiarity"] = cosine_ordered_dict_list
-            positive_ordered_dict_list.append(query_ordered_dict)
+            #  cosine_ordered_dict_list = []
+            #  index = 0
+            #  for p_cosine_dict, n_cosine_dict in zip(p_query["top10_positive_cosine_similarities"], n_query["top10_negative_cosine_similarities"]):
+            #      cosine_ordered_dict = OrderedDict()
+            #
+            #      index += 1
+            #      p_word_dict = OrderedDict()
+            #      p_word_dict["cosine_similarity"] = p_cosine_dict["cosine_similarity"]
+            #      p_word_dict["index"] = index
+            #      p_word_dict["count"] = p_cosine_dict["word"]["count"]
+            #      p_word_dict["stemmed_word"] = p_cosine_dict["word"]["stemmed_word"]
+            #      p_word_dict["word"] = p_cosine_dict["word"]["word"]
+            #      p_word_dict["strength"] = p_cosine_dict["word"]["strength"]
+            #      p_word_dict["polarity"] = p_cosine_dict["word"]["polarity"]
+            #      cosine_ordered_dict["positive_sentiment_word"] = NoIndent(p_word_dict)
+            #
+            #      n_word_dict = OrderedDict()
+            #      n_word_dict["cosine_similarity"] = n_cosine_dict["cosine_similarity"]
+            #      n_word_dict["index"] = index
+            #      n_word_dict["count"] = n_cosine_dict["word"]["count"]
+            #      n_word_dict["stemmed_word"] = n_cosine_dict["word"]["stemmed_word"]
+            #      n_word_dict["word"] = n_cosine_dict["word"]["word"]
+            #      n_word_dict["strength"] = n_cosine_dict["word"]["strength"]
+            #      n_word_dict["polarity"] = n_cosine_dict["word"]["polarity"]
+            #      cosine_ordered_dict["negative_sentiment_word"] = NoIndent(n_word_dict)
+            #
+            #      cosine_ordered_dict_list.append(cosine_ordered_dict)
+            #
+            #  query_ordered_dict["top10_cosine_similiarity"] = cosine_ordered_dict_list
+            #positive_ordered_dict_list.append(query_ordered_dict)
 
 	f = open(self.dst, "w")
-        f.write(json.dumps(positive_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
+        f.write(json.dumps(both_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
 
 class NoIndent(object):
     def __init__(self, value):
