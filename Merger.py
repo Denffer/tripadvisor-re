@@ -216,13 +216,16 @@ class Merger:
         #Sorting by count
         negative_statistics = sorted(negative_word_dict_list, key=itemgetter('count'), reverse = True)
 
+	positive_statistics[:] = [dictionary for dictionary in positive_statistics if dictionary.get('count') != 0]
+	negative_statistics[:] = [dictionary for dictionary in negative_statistics if dictionary.get('count') != 0]
+
         return positive_statistics, negative_statistics
 
     def save_sentiment_statistics(self):
         """ put keys in order and render json file """
 
         positive_statistics, negative_statistics = self.get_merged_sentiment_statistics()
-        print "Saving data to:", self.dst_ss[:10] + "\033[1m" + self.dst_ss[10:] + "\033[0m"
+        print "Saving data to:", "\033[1m" + self.dst_ss + "\033[0m"
 
         ps_cnt = 0
         ps_length = len(positive_statistics)
