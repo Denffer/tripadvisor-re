@@ -18,7 +18,7 @@ class Merger:
         self.dst_cs = "data/corpus_stars/"
         self.corpus_stars = []
         self.dst_corpora = "data/corpora/"
-        self.dst_ss = "data/line/sentiment_statistics.json"
+        self.dst_ss = "data/lexicon/sentiment_statistics.json"
 
     def get_corpora(self):
         """ load all reviews in data/backend_reviews/ and merge them """
