@@ -1,22 +1,25 @@
-import sys, os, json, uuid
+import sys, os, json, uuid, re
 from sklearn.metrics.pairwise import cosine_similarity
 from collections import OrderedDict
 import numpy as np
 from scipy import spatial
 
-class LexiconMaker2:
+class Distance:
     """ This program aims to
     (1) calculate nearest 100 dot product (or cosine similarity) sentiment words for star_1~5
     (2) render enhanced_lexicon.json
     """
 
     def __init__(self):
+        self.src = sys.argv[1]
         self.src_ss = "data/lexicon/sentiment_statistics.json"
-        self.src = "data/line/vectors200_stars/corpus_stars.txt"
-        self.dst = "./data/lexicon/lexicon2.json"
+        self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
+        self.src_fr = "data/frontend_reviews/" + self.filename + "/"
+        self.dst = "./data/distance/" + self.filename + ".json"
 
         self.topN = 10
-        self.queries = ["star_1", "star_2", "star_3", "star_4", "star_5"]
+        self.queries = []
+        #self.queries = ["star_1", "star_2", "star_3", "star_4", "star_5"]
         self.positive = []
         self.negative = []
         self.vocab_size = 0
@@ -49,6 +52,40 @@ class LexiconMaker2:
 
         f_src.close()
         print "\n" + "-"*70
+
+    def get_attraction_names(self):
+        """ get attraction_names as queries """
+
+        attraction_names = []
+        print "Starting to load attraction_names from: " + self.src_fr
+        for dirpath, dir_list, file_list in os.walk(self.src_fr):
+            print "Walking into directory: " + str(dirpath)
+
+            # in case there is a goddamn .DS_Store file
+            if len(file_list) > 0:
+                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+
+                file_cnt = 0
+                length = len(file_list)
+                for f in file_list:
+                    if str(f) == ".DS_Store":
+                        print "Removing " + dirpath + str(f)
+                        os.remove(dirpath+ "/"+ f)
+                        break
+                    else:
+                        file_cnt += 1
+                        print "Merging " + str(dirpath) + str(f)
+                        with open(dirpath + f) as file:
+                            attraction = json.load(file)
+                            # attraction_al => attraction append location E.g. Happy-Temple_Bangkok
+                            attraction_al = attraction["attraction_name"].lower() + "_" + attraction["location"].lower()
+                            attraction_names.append(attraction_al)
+            else:
+                print "No file is found"
+                print "-"*80
+
+        print "-"*80
+        return attraction_names
 
     def get_sentiment_statistics(self):
 	""" open sentiment_statistics.json file and load dictionary """
@@ -171,10 +208,23 @@ class LexiconMaker2:
 
         return positive_dot_product_list, negative_dot_product_list
 
+    def create_dirs(self):
+        """ create the directory if not exist"""
+        dir1 = os.path.dirname(self.dst)
+
+        if not os.path.exists(dir1):
+            print "Creating directory: " + dir1
+            os.makedirs(dir1)
+
     def render(self):
         """ save every cosine_list for top1~5 as json file"""
         self.get_source()
         self.get_sentiment_statistics()
+        if not self.queries:
+            print "Assigning attraction_names to queries"
+            self.queries = self.get_attraction_names()
+        self.create_dirs()
+
         positive_cosine_similarity_list, negative_cosine_similarity_list = self.get_top_cosine()
         positive_dot_product_list, negative_dot_product_list = self.get_top_dot()
 
@@ -257,9 +307,10 @@ class LexiconMaker2:
                 negative_dot_ordered_dict_list.append(NoIndent(n_word_dict))
 
             query_ordered_dict["top10_negative_dot_product"] = negative_dot_ordered_dict_list
-            
+
             # finish one query
             entire_ordered_dict_list.append(query_ordered_dict)
+
 
 	f = open(self.dst, "w")
         f.write(json.dumps(entire_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
@@ -291,6 +342,6 @@ class NoIndentEncoder(json.JSONEncoder):
         return result
 
 if __name__ == '__main__':
-    lexiconMaker2 = LexiconMaker2()
-    lexiconMaker2.render()
+    distance = Distance()
+    distance.render()
 
