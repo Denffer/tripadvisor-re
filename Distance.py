@@ -243,8 +243,8 @@ class Distance:
 
                 index += 1
                 p_word_dict = OrderedDict()
-                p_word_dict["cosine_similarity"] = p_cosine_dict["cosine_similarity"]
                 p_word_dict["index"] = index
+                p_word_dict["cosine_similarity"] = p_cosine_dict["cosine_similarity"]
                 p_word_dict["count"] = p_cosine_dict["word"]["count"]
                 p_word_dict["stemmed_word"] = p_cosine_dict["word"]["stemmed_word"]
                 p_word_dict["word"] = p_cosine_dict["word"]["word"]
@@ -261,8 +261,8 @@ class Distance:
 
                 index += 1
                 n_word_dict = OrderedDict()
-                n_word_dict["cosine_similarity"] = n_cosine_dict["cosine_similarity"]
                 n_word_dict["index"] = index
+                n_word_dict["cosine_similarity"] = n_cosine_dict["cosine_similarity"]
                 n_word_dict["count"] = n_cosine_dict["word"]["count"]
                 n_word_dict["stemmed_word"] = n_cosine_dict["word"]["stemmed_word"]
                 n_word_dict["word"] = n_cosine_dict["word"]["word"]
