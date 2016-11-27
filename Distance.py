@@ -16,6 +16,7 @@ class Distance:
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src_fr = "data/frontend_reviews/" + self.filename + "/"
         self.dst = "./data/distance/" + self.filename + ".json"
+        self.dst_ranking = "./data/ranking/" + self.filename + ".json"
 
         self.topN = 10
         self.queries = []
@@ -29,7 +30,7 @@ class Distance:
         self.vectors200 = []
         self.positive_vectors200 = []
         self.negative_vectors200 = []
-        self.lexicon = []
+        self.attractions = {}
 
     def get_source(self):
 	""" first call readline() to read thefirst line of vectors200 file to get vocab_size and dimension_size """
@@ -53,7 +54,7 @@ class Distance:
         f_src.close()
         print "\n" + "-"*70
 
-    def get_attraction_names(self):
+    def get_attractions(self):
         """ get attraction_names as queries """
 
         attraction_names = []
@@ -79,13 +80,15 @@ class Distance:
                             attraction = json.load(file)
                             # attraction_al => attraction append location E.g. Happy-Temple_Bangkok
                             attraction_al = attraction["attraction_name"].lower() + "_" + attraction["location"].lower()
-                            attraction_names.append(attraction_al)
+                            attraction_ranking = attraction["ranking"]
+                            self.attractions.update({attraction_al: attraction_ranking})
             else:
                 print "No file is found"
                 print "-"*80
 
         print "-"*80
-        return attraction_names
+        #print self.attractions
+        return self.attractions
 
     def get_sentiment_statistics(self):
 	""" open sentiment_statistics.json file and load dictionary """
@@ -130,13 +133,17 @@ class Distance:
 
             sorted_index = sorted(range(len(cosine_similarity_list)), key=lambda k: cosine_similarity_list[k], reverse=True)
             word_dict_list = []
+            top = []
             for i, index in enumerate(sorted_index):
                 if i < self.topN:
                     positive_word =  self.positive[index]
                     word_dict = {"word": positive_word, "cosine_similarity": cosine_similarity_list[index]}
+                    top.append(cosine_similarity_list[index])
                     word_dict_list.append(word_dict)
                     #print positive_word, cosine_similarity_list[index]
-            positive_cosine_similarity_list.append({"query": query, "top10_positive_cosine_similarity": word_dict_list})
+            cos_avg = sum(top)/len(top)
+            #print cosine_similarity_avg
+            positive_cosine_similarity_list.append({"query": query, "top10_positive_cosine_similarity": word_dict_list, "cos_avg": cos_avg})
 
         print "-"*70
         print "Calculating Cosine Similarity between queries and every negative word"
@@ -150,13 +157,17 @@ class Distance:
 
             sorted_index = sorted(range(len(cosine_similarity_list)), key=lambda k: cosine_similarity_list[k], reverse=True)
             word_dict_list = []
+            top = []
             for i, index in enumerate(sorted_index):
                 if i < self.topN:
                     negative_word =  self.negative[index]
                     word_dict = {"word": negative_word, "cosine_similarity": cosine_similarity_list[index]}
+                    top.append(cosine_similarity_list[index])
                     word_dict_list.append(word_dict)
                     #print positive_word, cosine_similarity_list[index]
-            negative_cosine_similarity_list.append({"query": query, "top10_negative_cosine_similarity": word_dict_list})
+            cos_avg = sum(top)/len(top)
+            #print cosine_similarity_avg
+            negative_cosine_similarity_list.append({"query": query, "top10_negative_cosine_similarity": word_dict_list, "cos_avg": cos_avg})
 
         print "-"*70
 
@@ -176,13 +187,17 @@ class Distance:
 
             sorted_index = sorted(range(len(dot_product_list)), key=lambda k: dot_product_list[k], reverse=True)
             word_dict_list = []
+            top = []
             for i, index in enumerate(sorted_index):
                 if i < self.topN:
                     positive_word =  self.positive[index]
                     word_dict = {"word": positive_word, "dot_product": dot_product_list[index]}
+                    top.append(dot_product_list[index])
                     word_dict_list.append(word_dict)
                     #print positive_word, dot_product_list[index]
-            positive_dot_product_list.append({"query": query, "top10_positive_dot_product": word_dict_list})
+            dot_avg = sum(top)/len(top)
+            #print dot_avg
+            positive_dot_product_list.append({"query": query, "top10_positive_dot_product": word_dict_list, "dot_avg": dot_avg})
 
         print "-"*70
         print "Calculating Dot Product between queries and every negative word"
@@ -196,13 +211,17 @@ class Distance:
 
             sorted_index = sorted(range(len(dot_product_list)), key=lambda k: dot_product_list[k], reverse=True)
             word_dict_list = []
+            top = []
             for i, index in enumerate(sorted_index):
                 if i < self.topN:
                     negative_word =  self.negative[index]
                     word_dict = {"word": negative_word, "dot_product": dot_product_list[index]}
+                    top.append(dot_product_list[index])
                     word_dict_list.append(word_dict)
                     #print positive_word, cosine_similarity[index]
-            negative_dot_product_list.append({"query": query, "top10_negative_dot_product": word_dict_list})
+            dot_avg = sum(top)/len(top)
+            #print dot_avg
+            negative_dot_product_list.append({"query": query, "top10_negative_dot_product": word_dict_list, "dot_avg": dot_avg})
 
         print "-"*70
 
@@ -211,10 +230,14 @@ class Distance:
     def create_dirs(self):
         """ create the directory if not exist"""
         dir1 = os.path.dirname(self.dst)
+        dir2 = os.path.dirname(self.dst_ranking)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
             os.makedirs(dir1)
+        if not os.path.exists(dir2):
+            print "Creating directory: " + dir2
+            os.makedirs(dir2)
 
     def render(self):
         """ save every cosine_list for top1~5 as json file"""
@@ -222,7 +245,7 @@ class Distance:
         self.get_sentiment_statistics()
         if not self.queries:
             print "Assigning attraction_names to queries"
-            self.queries = self.get_attraction_names()
+            self.queries = self.get_attractions().keys()
         self.create_dirs()
 
         positive_cosine_similarity_list, negative_cosine_similarity_list = self.get_top_cosine()
@@ -279,8 +302,8 @@ class Distance:
 
                 index += 1
                 p_word_dict = OrderedDict()
-                p_word_dict["dot_product"] = p_dot_dict["dot_product"]
                 p_word_dict["index"] = index
+                p_word_dict["dot_product"] = p_dot_dict["dot_product"]
                 p_word_dict["count"] = p_dot_dict["word"]["count"]
                 p_word_dict["stemmed_word"] = p_dot_dict["word"]["stemmed_word"]
                 p_word_dict["word"] = p_dot_dict["word"]["word"]
@@ -297,8 +320,8 @@ class Distance:
 
                 index += 1
                 n_word_dict = OrderedDict()
-                n_word_dict["dot_product"] = n_dot_dict["dot_product"]
                 n_word_dict["index"] = index
+                n_word_dict["dot_product"] = n_dot_dict["dot_product"]
                 n_word_dict["count"] = n_dot_dict["word"]["count"]
                 n_word_dict["stemmed_word"] = n_dot_dict["word"]["stemmed_word"]
                 n_word_dict["word"] = n_dot_dict["word"]["word"]
@@ -311,9 +334,53 @@ class Distance:
             # finish one query
             entire_ordered_dict_list.append(query_ordered_dict)
 
-
+        print "Writing to " + "\033[1m" + str(self.dst) + "\033[0m"
 	f = open(self.dst, "w")
         f.write(json.dumps(entire_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
+
+        print "-"*80
+
+        print "Ranking queries according to both cosine_similarity and dot_product"
+
+        outer_ordered_dict = OrderedDict()
+        #FIXME positive - negative
+        score_list = []
+        for p_query_dict, n_query_dict in zip(positive_cosine_similarity_list, negative_cosine_similarity_list):
+            score = p_query_dict["cos_avg"] - n_query_dict["cos_avg"]
+            score_list.append({"attraction_name": p_query_dict["query"], "score": score})
+
+        ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
+        processed_ranking_list = []
+        ranking = 0
+        for rank_dict in ranking_list:
+            ranking += 1
+            rank_ordered_dict = OrderedDict()
+            rank_ordered_dict['ranking'] = ranking
+            rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
+            rank_ordered_dict['score'] = rank_dict['score']
+            processed_ranking_list.append(rank_ordered_dict)
+        outer_ordered_dict['cosine_ranking'] = processed_ranking_list
+
+        score_list = []
+        for p_query_dict, n_query_dict in zip(positive_dot_product_list, negative_dot_product_list):
+            score = p_query_dict["dot_avg"] - n_query_dict["dot_avg"]
+            score_list.append({"attraction_name": p_query_dict["query"], "score": score})
+
+        ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
+        processed_ranking_list = []
+        ranking = 0
+        for rank_dict in ranking_list:
+            ranking += 1
+            rank_ordered_dict = OrderedDict()
+            rank_ordered_dict['ranking'] = ranking
+            rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
+            rank_ordered_dict['score'] = rank_dict['score']
+            processed_ranking_list.append(rank_ordered_dict)
+        outer_ordered_dict['dot_ranking'] = processed_ranking_list
+
+        print "Writing to " + "\033[1m" + str(self.dst_ranking) + "\033[0m"
+        f = open(self.dst_ranking, "w")
+        f.write(json.dumps(outer_ordered_dict, indent = 4, cls=NoIndentEncoder))
         print "Done"
 
 class NoIndent(object):
