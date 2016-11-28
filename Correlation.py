@@ -1,12 +1,7 @@
-import json, sys, uuid, math, glob, scipy, os, math, pprint
+import json, sys, uuid, scipy, os, math, re
 import numpy as np
 from scipy.spatial import distance
-from json import dumps, loads, JSONEncoder, JSONDecoder
-from operator import itemgetter
 from collections import OrderedDict
-from scipy import spatial
-from scipy.stats.stats import pearsonr
-from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.metrics.pairwise import cosine_similarity
 
 class Correlation:
@@ -14,8 +9,9 @@ class Correlation:
 
     def __init__(self):
         """ initialize path and lists to be used """
-        self.src_hd_vectors = "data/line/vectors200/Amsterdam.txt"
-        self.src_cooccur = "data/line/cooccur/Amsterdam.txt"
+        self.src_hd_vectors = argv[1]
+        self.src_cooccur = "data/line/cooccur/" + re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
+        self.dst = "data/correlation/"
 
         self.unique_words = {}
         # hd stands for high dimension
@@ -50,14 +46,15 @@ class Correlation:
 
     def get_cosine_matrix(self):
         """  get cosine matrix """
-        print "Constructing cosine product matrix"
 
+        print "Constructing cosine similarity matrix"
 	self.cosine_matrix = cosine_similarity(np.array(self.hd_vectors), np.array(self.hd_vectors))
 	#print self.cosine_matrix
 
     def get_cooccur_matrix(self):
         """ get cooccur_matrix """
 
+        print "Constructing cooccurrence matrix"
         cooccur_lines = []
         with open(self.src_cooccur) as f:
             for line in f:
@@ -74,19 +71,24 @@ class Correlation:
                 self.cooccur_matrix[index2-1][index1-1] = cooccur
             else:
                 pass
+
         # print self.cooccur_matrix
+        print "-"*80
 
     def get_correlation(self):
         """ get correlation matrix? """
+
+        print "Calculating correlation between dot_product_matrix and cooccurrence_matrix"
         dot_correlation = np.corrcoef(self.dot_matrix.ravel(), self.cooccur_matrix.ravel())[0][1]
         # print dot_correlation_matrix
+        print "Calculating correlation between cosine_similarity_matrix and cooccurrence_matrix"
         cos_correlation = np.corrcoef(self.cosine_matrix.ravel(), self.cooccur_matrix.ravel())[0][1]
         # print cos_correlation_matrix
         return dot_correlation, cos_correlation
 
     def create_dirs(self):
         """ create the directory if not exist"""
-        dir1 = os.path.dirname("data/correlation/")
+        dir1 = os.path.dirname(self.dst)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
@@ -100,14 +102,13 @@ class Correlation:
         self.get_cosine_matrix()
         self.get_cooccur_matrix()
         self.create_dirs()
-
         dot_correlation, cosine_correlation = self.get_correlation()
 
-        f_out = open("data/correlation/correlation.json", "w")
+        print "Writing data to"
+        f_out = open(self.dst + correlation.json, "w")
         f_out.write(json.dumps({"cosine_cooccur_correlation": cosine_correlation, "cosine_cooccur_correlation": dot_correlation}))
 
-        print '-'*80
-        print "Done"
+        print '-'*80 + "Done"
 
 class NoIndent(object):
     def __init__(self, value):
