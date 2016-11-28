@@ -276,9 +276,9 @@ class Distance:
                 ordered_dict["word"] = cosine_word_dict["word"]["word"]
                 ordered_dict["strength"] = cosine_word_dict["word"]["strength"]
                 ordered_dict["polarity"] = cosine_word_dict["word"]["polarity"]
-                positive_cosine_word_dict_list.append(NoIndent(ordered_dict))
+                negative_cosine_word_dict_list.append(NoIndent(ordered_dict))
 
-            query_ordered_dict["top10_negative_cosine_similarity"] = negative_cosine_word_dict_list
+            query_ordered_dict["negative_topN_cosine_similarity"] = negative_cosine_word_dict_list
 
             # positive dot
             positive_dot_word_dict_list = []
@@ -296,7 +296,7 @@ class Distance:
                 ordered_dict["polarity"] = dot_word_dict["word"]["polarity"]
                 positive_dot_word_dict_list.append(NoIndent(ordered_dict))
 
-            query_ordered_dict["top10_positive_dot_product"] = positive_dot_word_dict_list
+            query_ordered_dict["positive_topN_dot_product"] = positive_dot_word_dict_list
 
             # negative dot
             negative_dot_word_dict_list = []
@@ -314,7 +314,7 @@ class Distance:
                 ordered_dict["polarity"] = dot_word_dict["word"]["polarity"]
                 negative_dot_word_dict_list.append(NoIndent(ordered_dict))
 
-            query_ordered_dict["top10_negative_dot_product"] = negative_dot_word_dict_list
+            query_ordered_dict["negative_topN_dot_product"] = negative_dot_word_dict_list
 
             # append one query after another
             query_ordered_dict_list.append(query_ordered_dict)
