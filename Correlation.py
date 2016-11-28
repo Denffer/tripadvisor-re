@@ -10,7 +10,8 @@ class Correlation:
     def __init__(self):
         """ initialize path and lists to be used """
         self.src_hd_vectors = sys.argv[1]
-        self.src_cooccur = "data/line/cooccur/" + re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src_hd_vectors).group(1) + ".txt"
+        self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+\.txt)", self.src_hd_vectors).group(1)
+        self.src_cooccur = "data/line/cooccur/" + self.filename
         self.dst = "data/correlation/"
 
         self.unique_words = {}
@@ -105,7 +106,7 @@ class Correlation:
         dot_correlation, cosine_correlation = self.get_correlation()
 
         print "Writing data to"
-        f_out = open(self.dst + correlation.json, "w")
+        f_out = open(self.dst + self.filename, "w")
         f_out.write(json.dumps({"cosine_cooccur_correlation": cosine_correlation, "cosine_cooccur_correlation": dot_correlation}))
 
         print '-'*80 + "Done"
