@@ -163,6 +163,7 @@ class Merger:
             sys.stdout.flush()
 
         """ Putting them back to dictionary """
+        print "\nPutting positive_statistics back to dictionary"
         positive_word_dict_list = []
         pwl_cnt = 0
         pwl_length = len(positive_word_list)
@@ -178,8 +179,8 @@ class Merger:
         #Sorting by count
         positive_statistics = sorted(positive_word_dict_list, key=itemgetter('count'), reverse = True)
 
-        print "\nMerging sentiment_statistics' negative counts"
-
+        print "\n" + "-"*80
+        print "Merging sentiment_statistics' negative counts"
         count_list = np.zeros(len(sentiment_statistics[0]["negative_statistics"]))
         ss_cnt = 0
         ss_length = len(sentiment_statistics)
@@ -200,10 +201,11 @@ class Merger:
             sys.stdout.flush()
 
         """ Putting them back to dictionary """
+        print "\nPutting negative_statistics back to dictionary"
         negative_word_dict_list = []
         nwl_cnt = 0
-        nwl_length = len(positive_word_list)
-        for i in xrange(len(positive_word_list)):
+        nwl_length = len(negative_word_list)
+        for i in xrange(len(negative_word_list)):
 
             nwl_cnt += 1
             negative_word_dict = {"stemmed_word": stemmed_negative_word_list[i], "word": negative_word_list[i], "count": int(count_list[i]), "strength": strength, "polarity": polarity}
