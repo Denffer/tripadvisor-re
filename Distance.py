@@ -352,9 +352,9 @@ class Distance:
 
         # dot_avg
         score_list = []
-        for p_cos_word_dict, n_cos_word_dict in zip(positive_dot_topN, negative_dot_topN):
-            score = p_cos_word_dict["dot_avg"] - n_cos_word_dict["dot_avg"]
-            score_list.append({"attraction_name": p_cos_word_dict["query"], "score": score})
+        for p_dot_word_dict, n_dot_word_dict in zip(positive_dot_topN, negative_dot_topN):
+            score = p_dot_word_dict["dot_avg"] - n_dot_word_dict["dot_avg"]
+            score_list.append({"attraction_name": p_dot_word_dict["query"], "score": score})
 
         # derive ranking_list from a the unsorted score_list
         ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
@@ -364,6 +364,7 @@ class Distance:
         for rank_dict in ranking_list:
             ranking += 1
             rank_ordered_dict = OrderedDict()
+            rank_ordered_dict['attraction_name'] = rank_dict['attraction_name']
             rank_ordered_dict['ranking'] = ranking
             if not self.attractions:
                 rank_ordered_dict['original_ranking'] = self.queries[rank_dict['attraction_name']]
