@@ -20,8 +20,8 @@ class Distance:
         self.dst_r = "./data/ranking/" + self.filename + ".json"
 
         self.topN = 10
-        self.queries = []
-        #self.queries = ["star_1", "star_2", "star_3", "star_4", "star_5"]
+        #self.queries = []
+        self.queries = {"star_1":1, "star_2":2, "star_3":3, "star_4":4, "star_5":5}
         self.positive_statistics = []
         self.negative_statistics = []
         self.vocab_size = 0
@@ -342,7 +342,10 @@ class Distance:
             ranking += 1
             rank_ordered_dict = OrderedDict()
             rank_ordered_dict['ranking'] = ranking
-            rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
+            if not self.attractions:
+                rank_ordered_dict['original_ranking'] = self.queries[rank_dict['attraction_name']]
+            else:
+                rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
             rank_ordered_dict['score'] = rank_dict['score']
             processed_ranking_list.append(rank_ordered_dict)
         outer_ordered_dict['cosine_ranking'] = processed_ranking_list
@@ -362,7 +365,10 @@ class Distance:
             ranking += 1
             rank_ordered_dict = OrderedDict()
             rank_ordered_dict['ranking'] = ranking
-            rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
+            if not self.attractions:
+                rank_ordered_dict['original_ranking'] = self.queries[rank_dict['attraction_name']]
+            else:
+                rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
             rank_ordered_dict['score'] = rank_dict['score']
             processed_ranking_list.append(rank_ordered_dict)
 
