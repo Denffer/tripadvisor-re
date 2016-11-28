@@ -15,9 +15,9 @@ class Correlation:
     def __init__(self):
         """ initialize path and lists to be used """
         self.src_hd_vectors = "data/line/vectors200/Amsterdam.txt"
-        self.src_cooccur = "data/line/cooccur_stars/corpus_stars.txt"
+        self.src_cooccur = "data/line/cooccur/Amsterdam.txt"
 
-        self.unique_words = []
+        self.unique_words = {}
         # hd stands for high dimension
         self.hd_vectors = []
         self.dot_matrix = []
@@ -31,12 +31,13 @@ class Correlation:
 
         with open(self.src_hd_vectors) as f:
             next(f)
+            index = 0
             for line in f:
+                index += 1
                 hd_vector = line.strip("\n").strip().split(" ")
-                self.unique_words.append(hd_vector[0])
+                self.unique_words.update({hd_vector[0]:index})
                 hd_vector = hd_vector[1:]
                 hd_vector = [float(v) for v in hd_vector]
-                #print hd_vector
                 self.hd_vectors.append(hd_vector)
         # print self.hd_vectors
 
@@ -61,24 +62,18 @@ class Correlation:
         with open(self.src_cooccur) as f:
             for line in f:
                 cooccur_lines.append(line.strip("\n").strip().split(" "))
-        #print self.unique_words
 
-        unique_word_dict = {}
         length = len(self.unique_words)
-        print "Building unique_dict_words"
-        word_cnt = 0
-        for word in self.unique_words:
-            word_cnt += 1
-            unique_word_dict.update({word_cnt:word})
-        # print unique_word_dict
-
         self.cooccur_matrix = np.zeros((length,length))
         for line in cooccur_lines:
-            index1 = unique_word_dict.keys()[unique_word_dict.values().index(line[0])]
-            index2 = unique_word_dict.keys()[unique_word_dict.values().index(line[1])]
-            cooccur =  line[2]
-            self.cooccur_matrix[index1-1][index2-1] = cooccur
-            self.cooccur_matrix[index2-1][index1-1] = cooccur
+            if line[0] and line[1] in self.unique_words:
+                index1 = unique_word_dict.keys()[unique_word_dict.values().index(line[0])]
+                index2 = unique_word_dict.keys()[unique_word_dict.values().index(line[1])]
+                cooccur =  line[2]
+                self.cooccur_matrix[index1-1][index2-1] = cooccur
+                self.cooccur_matrix[index2-1][index1-1] = cooccur
+            else:
+                pass
         # print self.cooccur_matrix
 
     def get_correlation(self):
