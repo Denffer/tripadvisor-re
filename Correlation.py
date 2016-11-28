@@ -105,11 +105,11 @@ class Correlation:
         self.create_dirs()
         dot_correlation, cosine_correlation = self.get_correlation()
 
-        print "Writing data to"
+        print "Writing data to" + self.dst + "\033[1m" + self.filename + "\033[0m"
         f_out = open(self.dst + self.filename, "w")
         f_out.write(json.dumps({"cosine_cooccur_correlation": cosine_correlation, "cosine_cooccur_correlation": dot_correlation}))
 
-        print '-'*80 + "Done"
+        print '-'*80 + "\nDone"
 
 class NoIndent(object):
     def __init__(self, value):
