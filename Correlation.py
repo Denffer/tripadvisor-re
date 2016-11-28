@@ -10,7 +10,7 @@ class Correlation:
     def __init__(self):
         """ initialize path and lists to be used """
         self.src_hd_vectors = sys.argv[1]
-        self.src_cooccur = "data/line/cooccur/" + re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
+        self.src_cooccur = "data/line/cooccur/" + re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src_hd_vectors).group(1)
         self.dst = "data/correlation/"
 
         self.unique_words = {}
