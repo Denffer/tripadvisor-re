@@ -104,7 +104,7 @@ class Correlation:
         dot_correlation, cosine_correlation = self.get_correlation()
 
         f_out = open("data/correlation/correlation.json", "w")
-        f_out.write(json.dump({"cosine_cooccur_correlation": cosine_correlation, "cosine_cooccur_correlation": dot_correlation}))
+        f_out.write(json.dumps({"cosine_cooccur_correlation": cosine_correlation, "cosine_cooccur_correlation": dot_correlation}))
 
         print '-'*80
         print "Done"
