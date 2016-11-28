@@ -14,7 +14,7 @@ class Correlation:
 
     def __init__(self):
         """ initialize path and lists to be used """
-        self.src_hd_vectors = "data/line/vectors200_stars/corpus_stars.txt"
+        self.src_hd_vectors = "data/line/vectors200/Amsterdam.txt"
         self.src_cooccur = "data/line/cooccur_stars/corpus_stars.txt"
 
         self.unique_words = []
@@ -108,10 +108,8 @@ class Correlation:
 
         dot_correlation, cosine_correlation = self.get_correlation()
 
-        f_dot = open("data/correlation/dot_correlation.txt", "w")
-        f_dot.write(str(dot_correlation))
-        f_cosine = open("data/correlation/cosine_correlation.txt", "w")
-        f_cosine.write(str(cosine_correlation))
+        f_out = open("data/correlation/correlation.json", "w")
+        f_out.write(json.dump({"cosine_cooccur_correlation": cosine_correlation, "cosine_cooccur_correlation": dot_correlation}))
 
         print '-'*80
         print "Done"
