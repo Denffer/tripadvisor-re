@@ -67,8 +67,8 @@ class Correlation:
         self.cooccur_matrix = np.zeros((length,length))
         for line in cooccur_lines:
             if line[0] and line[1] in self.unique_words:
-                index1 = unique_word_dict.keys()[unique_word_dict.values().index(line[0])]
-                index2 = unique_word_dict.keys()[unique_word_dict.values().index(line[1])]
+                index1 = self.unique_words[line[0]]
+                index2 = self.unique_words[line[1]]
                 cooccur =  line[2]
                 self.cooccur_matrix[index1-1][index2-1] = cooccur
                 self.cooccur_matrix[index2-1][index1-1] = cooccur
