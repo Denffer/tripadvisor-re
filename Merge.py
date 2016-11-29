@@ -154,9 +154,6 @@ class Merge:
                 stemmed_positive_word_list.append(statistics["positive_statistics"][i]['stemmed_word'])
                 count_list[i] += (np.asarray(statistics["positive_statistics"][i]['count']))
 
-            strength = statistics["positive_statistics"][0]['strength']
-            polarity = statistics["positive_statistics"][0]['polarity']
-
             sys.stdout.write("\rStatus: %s / %s"%(ss_cnt, ss_length))
             sys.stdout.flush()
 
@@ -168,7 +165,7 @@ class Merge:
         for i in xrange(len(positive_word_list)):
 
             pwl_cnt += 1
-            positive_word_dict = {"stemmed_word": stemmed_positive_word_list[i], "word": positive_word_list[i], "count": int(count_list[i]), "strength": strength, "polarity": polarity}
+            positive_word_dict = {"stemmed_word": stemmed_positive_word_list[i], "word": positive_word_list[i], "count": int(count_list[i])}
             positive_word_dict_list.append(positive_word_dict)
 
             sys.stdout.write("\rStatus: %s / %s"%(pwl_cnt, pwl_length))
@@ -192,9 +189,6 @@ class Merge:
                 stemmed_negative_word_list.append(statistics["negative_statistics"][i]['stemmed_word'])
                 count_list[i] += (np.asarray(statistics["negative_statistics"][i]['count']))
 
-            strength = statistics["negative_statistics"][0]['strength']
-            polarity = statistics["negative_statistics"][0]['polarity']
-
             sys.stdout.write("\rStatus: %s / %s"%(ss_cnt, ss_length))
             sys.stdout.flush()
 
@@ -206,7 +200,7 @@ class Merge:
         for i in xrange(len(negative_word_list)):
 
             nwl_cnt += 1
-            negative_word_dict = {"stemmed_word": stemmed_negative_word_list[i], "word": negative_word_list[i], "count": int(count_list[i]), "strength": strength, "polarity": polarity}
+            negative_word_dict = {"stemmed_word": stemmed_negative_word_list[i], "word": negative_word_list[i], "count": int(count_list[i])}
             negative_word_dict_list.append(negative_word_dict)
 
             sys.stdout.write("\rStatus: %s / %s"%(nwl_cnt, nwl_length))
@@ -237,8 +231,6 @@ class Merge:
             ordered_dict["count"] = word_dict["count"]
             ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
             ordered_dict["word"] = word_dict["word"]
-            ordered_dict["strength"] = word_dict["strength"]
-            ordered_dict["polarity"] = word_dict["polarity"]
             positive_ordered_dict_list.append(NoIndent(ordered_dict))
 
         ns_cnt = 0
@@ -251,8 +243,6 @@ class Merge:
             ordered_dict["count"] = word_dict["count"]
             ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
             ordered_dict["word"] = word_dict["word"]
-            ordered_dict["strength"] = word_dict["strength"]
-            ordered_dict["polarity"] = word_dict["polarity"]
             negative_ordered_dict_list.append(NoIndent(ordered_dict))
 
         ss_ordered_dict = OrderedDict()
