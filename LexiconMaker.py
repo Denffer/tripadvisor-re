@@ -1,8 +1,9 @@
 import json, sys, uuid, re
 from collections import OrderedDict
 from operator import itemgetter
-from itertools import groupby
 from nltk.stem.snowball import SnowballStemmer
+from nltk.corpus import opinion_lexicon
+
 
 class LexiconMaker:
     """ This program aims to
@@ -11,87 +12,49 @@ class LexiconMaker:
     """
 
     def __init__(self):
-        self.src = "./data/lexicon/mpqa/subjclueslen1-HLTEMNLP05.tff"
         self.dst = "./data/lexicon/lexicon.json"
         self.lexicon = []
-
         self.stemmer = SnowballStemmer("english")
+
         self.verbose = 1
 
-    def get_source(self):
-        """ append every line into source """
+    def get_positive_words(self):
+        """ return a list of positive_words """
 
-        print "Loading data from:", self.src
+        print "Getting positive_words"
+        positive_words = opinion_lexicon.positive()
+        return positive_words
 
-        source = []
-        cnt = 0
-        length = sum(1 for line in open(self.src))
+    def get_negative_words(self):
+        """ return a list of positive_words """
 
-        with open(self.src) as f:
-            for line in f:
-                cnt += 1
-                source.append(line)
-
-                if self.verbose:
-                    sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
-                    sys.stdout.flush()
-
-        #print source
-        return source
+        print "Getting negative_words"
+        negative_words = opinion_lexicon.negative()
+        return negative_words
 
     def get_lexicon(self):
         """ (1) get every line in source (2) filter unwanted (3) append to lexicon """
-        source = self.get_source()
 
-        print "\n" + "-"*70
-        print "Making lexicon from source:", self.src
-        positive = []
-        negative = []
-
-        cnt = 0
-        length = len(source)
-        for line in source:
-            cnt += 1
-            word = re.search('word1=(.+) po', line).group(1)
-            strength = re.search('type=(.+)subj', line).group(1)
-            polarity = re.search('priorpolarity=(.+)', line).group(1)
-
-            if self.verbose:
-                sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
-                sys.stdout.flush()
-
-            if polarity == 'positive':
-                positive.append({"word": word, "strength": strength, "polarity": polarity})
-                # remove repeated word
-                if positive[-1] in positive[:-1]:
-                    positive.pop()
-                else:
-                    pass
-            elif polarity == 'negative':
-                negative.append({"word": word, "strength": strength, "polarity": polarity})
-                # remove repeated word
-                if negative[-1] in negative[:-1]:
-                    negative.pop()
-                else:
-                    pass
-            else:
-                pass
+        print "Making lexicon from nltk opinion_lexicon"
         # a list of word_dicts
-        positive = sorted(positive)
-        negative = sorted(negative)
+        positive_words = self.get_positive_words()
+        positive_words = sorted(positive_words)
+        print "Numbers of words in positve: " + "\033[1m" + str(len(positive_words)) +"\033[0m"
 
-        print "\nNumbers of words in positve: " + "\033[1m" + str(len(positive)) +"\033[0m"
-        print "Numbers of words in negative: " + "\033[1m" + str(len(negative)) +"\033[0m"
+        negative_words = self.get_negative_words()
+        negative_words = sorted(negative_words)
+        print "Numbers of words in negative: " + "\033[1m" + str(len(negative_words)) +"\033[0m"
+
         print "-"*70
 
-        return positive, negative
+        return positive_words, negative_words
 
     def stem(self, input_lexicon):
-        """ stem lexicon and return a list of {"word": sincere, "stemmed_word": sincer, "stength": strength, "polarity": polarity} """
+        """ perform stemming on input_lexicon | input_lexicon is a list"""
         stemmed_lexicon = []
-        for word_dict in input_lexicon:
-            stemmed_word = self.stemmer.stem(word_dict["word"])
-            stemmed_lexicon.append({"word": word_dict["word"], "stemmed_word": stemmed_word, "strength": word_dict["strength"], "polarity": word_dict["polarity"]})
+        for word in input_lexicon:
+            stemmed_word = self.stemmer.stem(word)
+            stemmed_lexicon.append({"word": word, "stemmed_word": stemmed_word})
 
         #print stemmed_lexicon
         stemmed_lexicon = sorted(stemmed_lexicon, key=lambda k: k['word'])
@@ -114,7 +77,7 @@ class LexiconMaker:
                 sys.stdout.write("\rStatus: %s / %s | %s / %s"%(w1_cnt, length, w2_cnt, length))
                 sys.stdout.flush()
 
-            processed_lexicon.append({"word": word_list, "stemmed_word": word_dict["stemmed_word"], "strength": word_dict["strength"], "polarity": word_dict["polarity"]})
+            processed_lexicon.append({"word": word_list, "stemmed_word": word_dict["stemmed_word"]})
 
         # Uniquifying dictionaries
         processed_lexicon = {word_dict['stemmed_word']:word_dict for word_dict in processed_lexicon}.values()
@@ -132,7 +95,6 @@ class LexiconMaker:
         negative = self.stem(negative)
         print "-"*70
 
-
         print "Merging positive"
         cnt = 0
         length = len(positive)
@@ -143,8 +105,6 @@ class LexiconMaker:
             ordered_dict["index"] = cnt
             ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
             ordered_dict["word"] = word_dict["word"]
-            ordered_dict["strength"] = word_dict["strength"]
-            ordered_dict["polarity"] = word_dict["polarity"]
 
             positive_ordered_dict_list.append(NoIndent(ordered_dict))
 
@@ -161,8 +121,6 @@ class LexiconMaker:
             ordered_dict["index"] = cnt
             ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
             ordered_dict["word"] = word_dict["word"]
-            ordered_dict["strength"] = word_dict["strength"]
-            ordered_dict["polarity"] = word_dict["polarity"]
 
             negative_ordered_dict_list.append(NoIndent(ordered_dict))
 
