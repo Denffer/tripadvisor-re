@@ -16,7 +16,7 @@ class ReviewProcess:
     def __init__(self):
         self.src = sys.argv[1]  # E.g. data/reviews/bangkok_3.json
         print "Processing " + self.src[:12] +"\033[1m" + self.src[12:] + "\033[0m"
-        self.verbose = 1
+        self.verbose = 0
 
         self.attraction = {}
         self.attraction_name = ""
@@ -313,8 +313,6 @@ class ReviewProcess:
             orderedDict["count"] = sentiment_count
             orderedDict["stemmed_word"] = word_dict["stemmed_word"]
             orderedDict["word"] = word_dict["word"]
-            orderedDict["strength"] = word_dict["strength"]
-            orderedDict["polarity"] = word_dict["polarity"]
             positive_statistics.append(NoIndent(orderedDict))
 
             if self.verbose:
@@ -339,8 +337,6 @@ class ReviewProcess:
             orderedDict["count"] = sentiment_count
             orderedDict["stemmed_word"] = word_dict["stemmed_word"]
             orderedDict["word"] = word_dict["word"]
-            orderedDict["strength"] = word_dict["strength"]
-            orderedDict["polarity"] = word_dict["polarity"]
             negative_statistics.append(NoIndent(orderedDict))
 
             if self.verbose:
