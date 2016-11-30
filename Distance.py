@@ -20,7 +20,7 @@ class Distance:
         self.dst_r = "./data/ranking/" + self.filename + ".json"
 
         self.topN = 10
-        self.cosine_lambda = 0.5
+        self.tuning_lambda = 0.5
         self.queries = []
         #self.queries = {"star_1":1, "star_2":2, "star_3":3, "star_4":4, "star_5":5}
         self.positive_statistics = []
@@ -142,7 +142,7 @@ class Distance:
 
             topN_cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list]
             # calculate the score out of topN cosine similarity
-            cos_score =  self.cosine_lambda * max(topN_cos_sim_list) + (1-self.cosine_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
+            cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
             positive_cosine_topN.append({"query": query, "positive_topN_cosine_similarity": word_dict_list, "cos_score": cos_score})
 
         print "-"*70
@@ -165,7 +165,7 @@ class Distance:
 
             topN_cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list]
             # calculate the score out of topN cosine similarity
-            cos_score =  self.cosine_lambda * max(topN_cos_sim_list) + (1-self.cosine_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
+            cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
             negative_cosine_topN.append({"query": query, "negative_topN_cosine_similarity": word_dict_list, "cos_score": cos_score})
 
         print "-"*70
@@ -191,8 +191,10 @@ class Distance:
                     word_dict = {"word": self.positive_statistics[index], "dot_prod": dot_prod_list[index]}
                     word_dict_list.append(word_dict)
 
+            topN_dot_prod_list = [float(word_dict["dot_prod"]) for word_dict in word_dict_list]
             dot_avg = sum([float(word_dict["dot_prod"]) for word_dict in word_dict_list]) / len([float(word_dict["dot_prod"]) for word_dict in word_dict_list])
-            positive_dot_topN.append({"query": query, "positive_topN_dot_product": word_dict_list, "dot_avg": dot_avg})
+            dot_score =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
+            positive_dot_topN.append({"query": query, "positive_topN_dot_product": word_dict_list, "dot_score": dot_score})
 
         print "-"*70
         print "Calculating Dot Product between queries and every negative word"
@@ -212,8 +214,10 @@ class Distance:
                     word_dict = {"word": self.negative_statistics[index], "dot_prod": dot_prod_list[index]}
                     word_dict_list.append(word_dict)
 
+            topN_dot_prod_list = [float(word_dict["dot_prod"]) for word_dict in word_dict_list]
             dot_avg = sum([float(word_dict["dot_prod"]) for word_dict in word_dict_list]) / len([float(word_dict["dot_prod"]) for word_dict in word_dict_list])
-            negative_dot_topN.append({"query": query, "negative_topN_dot_product": word_dict_list, "dot_avg": dot_avg})
+            dot_score =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
+            negative_dot_topN.append({"query": query, "negative_topN_dot_product": word_dict_list, "dot_score": dot_score})
 
         print "-"*70
         return positive_dot_topN, negative_dot_topN
