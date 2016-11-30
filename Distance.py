@@ -20,6 +20,7 @@ class Distance:
         self.dst_r = "./data/ranking/" + self.filename + ".json"
 
         self.topN = 10
+        self.lambda = 0.5
         self.queries = []
         #self.queries = {"star_1":1, "star_2":2, "star_3":3, "star_4":4, "star_5":5}
         self.positive_statistics = []
@@ -138,9 +139,11 @@ class Distance:
                 if i < self.topN:
                     word_dict = {"word": self.positive_statistics[index], "cos_sim": cos_sim_list[index]}
                     word_dict_list.append(word_dict)
-            # calculate the average of topN cosine similarity
-            cos_avg = sum([float(word_dict["cos_sim"]) for word_dict in word_dict_list]) / len([float(word_dict["cos_sim"]) for word_dict in word_dict_list])
-            positive_cosine_topN.append({"query": query, "positive_topN_cosine_similarity": word_dict_list, "cos_avg": cos_avg})
+
+            topN_cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list]
+            # calculate the score out of topN cosine similarity
+            cos_score =  (self.lambda)(max(topN_cos_sim_list)) + (1-self.lambda)(sum(topN_cos_sim_list) / len(topN_cos_sim_list))
+            positive_cosine_topN.append({"query": query, "positive_topN_cosine_similarity": word_dict_list, "cos_score": cos_score})
 
         print "-"*70
         print "Calculating Cosine Similarity between queries and every negative word"
@@ -160,8 +163,10 @@ class Distance:
                     word_dict = {"word": self.negative_statistics[index], "cos_sim": cos_sim_list[index]}
                     word_dict_list.append(word_dict)
 
-            cos_avg = sum([float(word_dict["cos_sim"]) for word_dict in word_dict_list]) / len([float(word_dict["cos_sim"]) for word_dict in word_dict_list])
-            negative_cosine_topN.append({"query": query, "negative_topN_cosine_similarity": word_dict_list, "cos_avg": cos_avg})
+            topN_cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list]
+            # calculate the score out of topN cosine similarity
+            cos_score =  (self.lambda)(max(topN_cos_sim_list)) + (1-self.lambda)(sum(topN_cos_sim_list) / len(topN_cos_sim_list))
+            negative_cosine_topN.append({"query": query, "negative_topN_cosine_similarity": word_dict_list, "cos_score": cos_score})
 
         print "-"*70
         return positive_cosine_topN, negative_cosine_topN
@@ -319,10 +324,10 @@ class Distance:
         print "Ranking queries according to average cosine_similarity and dot_product"
         outer_ordered_dict = OrderedDict() #FIXME positive - negative
 
-        # cos_avg
+        # cos_score
         score_list = []
         for p_cos_word_dict, n_cos_word_dict in zip(positive_cosine_topN, negative_cosine_topN):
-            score = p_cos_word_dict["cos_avg"] - n_cos_word_dict["cos_avg"]
+            score = p_cos_word_dict["cos_score"] - n_cos_word_dict["cos_score"]
             score_list.append({"attraction_name": p_cos_word_dict["query"], "score": score})
 
         # derive ranking_list from a the unsorted score_list
