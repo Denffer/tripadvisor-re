@@ -99,7 +99,7 @@ class Distance:
             sentiment_statistics = json.load(f_ss)
 
         positive_statistics = sentiment_statistics["positive_statistics"]
-        """ E.g. {"index": 1, "count": 3, "stemmed_word": "good", "word": ["good"], "strength": "strong", "polarity": "positive"} """
+        """ E.g. {"index": 1, "count": 3, "stemmed_word": "good", "word": ["good"]} """
         for word_dict in positive_statistics:
             # Only put positive word matched in unique_words into self.negative_statistics
             for key, value in self.unique_words.iteritems():
@@ -108,7 +108,7 @@ class Distance:
                     self.positive_vectors200.append(self.vectors200[value])
 
         negative_statistics = sentiment_statistics["negative_statistics"]
-        """ E.g. {"index": 1, "count": 4, "stemmed_word": "bad", "word": ["bad"], "strength": "strong", "polarity": "negative"} """
+        """ E.g. {"index": 1, "count": 4, "stemmed_word": "bad", "word": ["bad"]} """
         for word_dict in negative_statistics:
             # Only put negative word matched in unique_words into self.negative_statistics
             for key, value in self.unique_words.iteritems():
@@ -256,8 +256,6 @@ class Distance:
                 ordered_dict["count"] = cosine_word_dict["word"]["count"]
                 ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
                 ordered_dict["word"] = cosine_word_dict["word"]["word"]
-                ordered_dict["strength"] = cosine_word_dict["word"]["strength"]
-                ordered_dict["polarity"] = cosine_word_dict["word"]["polarity"]
                 positive_cosine_word_dict_list.append(NoIndent(ordered_dict))
 
             query_ordered_dict["positive_topN_cosine_similarity"] = positive_cosine_word_dict_list
@@ -274,8 +272,6 @@ class Distance:
                 ordered_dict["count"] = cosine_word_dict["word"]["count"]
                 ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
                 ordered_dict["word"] = cosine_word_dict["word"]["word"]
-                ordered_dict["strength"] = cosine_word_dict["word"]["strength"]
-                ordered_dict["polarity"] = cosine_word_dict["word"]["polarity"]
                 negative_cosine_word_dict_list.append(NoIndent(ordered_dict))
 
             query_ordered_dict["negative_topN_cosine_similarity"] = negative_cosine_word_dict_list
@@ -292,8 +288,6 @@ class Distance:
                 ordered_dict["count"] = dot_word_dict["word"]["count"]
                 ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
                 ordered_dict["word"] = dot_word_dict["word"]["word"]
-                ordered_dict["strength"] = dot_word_dict["word"]["strength"]
-                ordered_dict["polarity"] = dot_word_dict["word"]["polarity"]
                 positive_dot_word_dict_list.append(NoIndent(ordered_dict))
 
             query_ordered_dict["positive_topN_dot_product"] = positive_dot_word_dict_list
@@ -310,8 +304,6 @@ class Distance:
                 ordered_dict["count"] = dot_word_dict["word"]["count"]
                 ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
                 ordered_dict["word"] = dot_word_dict["word"]["word"]
-                ordered_dict["strength"] = dot_word_dict["word"]["strength"]
-                ordered_dict["polarity"] = dot_word_dict["word"]["polarity"]
                 negative_dot_word_dict_list.append(NoIndent(ordered_dict))
 
             query_ordered_dict["negative_topN_dot_product"] = negative_dot_word_dict_list
