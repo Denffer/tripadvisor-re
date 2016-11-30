@@ -355,7 +355,7 @@ class Distance:
         # dot_avg
         score_list = []
         for p_dot_word_dict, n_dot_word_dict in zip(positive_dot_topN, negative_dot_topN):
-            score = p_dot_word_dict["dot_avg"] - n_dot_word_dict["dot_avg"]
+            score = p_dot_word_dict["dot_score"] - n_dot_word_dict["dot_score"]
             score_list.append({"attraction_name": p_dot_word_dict["query"], "score": score})
 
         # derive ranking_list from a the unsorted score_list
