@@ -142,7 +142,7 @@ class Distance:
 
             topN_cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list]
             # calculate the score out of topN cosine similarity
-            cos_score =  (self.cosine_lambda)(max(topN_cos_sim_list)) + (1-self.cosine_lambda)(sum(topN_cos_sim_list) / len(topN_cos_sim_list))
+            cos_score =  self.cosine_lambda * max(topN_cos_sim_list) + (1-self.cosine_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
             positive_cosine_topN.append({"query": query, "positive_topN_cosine_similarity": word_dict_list, "cos_score": cos_score})
 
         print "-"*70
@@ -165,7 +165,7 @@ class Distance:
 
             topN_cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list]
             # calculate the score out of topN cosine similarity
-            cos_score =  (self.cosine_lambda)(max(topN_cos_sim_list)) + (1-self.cosine_lambda)(sum(topN_cos_sim_list) / len(topN_cos_sim_list))
+            cos_score =  self.cosine_lambda * max(topN_cos_sim_list) + (1-self.cosine_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
             negative_cosine_topN.append({"query": query, "negative_topN_cosine_similarity": word_dict_list, "cos_score": cos_score})
 
         print "-"*70
