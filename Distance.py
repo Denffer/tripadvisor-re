@@ -382,6 +382,7 @@ class Distance:
         f.write(json.dumps(outer_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
         print "Done"
+        print "-"*80
 
 class NoIndent(object):
     def __init__(self, value):

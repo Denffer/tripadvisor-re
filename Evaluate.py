@@ -6,9 +6,9 @@ from Distance import Distance
 class Evaluate:
     """ This program take vectors2 as input and draw them by matplotlib """
     def __init__(self):
-        self.src = sys.argv[1]
-        self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.json", self.src).group(1)
-        self.dst = "data/graphic_output/precision/" + self.filename
+        self.filename = sys.argv[1]
+        self.src = "data/ranking/" + self.filename + ".json"
+        self.dst = "data/graphic_output/precision/" + self.filename + "/"
 
         self.tuning_lambda = 1
         self.json_data = []
@@ -51,10 +51,12 @@ class Evaluate:
 
         matplotlib.rcParams['axes.unicode_minus'] = False
         fig, ax = plt.subplots()
-        for x in range(1,11):
+        ax.set_xlim(-0.05, 1.1)
+        ax.set_ylim(-0.05, 1.1)
+
+        for x in range(0,11):
             self.tuning_lambda = float(x)/10
             distance = Distance("data/line/vectors200/" + self.filename + ".txt", self.tuning_lambda)
-            #Distance.__init__("data/line/vectors200/"+self.filename+".txt",self.tuning_lambda)
             distance.render()
 
             self.get_json_data()
@@ -70,9 +72,9 @@ class Evaluate:
                 self.PrintException()
 
         ax.set_title('Precision on: ' + self.filename)
-        print "\n" + "-"*80
+        print "-"*80
         filename = self.filename + ".png"
-        print "Writing", "\033[1m" + filename + "\033[0m", "to", self.dst
+        print "Saving", "\033[1m" + filename + "\033[0m", "to", self.dst
         plt.savefig(self.dst + filename)
         plt.show()
 
