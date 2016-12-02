@@ -104,7 +104,6 @@ class Correlation:
         dot = np.corrcoef(dot_1D, cooccur_1D)[0,1]
         #dot = pearsonr(dot_1D, cooccur_1D)
 
-
         indices = np.nonzero(cooccur_1D)[0]
         cooccur2_1D = [cooccur_1D[index] for index in indices]
         cosine2_1D = [cosine_1D[index] for index in indices]
