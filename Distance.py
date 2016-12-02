@@ -20,7 +20,7 @@ class Distance:
         self.dst_r = "./data/ranking/" + self.filename + ".json"
 
         self.topN = 10
-        self.tuning_lambda = 0.5
+        self.tuning_lambda = 0.7
         self.queries = []
         #self.queries = {"star_1":1, "star_2":2, "star_3":3, "star_4":4, "star_5":5}
         self.positive_statistics = []
