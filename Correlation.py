@@ -3,6 +3,7 @@ import numpy as np
 from scipy.spatial import distance
 from collections import OrderedDict
 from sklearn.metrics.pairwise import cosine_similarity
+from scipy.stats.stats import pearsonr
 
 class Correlation:
     """ This program aim to calculate correlation """
@@ -13,6 +14,7 @@ class Correlation:
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+\.txt)", self.src_hd_vectors).group(1)
         self.src_cooccur = "data/line/cooccur/" + self.filename
         self.dst = "data/correlation/"
+        self.verbose = 1
 
         self.unique_words = {}
         # hd stands for high dimension
@@ -30,12 +32,12 @@ class Correlation:
             next(f)
             index = 0
             for line in f:
-                index += 1
                 hd_vector = line.strip("\n").strip().split(" ")
                 self.unique_words.update({hd_vector[0]:index})
                 hd_vector = hd_vector[1:]
                 hd_vector = [float(v) for v in hd_vector]
                 self.hd_vectors.append(hd_vector)
+                index += 1
         # print self.hd_vectors
 
     def get_dot_matrix(self):
@@ -49,7 +51,7 @@ class Correlation:
         """  get cosine matrix """
 
         print "Constructing cosine similarity matrix"
-	self.cosine_matrix = cosine_similarity(np.array(self.hd_vectors), np.array(self.hd_vectors))
+	self.cosine_matrix = cosine_similarity(np.array(self.hd_vectors))
 	#print self.cosine_matrix
 
     def get_cooccur_matrix(self):
@@ -68,24 +70,19 @@ class Correlation:
                 index1 = self.unique_words[line[0]]
                 index2 = self.unique_words[line[1]]
                 cooccur =  line[2]
-                self.cooccur_matrix[index1-1][index2-1] = cooccur
-                self.cooccur_matrix[index2-1][index1-1] = cooccur
+                self.cooccur_matrix[index1][index2] = cooccur
+                #self.cooccur_matrix[index2-1][index1-1] = cooccur
             else:
                 pass
 
         # print self.cooccur_matrix
         print "-"*80
 
-    def get_correlation(self):
-        """ get correlation matrix? """
+    def get_correlation(self, matrix1, matrix2):
+        """ get correlation value """
 
-        print "Calculating correlation between dot_product_matrix and cooccurrence_matrix"
-        dot_correlation = np.corrcoef(self.dot_matrix.ravel(), self.cooccur_matrix.ravel())[0][1]
-        # print dot_correlation_matrix
-        print "Calculating correlation between cosine_similarity_matrix and cooccurrence_matrix"
-        cos_correlation = np.corrcoef(self.cosine_matrix.ravel(), self.cooccur_matrix.ravel())[0][1]
-        # print cos_correlation_matrix
-        return dot_correlation, cos_correlation
+        correlation = pearsonr(matrix1, matrix2)
+        return correlation
 
     def create_dirs(self):
         """ create the directory if not exist"""
@@ -103,11 +100,40 @@ class Correlation:
         self.get_cosine_matrix()
         self.get_cooccur_matrix()
         self.create_dirs()
-        dot_correlation, cosine_correlation = self.get_correlation()
+
+        cooccur_1D = self.cooccur_matrix.ravel()
+        cosine_1D = self.cosine_matrix.ravel()
+        dot_1D = self.dot_matrix.ravel()
+        print "Calculating correlation between cosine_similarity_matrix and cooccurrence_matrix"
+        cosine = self.get_correlation(cosine_1D, cooccur_1D)
+        print "Calculating correlation between dot_product_matrix and cooccurrence_matrix"
+        dot = self.get_correlation(dot_1D, cooccur_1D)
+
+        cooccur2 = np.fill_diagonal(self.cooccur_matrix, 0)
+        cooccur2_1D = cooccur2.ravel()
+        indices = np.nonzero(cooccur2_1D)[0]
+
+        cooccur2_1D = [cooccur_1D[index] for index in indices]
+        cosine2_1D = [cosine_1D[index] for index in indices]
+        dot2_1D = [dot_1D[index] for index in indices]
+
+        print "Calculating correlation between cosine_similarity_matrix and cooccurrence_matrix2"
+        cosine2 = self.get_correlation(cosine2_1D, cooccur2_1D)
+        print "Calculating correlation between dot_product_matrix and cooccurrence_matrix2"
+        dot2 = self.get_correlation(dot2_1D, cooccur2_1D)
+
+        if verbose:
+            print "-"*10 + "All values are included" + "-"*10
+            print "cosine:", cosine
+            print "dot:", dot
+
+            print "-"*10 + "Zeros and diagonal elements are excluded" + "-"*10
+            print "cosine:", cosine2
+            print "dot:", dot2
 
         print "Writing data to" + self.dst + "\033[1m" + self.filename + "\033[0m"
         f_out = open(self.dst + self.filename, "w")
-        f_out.write(json.dumps({"cosine_cooccur_correlation": cosine_correlation, "dot_cooccur_correlation": dot_correlation}, indent = 4))
+        f_out.write(json.dumps({"cosine_correlation": cosine, "cosine_correlation2": cosine2, "dot_correlation": dot, "dot_correlation2": dot2}, indent = 4))
 
         print '-'*80 + "\nDone"
 
