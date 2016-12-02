@@ -38,7 +38,7 @@ class Correlation:
                 hd_vector = [float(v) for v in hd_vector]
                 self.hd_vectors.append(hd_vector)
                 index += 1
-        # print self.hd_vectors
+        #print self.unique_words
 
     def get_dot_matrix(self):
         """  get dot matrix """
@@ -64,25 +64,18 @@ class Correlation:
                 cooccur_lines.append(line.strip("\n").strip().split(" "))
 
         length = len(self.unique_words)
-        self.cooccur_matrix = np.zeros((length,length))
+        self.cooccur_matrix = np.zeros(shape=(length,length))
         for line in cooccur_lines:
             if line[0] and line[1] in self.unique_words:
                 index1 = self.unique_words[line[0]]
                 index2 = self.unique_words[line[1]]
-                cooccur =  line[2]
-                self.cooccur_matrix[index1][index2] = cooccur
-                #self.cooccur_matrix[index2-1][index1-1] = cooccur
+                self.cooccur_matrix[index1][index2] = line[2]
+                #self.cooccur_matrix[index2][index1] = line[2]
             else:
                 pass
 
-        # print self.cooccur_matrix
+        #print len(self.cooccur_matrix)
         print "-"*80
-
-    def get_correlation(self, matrix1, matrix2):
-        """ get correlation value """
-
-        correlation = pearsonr(matrix1, matrix2)
-        return correlation
 
     def create_dirs(self):
         """ create the directory if not exist"""
@@ -105,31 +98,36 @@ class Correlation:
         cosine_1D = self.cosine_matrix.ravel()
         dot_1D = self.dot_matrix.ravel()
         print "Calculating correlation between cosine_similarity_matrix and cooccurrence_matrix"
-        cosine = self.get_correlation(cosine_1D, cooccur_1D)
+        cosine = np.corrcoef(cosine_1D, cooccur_1D)[0,1]
+        #cosine = pearsonr(cosine_1D, cooccur_1D)
         print "Calculating correlation between dot_product_matrix and cooccurrence_matrix"
-        dot = self.get_correlation(dot_1D, cooccur_1D)
+        dot = np.corrcoef(dot_1D, cooccur_1D)[0,1]
+        #dot = pearsonr(dot_1D, cooccur_1D)
 
-        cooccur2 = np.fill_diagonal(self.cooccur_matrix, 0)
-        cooccur2_1D = cooccur2.ravel()
-        indices = np.nonzero(cooccur2_1D)[0]
 
+        indices = np.nonzero(cooccur_1D)[0]
         cooccur2_1D = [cooccur_1D[index] for index in indices]
         cosine2_1D = [cosine_1D[index] for index in indices]
         dot2_1D = [dot_1D[index] for index in indices]
 
         print "Calculating correlation between cosine_similarity_matrix and cooccurrence_matrix2"
-        cosine2 = self.get_correlation(cosine2_1D, cooccur2_1D)
+        cosine2 = np.corrcoef(cosine2_1D, cooccur2_1D)[0,1]
+        #cosine2 = pearsonr(cosine2_1D, cooccur2_1D)
         print "Calculating correlation between dot_product_matrix and cooccurrence_matrix2"
-        dot2 = self.get_correlation(dot2_1D, cooccur2_1D)
+        dot2 = np.corrcoef(dot2_1D, cooccur2_1D)[0,1]
+        #dot2 = pearsonr(dot2_1D, cooccur2_1D)
 
-        if verbose:
-            print "-"*10 + "All values are included" + "-"*10
+        if self.verbose:
+            print "-"*50
+            print "All values are included:"
             print "cosine:", cosine
             print "dot:", dot
 
-            print "-"*10 + "Zeros and diagonal elements are excluded" + "-"*10
+            print "-"*50
+            print "Zeros and diagonal elements are excluded:"
             print "cosine:", cosine2
             print "dot:", dot2
+            print "-"*80
 
         print "Writing data to" + self.dst + "\033[1m" + self.filename + "\033[0m"
         f_out = open(self.dst + self.filename, "w")
