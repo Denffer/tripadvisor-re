@@ -11,8 +11,8 @@ class Distance:
         for the given queries
     """
 
-    def __init__(self):
-        self.src = sys.argv[1]
+    def __init__(self, argv1, argv2):
+        self.src = argv1
         self.src_ss = "data/lexicon/sentiment_statistics.json"
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src_fr = "data/frontend_reviews/" + self.filename + "/"
@@ -20,7 +20,7 @@ class Distance:
         self.dst_r = "./data/ranking/" + self.filename + ".json"
 
         self.topN = 10
-        self.tuning_lambda = 0.7
+        self.tuning_lambda = float(argv2)
         self.queries = []
         #self.queries = {"star_1":1, "star_2":2, "star_3":3, "star_4":4, "star_5":5}
         self.positive_statistics = []
@@ -382,6 +382,7 @@ class Distance:
         f.write(json.dumps(outer_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
         print "Done"
+        print "-"*80
 
 class NoIndent(object):
     def __init__(self, value):
@@ -409,6 +410,6 @@ class NoIndentEncoder(json.JSONEncoder):
         return result
 
 if __name__ == '__main__':
-    distance = Distance()
+    distance = Distance(sys.argv[1], sys.argv[2])
     distance.render()
 
