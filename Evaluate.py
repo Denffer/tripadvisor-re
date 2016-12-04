@@ -6,7 +6,8 @@ from Distance import Distance
 class Evaluate:
     """ This program take vectors2 as input and draw them by matplotlib """
     def __init__(self):
-        self.filename = sys.argv[1]
+        self.src = sys.argv[1]
+        self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src = "data/ranking/" + self.filename + ".json"
         self.dst = "data/graphic_output/precision/" + self.filename + "/"
 
@@ -66,12 +67,12 @@ class Evaluate:
                 ax.plot(self.tuning_lambda, self.precision, 'bo')
                 plt.text( (self.tuning_lambda)+0.001, (self.precision)+0.001, str(self.precision), fontsize=8)
                 plt.xlabel('Lambda', fontsize=14)
-                plt.ylabel('Precision', fontsize=14)
+                plt.ylabel('Rerank', fontsize=14)
             except:
                 print 'Error'
                 self.PrintException()
 
-        ax.set_title('Precision on: ' + self.filename)
+        ax.set_title('Rerank on: ' + self.filename)
         print "-"*80
         filename = self.filename + ".png"
         print "Saving", "\033[1m" + filename + "\033[0m", "to", self.dst
