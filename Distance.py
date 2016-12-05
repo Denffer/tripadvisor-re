@@ -215,7 +215,6 @@ class Distance:
                     word_dict_list.append(word_dict)
 
             topN_dot_prod_list = [float(word_dict["dot_prod"]) for word_dict in word_dict_list]
-            dot_avg = sum([float(word_dict["dot_prod"]) for word_dict in word_dict_list]) / len([float(word_dict["dot_prod"]) for word_dict in word_dict_list])
             dot_score =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
             positive_dot_topN.append({"query": query, "positive_topN_dot_product": word_dict_list, "dot_score": dot_score})
 
@@ -240,7 +239,6 @@ class Distance:
                     word_dict_list.append(word_dict)
 
             topN_dot_prod_list = [float(word_dict["dot_prod"]) for word_dict in word_dict_list]
-            dot_avg = sum([float(word_dict["dot_prod"]) for word_dict in word_dict_list]) / len([float(word_dict["dot_prod"]) for word_dict in word_dict_list])
             dot_score =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
             negative_dot_topN.append({"query": query, "negative_topN_dot_product": word_dict_list, "dot_score": dot_score})
 
