@@ -20,7 +20,7 @@ do
     filename=$(echo $i | cut -d'/' -f 4)
     echo $filename
     ./Line/line -train $i -output data/line/vectors100/$filename -size 100 -order 1 -negative 5 -samples 10 -threads 5
-    ./Line/normalize -input data/line/vectors100/$filename -output data/line/norm_vectors100/$filename -binary 0
+#    ./Line/normalize -input data/line/vectors100/$filename -output data/line/norm_vectors100/$filename -binary 0
     echo "-------------------------------------------"
 done    
 
