@@ -11,7 +11,7 @@ class Evaluate:
         self.src = "data/ranking/" + self.filename + ".json"
         self.dst = "data/graphic_output/precision/" + self.filename + "/"
 
-        self.tuning_lambda = 1
+        self.step = 0.5
         self.json_data = []
         self.attraction_name = ""
         self.precision = 0
@@ -55,9 +55,9 @@ class Evaluate:
         ax.set_xlim(-0.05, 1.1)
         ax.set_ylim(-0.05, 1.1)
 
-        for x in range(0,11):
-            self.tuning_lambda = float(x)/10
-            distance = Distance("data/line/vectors200/" + self.filename + ".txt", self.tuning_lambda)
+        for x in range(0,110, self.step*10):
+            tuning_lambda = float(x)/10
+            distance = Distance("data/line/vectors200/" + self.filename + ".txt", tuning_lambda)
             distance.render()
 
             self.get_json_data()
@@ -71,6 +71,8 @@ class Evaluate:
             except:
                 print 'Error'
                 self.PrintException()
+
+            sys.stdout.write("\rStatus: %s / %s"%(r,))
 
         ax.set_title('Rerank on: ' + self.filename)
         print "-"*80
