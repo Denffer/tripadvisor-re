@@ -14,7 +14,7 @@ class Evaluate:
         self.step = 0.5
         self.json_data = []
         self.attraction_name = ""
-        self.precision = 0
+        p = 0
 
     def get_json_data(self):
         """ get json """
@@ -32,10 +32,11 @@ class Evaluate:
 
         matched_cnt = 0
         for r1, r2 in zip(rankings, original_rankings):
-            if float(r1) == float(r2):
+            if int(r2)-2 <= int(r1) <= int(r2)+2 or int(r1)-2 <= int(r2) <= int(r1)+2:
                 matched_cnt += 1
 
-        self.precision = float(matched_cnt) / float(len(rankings))
+        precision = float(matched_cnt) / float(len(rankings))
+        return precision
 
     def create_dirs(self):
         """ create the directory if not exist"""
@@ -55,26 +56,28 @@ class Evaluate:
         ax.set_xlim(-0.05, 1.1)
         ax.set_ylim(-0.05, 1.1)
 
-        for x in range(0,110, self.step*10):
-            tuning_lambda = float(x)/10
-            distance = Distance("data/line/vectors200/" + self.filename + ".txt", tuning_lambda)
+        lambdas = [float(x)/20 for x in range(0, 21)]
+        #print lambdas
+
+        for l in lambdas:
+            distance = Distance("data/line/vectors200/" + self.filename + ".txt", l)
             distance.render()
 
             self.get_json_data()
-            self.get_precision()
+            p = self.get_precision()
 
             try:
-                ax.plot(self.tuning_lambda, self.precision, 'bo')
-                plt.text( (self.tuning_lambda)+0.001, (self.precision)+0.001, str(self.precision), fontsize=8)
+                ax.plot(l, p, 'bo')
+                plt.text( l+0.001, p+0.001, str(p), fontsize=8)
                 plt.xlabel('Lambda', fontsize=14)
-                plt.ylabel('Rerank', fontsize=14)
+                plt.ylabel('Precision', fontsize=14)
             except:
                 print 'Error'
                 self.PrintException()
 
-            sys.stdout.write("\rStatus: %s / %s"%(r,))
+            #sys.stdout.write("\rStatus: %s / %s"%(r,))
 
-        ax.set_title('Rerank on: ' + self.filename)
+        ax.set_title('Precision on: ' + self.filename)
         print "-"*80
         filename = self.filename + ".png"
         print "Saving", "\033[1m" + filename + "\033[0m", "to", self.dst
