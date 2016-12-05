@@ -17,10 +17,13 @@ class Distance:
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src_fr = "data/frontend_reviews/" + self.filename + "/"
         self.dst_d = "./data/distance/" + self.filename + ".json"
+
+        self.tuning_lambda = float(argv2)
         self.dst_r = "./data/ranking/" + self.filename + ".json"
+        self.dst_rl = "./data/ranking/" + self.filename + "/" + self.filename + "_lambda" + str(argv2).replace(".","") + ".json"
+        self.verbose = 0
 
         self.topN = 10
-        self.tuning_lambda = float(argv2)
         self.queries = []
         #self.queries = {"star_1":1, "star_2":2, "star_3":3, "star_4":4, "star_5":5}
         self.positive_statistics = []
@@ -37,47 +40,56 @@ class Distance:
     def get_source(self):
 	""" first call readline() to read thefirst line of vectors200 file to get vocab_size and dimension_size """
 
-        print "Loading data from " + "\033[1m" + self.src + "\033[0m"
+        if self.verbose:
+            print "Loading data from " + "\033[1m" + self.src + "\033[0m"
         f_src = open(self.src, "r")
         vocab_size, dimension_size = f_src.readline().split(' ')
         self.vocab_size = int(vocab_size)
         self.dimension_size = int(dimension_size)
 
-        print "Building Index"
+        if self.verbose:
+            print "Building Index"
         for index in range(0, self.vocab_size):
             line = f_src.readline().split(' ')
             # {"good":1, "attraciton":2, "Tokyo": 3}
             self.unique_words[line[0]]=index
             self.vectors200.append([float(i) for i in line[1:-1]])
 
-            sys.stdout.write("\rStatus: %s / %s"%(index+1, vocab_size))
-            sys.stdout.flush()
+            if self.verbose:
+                sys.stdout.write("\rStatus: %s / %s"%(index+1, vocab_size))
+                sys.stdout.flush()
 
         f_src.close()
-        print "\n" + "-"*70
+        if self.verbose:
+            print "\n" + "-"*70
 
     def get_attractions(self):
         """ get attraction_names as queries """
 
         attraction_names = []
-        print "Starting to load attraction_names from: " + self.src_fr
+        if self.verbose:
+            print "Loading attraction_names from: " + self.src_fr
         for dirpath, dir_list, file_list in os.walk(self.src_fr):
-            print "Walking into directory: " + str(dirpath)
+            if self.verbose:
+                print "Walking into directory: " + str(dirpath)
 
             # in case there is a goddamn .DS_Store file
             if len(file_list) > 0:
-                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+                if self.verbose:
+                    print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
 
                 file_cnt = 0
                 length = len(file_list)
                 for f in file_list:
                     if str(f) == ".DS_Store":
-                        print "Removing " + dirpath + str(f)
+                        if self.verbose:
+                            print "Removing " + dirpath + str(f)
                         os.remove(dirpath+ "/"+ f)
                         break
                     else:
                         file_cnt += 1
-                        print "Merging " + str(dirpath) + str(f)
+                        if self.verbose:
+                            print "Merging " + str(dirpath) + str(f)
                         with open(dirpath + f) as file:
                             attraction = json.load(file)
                             # attraction_al => attraction append location E.g. Happy-Temple_Bangkok
@@ -85,17 +97,20 @@ class Distance:
                             attraction_ranking = attraction["ranking"]
                             self.attractions.update({attraction_al: attraction_ranking})
             else:
-                print "No file is found"
-                print "-"*80
+                if self.verbose:
+                    print "No file is found"
+                    print "-"*80
 
-        print "-"*80
+        if self.verbose:
+            print "-"*80
         #print self.attractions
         return self.attractions
 
     def get_sentiment_statistics(self):
 	""" open sentiment_statistics.json file and load dictionary """
 
-        print "Loading data from " + "\033[1m" + self.src_ss + "\033[0m"
+        if self.verbose:
+            print "Loading data from " + "\033[1m" + self.src_ss + "\033[0m"
         with open(self.src_ss, 'r') as f_ss:
             sentiment_statistics = json.load(f_ss)
 
@@ -117,13 +132,15 @@ class Distance:
                     self.negative_statistics.append(word_dict)
                     self.negative_vectors200.append(self.vectors200[value])
 
-        print "-"*70
+        if self.verbose:
+            print "-"*70
 
     def get_cosine_topN(self):
         """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
         """ cos_sim stands for cosine_similarity """
 
-        print "Calculating Cosine Similarity between queries and every positive word"
+        if self.verbose:
+            print "Calculating Cosine Similarity between queries and every positive word"
 
         positive_cosine_topN = []
         for query in self.queries:
@@ -132,7 +149,8 @@ class Distance:
                 # cosine_similarity ranges from -1 ~ 1
                 cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.positive_vectors200[index]))
 
-            print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
+            if self.verbose:
+                print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
             sorted_index = sorted(range(len(cos_sim_list)), key=lambda k: cos_sim_list[k], reverse=True)
             word_dict_list = []
             for i, index in enumerate(sorted_index):
@@ -145,8 +163,9 @@ class Distance:
             cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
             positive_cosine_topN.append({"query": query, "positive_topN_cosine_similarity": word_dict_list, "cos_score": cos_score})
 
-        print "-"*70
-        print "Calculating Cosine Similarity between queries and every negative word"
+        if self.verbose:
+            print "-"*70
+            print "Calculating Cosine Similarity between queries and every negative word"
 
         negative_cosine_topN = []
         for query in self.queries:
@@ -155,7 +174,8 @@ class Distance:
                 # cosine_similarity ranges from -1 ~ 1
                 cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.negative_vectors200[index]))
 
-            print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
+            if self.verbose:
+                print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
             sorted_index = sorted(range(len(cos_sim_list)), key=lambda k: cos_sim_list[k], reverse=True)
             word_dict_list = []
             for i, index in enumerate(sorted_index):
@@ -168,14 +188,16 @@ class Distance:
             cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
             negative_cosine_topN.append({"query": query, "negative_topN_cosine_similarity": word_dict_list, "cos_score": cos_score})
 
-        print "-"*70
+        if self.verbose:
+            print "-"*70
         return positive_cosine_topN, negative_cosine_topN
 
     def get_dot_topN(self):
         """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
         """ dot_prod stands for dot_product """
 
-        print "Calculating Dot Product between queries and every positive word"
+        if self.verbose:
+            print "Calculating Dot Product between queries and every positive word"
 
         positive_dot_topN = []
         for query in self.queries:
@@ -183,7 +205,8 @@ class Distance:
             for index in xrange(len(self.positive_statistics)):
                 dot_prod_list.append(np.dot(self.vectors200[self.unique_words[query]], self.positive_vectors200[index]))
 
-            print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
+            if self.verbose:
+                print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
             sorted_index = sorted(range(len(dot_prod_list)), key=lambda k: dot_prod_list[k], reverse=True)
             word_dict_list = []
             for i, index in enumerate(sorted_index):
@@ -196,8 +219,9 @@ class Distance:
             dot_score =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
             positive_dot_topN.append({"query": query, "positive_topN_dot_product": word_dict_list, "dot_score": dot_score})
 
-        print "-"*70
-        print "Calculating Dot Product between queries and every negative word"
+        if self.verbose:
+            print "-"*70
+            print "Calculating Dot Product between queries and every negative word"
 
         negative_dot_topN = []
         for query in self.queries:
@@ -205,7 +229,8 @@ class Distance:
             for index in xrange(len(self.negative_statistics)):
                 dot_prod_list.append(np.dot(self.vectors200[self.unique_words[query]], self.negative_vectors200[index]))
 
-            print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
+            if self.verbose:
+                print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
 
             sorted_index = sorted(range(len(dot_prod_list)), key=lambda k: dot_prod_list[k], reverse=True)
             word_dict_list = []
@@ -219,13 +244,15 @@ class Distance:
             dot_score =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
             negative_dot_topN.append({"query": query, "negative_topN_dot_product": word_dict_list, "dot_score": dot_score})
 
-        print "-"*70
+        if self.verbose:
+            print "-"*70
         return positive_dot_topN, negative_dot_topN
 
     def create_dirs(self):
         """ create the directory if not exist"""
         dir1 = os.path.dirname(self.dst_d)
         dir2 = os.path.dirname(self.dst_r)
+        dir3 = os.path.dirname(self.dst_rl)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
@@ -233,20 +260,25 @@ class Distance:
         if not os.path.exists(dir2):
             print "Creating directory: " + dir2
             os.makedirs(dir2)
+        if not os.path.exists(dir3):
+            print "Creating directory: " + dir3
+            os.makedirs(dir3)
 
     def render(self):
         """ save every cosine_list for top1~5 as json file"""
         self.get_source()
         self.get_sentiment_statistics()
         if not self.queries:
-            print "Assigning attraction_names to queries"
+            if self.verbose:
+                print "Assigning attraction_names to queries"
             self.queries = self.get_attractions().keys()
         self.create_dirs()
 
         positive_cosine_topN, negative_cosine_topN = self.get_cosine_topN()
         positive_dot_topN, negative_dot_topN = self.get_dot_topN()
 
-        print "Putting all dictionaries in order"
+        if self.verbose:
+            print "Putting all dictionaries in order"
 
         query_ordered_dict_list = []
         for p_cos_word_dict, n_cos_word_dict, p_dot_word_dict, n_dot_word_dict in zip(positive_cosine_topN, negative_cosine_topN, positive_dot_topN, negative_dot_topN):
@@ -320,10 +352,12 @@ class Distance:
             # append one query after another
             query_ordered_dict_list.append(query_ordered_dict)
 
-        print "Writing to " + "\033[1m" + str(self.dst_d) + "\033[0m"
+        if self.verbose:
+            print "Writing to " + "\033[1m" + str(self.dst_d) + "\033[0m"
 	f = open(self.dst_d, "w")
         f.write(json.dumps(query_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
-        print "-"*80
+        if self.verbose:
+            print "-"*80
 
         print "Ranking queries according to average cosine_similarity and dot_product"
         outer_ordered_dict = OrderedDict() #FIXME positive - negative
@@ -380,9 +414,13 @@ class Distance:
         print "Writing to " + "\033[1m" + str(self.dst_r) + "\033[0m"
         f = open(self.dst_r, "w")
         f.write(json.dumps(outer_ordered_dict, indent = 4, cls=NoIndentEncoder))
+        print "Writing to " + "\033[1m" + str(self.dst_rl) + "\033[0m"
+        f = open(self.dst_rl, "w")
+        f.write(json.dumps(outer_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
-        print "Done"
         print "-"*80
+        if self.verbose:
+            print "Done"
 
 class NoIndent(object):
     def __init__(self, value):
