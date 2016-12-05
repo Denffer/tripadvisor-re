@@ -369,7 +369,7 @@ class ReviewProcess:
         if self.verbose:
             print "\n" + "-"*80
             print "Saving files"
-        self.create_dirs(self.attraction["location"] + "/")
+        self.create_dirs(self.attraction["location"].replace("-","_") + "/")
 
         filename = sys.argv[1][13:-5] # E.g. data/reviews/ | Amsterdam_18 | .json
 
@@ -401,7 +401,7 @@ class ReviewProcess:
 
         frontend_orderedDict["reviews"] = review_ordered_dict_list
 
-        frontend_json = open(self.dst_frontend + self.attraction["location"] + "/" + filename + ".json", "w+")
+        frontend_json = open(self.dst_frontend + self.attraction["location"].replace("-","_") + "/" + filename + ".json", "w+")
         frontend_json.write(json.dumps( frontend_orderedDict, indent = 4, cls=NoIndentEncoder))
         frontend_json.close()
 
@@ -410,7 +410,7 @@ class ReviewProcess:
 
         """ (2) save location_*.txt in ./backend_reviews/location/ """
 
-        backend_txt = open(self.dst_backend +"/"+ self.attraction["location"] +"/"+ filename + ".txt", "w+")
+        backend_txt = open(self.dst_backend +"/"+ self.attraction["location"].replace("-","_") +"/"+ filename + ".txt", "w+")
         for review in self.backend_reviews:
             backend_txt.write(review.encode("utf-8") + '\n')
         backend_txt.close()
@@ -420,7 +420,7 @@ class ReviewProcess:
 
         """ (3) save location_*.txt in ./backend_reviews/location/ """
 
-        stars_txt = open(self.dst_stars +"/"+ self.attraction["location"] +"/"+ filename + ".txt", "w+")
+        stars_txt = open(self.dst_stars +"/"+ self.attraction["location"].replace("-","_") +"/"+ filename + ".txt", "w+")
         for review in self.backend_stars_reviews:
             stars_txt.write(review.encode("utf-8") + '\n')
         stars_txt.close()
@@ -433,7 +433,7 @@ class ReviewProcess:
         statistics_orderedDict["positive_statistics"] = self.sentiment_statistics["positive_statistics"]
         statistics_orderedDict["negative_statistics"] = self.sentiment_statistics["negative_statistics"]
 
-        sentiment_statistics_json = open(self.dst_sentiment_statistics + "/" + self.attraction["location"] + "/" + filename + ".json", "w+")
+        sentiment_statistics_json = open(self.dst_sentiment_statistics + "/" + self.attraction["location"].replace("-","_") + "/" + filename + ".json", "w+")
         sentiment_statistics_json.write(json.dumps(statistics_orderedDict, indent = 4, cls=NoIndentEncoder))
         sentiment_statistics_json.close()
 
