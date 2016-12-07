@@ -152,12 +152,12 @@ class Correlation:
         # norm_cos vs cooccur
         print "Calculating correlation between normalized cosine_similarity_matrix and cooccurrence_matrix"
         cosine1 = np.corrcoef(norm_cosine_1D, cooccur_1D)[0,1]
-        #cosine = pearsonr(norm_cosine_1D, cooccur_1D)
+        #cosine1 = pearsonr(norm_cosine_1D, cooccur_1D)
 
         # norm_dot vs cooccur
         print "Calculating correlation between normalized dot_product_matrix and cooccurrence_matrix"
         dot1 = np.corrcoef(norm_dot_1D, cooccur_1D)[0,1]
-        #dot = pearsonr(norm_dot_1D, cooccur_1D)
+        #dot1 = pearsonr(norm_dot_1D, cooccur_1D)
 
         indices = np.nonzero(cooccur_1D)[0]
         cooccur_noZeros_1D = [cooccur_1D[index] for index in indices]
@@ -169,22 +169,22 @@ class Correlation:
         # noZeros cos vs noZeros cooccur
         print "Calculating correlation between noZeros cosine_similarity_matrix and noZeros cooccurrence_matrix"
         cosine2 = np.corrcoef(cosine_noZeros_1D, cooccur_noZeros_1D)[0,1]
-        #cosine_noZeros = pearsonr(cosine_noZeros_1D, cooccur_noZeros_1D)
+        #cosine2 = pearsonr(cosine_noZeros_1D, cooccur_noZeros_1D)
 
         # noZeros dot vs noZeros cooccur
         print "Calculating correlation between noZeros dot_product_matrix and noZeros cooccurrence_matrix"
         dot2 = np.corrcoef(dot_noZeros_1D, cooccur_noZeros_1D)[0,1]
-        #dot_noZeros = pearsonr(dot_noZeros_1D, cooccur_noZeros_1D)
+        #dot2 = pearsonr(dot_noZeros_1D, cooccur_noZeros_1D)
 
         # noZeros norm_cos vs noZeros cooccur
         print "Calculating correlation between noZeros cosine_similarity_matrix and noZeros cooccurrence_matrix"
-        cosine3 = np.corrcoef(cosine_noZeros_1D, cooccur_noZeros_1D)[0,1]
-        #cosine2 = pearsonr(cosine_noZeros_1D, cooccur_noZeros_1D)
+        cosine3 = np.corrcoef(norm_cosine_noZeros_1D, cooccur_noZeros_1D)[0,1]
+        #cosine3 = pearsonr(norm_cosine_noZeros_1D, cooccur_noZeros_1D)
 
         # noZeros norm_dot vs noZeros cooccur
         print "Calculating correlation between noZeros dot_product_matrix and noZeros cooccurrence_matrix"
-        dot3 = np.corrcoef(dot_noZeros_1D, cooccur_noZeros_1D)[0,1]
-        #dot2 = pearsonr(dot_noZeros_1D, cooccur_noZeros_1D)
+        dot3 = np.corrcoef(norm_dot_noZeros_1D, cooccur_noZeros_1D)[0,1]
+        #dot3 = pearsonr(norm_dot_noZeros_1D, cooccur_noZeros_1D)
 
         if self.verbose:
             print "-"*50
