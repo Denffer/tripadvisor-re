@@ -5,7 +5,7 @@ import numpy as np
 class Plot:
     """ This program take vectors2 as input and draw them by matplotlib """
     def __init__(self):
-        self.input = "amsterdam.json"
+        self.input = "bangkok.json"
         self.dst_o = "data/graphic_output/"
 
         self.src_v2 = "data/line/vectors2/"
@@ -43,7 +43,7 @@ class Plot:
         """ Get sentiment_statistics """
         with open(self.src_ss) as f:
             self.sentiment_statistics = json.load(f)
-        
+
         self.sentiment_statistics = self.sentiment_statistics[:150]
         #print self.sentiment_statistics
 
@@ -106,7 +106,7 @@ class Plot:
         ss_length = len(self.sentiment_statistics)
 
         print "Matching and drawing"
-        
+
         uw_length = len(self.unique_words)
         for i in xrange(len(self.unique_words)):
             for j in xrange(len(self.sentiment_statistics)):
@@ -115,7 +115,7 @@ class Plot:
                     try:
                         ax.plot( self.vectors2[i][0], self.vectors2[i][1], 'bo')
                         # instead of printing stemmed word, print unstemmed word
-                        plt.text( (self.vectors2[i][0])+0.02, (self.vectors2[i][1])+0.02, self.sentiment_statistics[j]["word"][0], fontsize=8)
+                        plt.text( (self.vectors2[i][0])+0.002, (self.vectors2[i][1])+0.002, self.sentiment_statistics[j]["word"][0], fontsize=8)
                     except:
                         print 'Error word:', word_dict["stemmed_word"]
                         self.PrintException()
@@ -124,7 +124,7 @@ class Plot:
                 if self.unique_words[i] == self.attraction_name_list[k]:
                     try:
                         ax.plot( self.vectors2[i][0], self.vectors2[i][1], 'go')
-                        plt.text( self.vectors2[i][0]+0.02, self.vectors2[i][1]+0.02, self.unique_words[i], fontsize=8)
+                        plt.text( self.vectors2[i][0]+0.002, self.vectors2[i][1]+0.002, self.unique_words[i], fontsize=8)
                     except:
                         print 'Error word:', self.unique_words[i]
                         self.PrintException()

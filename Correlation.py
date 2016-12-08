@@ -11,10 +11,13 @@ class Correlation:
     def __init__(self):
         """ initialize path and lists to be used """
         self.src_hd_vectors = sys.argv[1]
-        self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+\.txt)", self.src_hd_vectors).group(1)
-        self.src_cooccur = "data/line/cooccur/" + self.filename
+        self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src_hd_vectors).group(1)
+        self.src_cooccur = "data/line/cooccur/" + self.filename + ".txt"
         self.dst = "data/correlation/"
+        self.dst_matrix = "data/matrix/"
+
         self.verbose = 1
+        self.save_matrix_into_json_file = 1
 
         self.unique_words = {}
         # hd stands for high dimension
@@ -75,31 +78,57 @@ class Correlation:
                 pass
 
         #print len(self.cooccur_matrix)
-        print "-"*80
 
     def create_dirs(self):
         """ create the directory if not exist"""
         dir1 = os.path.dirname(self.dst)
+        dir2 = os.path.dirname(self.dst_matrix)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
             os.makedirs(dir1)
+        if self.save_matrix_into_json_file:
+            if not os.path.exists(dir2):
+                print "Creating directory: " + dir2
+                os.makedirs(dir2)
 
     def render(self):
         """ customize output json file """
 
         self.get_hd_vectors()
-        self.get_dot_matrix()
-        self.get_cosine_matrix()
-        self.get_cooccur_matrix()
         self.create_dirs()
+
+        self.get_dot_matrix()
+        if self.save_matrix_into_json_file:
+            print "Saving dot_matrix to " + self.dst_matrix + "\033[1m" + self.filename + "_dot.json" + "\033[0m"
+            f_dot = open(self.dst_matrix + self.filename + "_dot.json" , "w")
+            f_dot.write(json.dumps(self.dot_matrix.tolist()))
+            f_dot.close()
+
+        self.get_cosine_matrix()
+        if self.save_matrix_into_json_file:
+            print "Saving cosine_matrix to " + self.dst_matrix + "\033[1m" + self.filename + "_cosine.json" + "\033[0m"
+            f_cosine = open(self.dst_matrix + self.filename + "_cosine.json" , "w")
+            f_cosine.write(json.dumps(self.cosine_matrix.tolist()))
+            f_cosine.close()
+
+        self.get_cooccur_matrix()
+        if self.save_matrix_into_json_file:
+            print "Saving coocccur_matrix to " + self.dst_matrix + "\033[1m" + self.filename + "_cooccur.json" + "\033[0m"
+            f_cooccur= open(self.dst_matrix + self.filename + "_cooccur.json" , "w")
+            f_cooccur.write(json.dumps(self.cooccur_matrix.tolist()))
+            f_cooccur.close()
+
+        print "-"*80
 
         cooccur_1D = self.cooccur_matrix.ravel()
         cosine_1D = self.cosine_matrix.ravel()
         dot_1D = self.dot_matrix.ravel()
+
         print "Calculating correlation between cosine_similarity_matrix and cooccurrence_matrix"
         cosine = np.corrcoef(cosine_1D, cooccur_1D)[0,1]
         #cosine = pearsonr(cosine_1D, cooccur_1D)
+
         print "Calculating correlation between dot_product_matrix and cooccurrence_matrix"
         dot = np.corrcoef(dot_1D, cooccur_1D)[0,1]
         #dot = pearsonr(dot_1D, cooccur_1D)
@@ -112,6 +141,7 @@ class Correlation:
         print "Calculating correlation between cosine_similarity_matrix and cooccurrence_matrix2"
         cosine2 = np.corrcoef(cosine2_1D, cooccur2_1D)[0,1]
         #cosine2 = pearsonr(cosine2_1D, cooccur2_1D)
+
         print "Calculating correlation between dot_product_matrix and cooccurrence_matrix2"
         dot2 = np.corrcoef(dot2_1D, cooccur2_1D)[0,1]
         #dot2 = pearsonr(dot2_1D, cooccur2_1D)
@@ -128,7 +158,7 @@ class Correlation:
             print "dot:", dot2
             print "-"*80
 
-        print "Writing data to" + self.dst + "\033[1m" + self.filename + "\033[0m"
+        print "Writing data to " + self.dst + "\033[1m" + self.filename + "\033[0m"
         f_out = open(self.dst + self.filename, "w")
         f_out.write(json.dumps({"cosine_correlation": cosine, "cosine_correlation2": cosine2, "dot_correlation": dot, "dot_correlation2": dot2}, indent = 4))
 
