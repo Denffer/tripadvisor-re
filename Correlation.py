@@ -16,6 +16,7 @@ class Correlation:
         self.src_cooccur = "data/line/cooccur/" + self.filename + ".txt"
         self.dst = "data/correlation/"
         self.verbose = 1
+        self.norm_flag = 0
 
         self.unique_words = {}
         # hd stands for high dimension
@@ -121,14 +122,16 @@ class Correlation:
         """ customize output json file """
 
         self.get_vectors()
-        self.get_norm_vectors()
+        if self.norm_flag:
+            self.get_norm_vectors()
         print "-"*80
 
         self.get_dot_matrix()
-        self.get_norm_dot_matrix()
         self.get_cosine_matrix()
-        self.get_norm_cosine_matrix()
         self.get_cooccur_matrix()
+        if self.norm_flag:
+            self.get_norm_dot_matrix()
+            self.get_norm_cosine_matrix()
         print "-"*80
 
         self.create_dirs()
@@ -136,8 +139,9 @@ class Correlation:
         cooccur_1D = self.cooccur_matrix.ravel()
         cosine_1D = self.cosine_matrix.ravel()
         dot_1D = self.dot_matrix.ravel()
-        norm_cosine_1D = self.norm_cosine_matrix.ravel()
-        norm_dot_1D = self.norm_dot_matrix.ravel()
+        if self.norm_flag:
+            norm_cosine_1D = self.norm_cosine_matrix.ravel()
+            norm_dot_1D = self.norm_dot_matrix.ravel()
 
         # cos vs cooccur
         print "Calculating correlation between cosine_similarity_matrix and cooccurrence_matrix"
@@ -163,8 +167,10 @@ class Correlation:
         cooccur_noZeros_1D = [cooccur_1D[index] for index in indices]
         cosine_noZeros_1D = [cosine_1D[index] for index in indices]
         dot_noZeros_1D = [dot_1D[index] for index in indices]
-        norm_cosine_noZeros_1D = [norm_cosine_1D[index] for index in indices]
-        norm_dot_noZeros_1D = [norm_dot_1D[index] for index in indices]
+
+        if self.norm_flag:
+            norm_cosine_noZeros_1D = [norm_cosine_1D[index] for index in indices]
+            norm_dot_noZeros_1D = [norm_dot_1D[index] for index in indices]
 
         # noZeros cos vs noZeros cooccur
         print "Calculating correlation between noZeros cosine_similarity_matrix and noZeros cooccurrence_matrix"
@@ -191,25 +197,35 @@ class Correlation:
             print "All values are included:"
             print "cosine:", cosine
             print "dot:", dot
-            print "norm_cosine:", cosine1
-            print "norm_dot:", dot1
+            if self.verbose:
+                print "norm_cosine:", cosine1
+                print "norm_dot:", dot1
 
             print "-"*50
             print "Zeros and diagonal elements are excluded:"
             print "cosine:", cosine2
             print "dot:", dot2
-            print "norm_cosine:", cosine3
-            print "norm_dot:", dot3
+            if self.verbose:
+                print "norm_cosine:", cosine3
+                print "norm_dot:", dot3
             print "-"*80
 
         print "Writing data to" + self.dst + "\033[1m" + self.filename + "\033[0m" + ".txt"
         f_out = open(self.dst + self.filename + ".txt", "w")
-        f_out.write(json.dumps(
-            {"cosine": cosine, "norm_cosine": cosine1,
-            "dot": dot, "norm_dot": dot1,
-            "noZeros_cosine": cosine2, "noZeros_norm_cosine": cosine3,
-            "noZeros_dot": dot2, "noZeros_norm_dot": dot3}
-            , indent = 4))
+        if self.verbose:
+            f_out.write(json.dumps(
+                {"cosine": cosine, "norm_cosine": cosine1,
+                "dot": dot, "norm_dot": dot1,
+                "noZeros_cosine": cosine2, "noZeros_norm_cosine": cosine3,
+                "noZeros_dot": dot2, "noZeros_norm_dot": dot3}
+                , indent = 4))
+        else:
+            f_out.write(json.dumps(
+                {"cosine": cosine, "norm_cosine": cosine1,
+                "dot": dot, "norm_dot": dot1,
+                "noZeros_cosine": cosine2, "noZeros_norm_cosine": cosine3,
+                "noZeros_dot": dot2, "noZeros_norm_dot": dot3}
+                , indent = 4))
 
         print '-'*80 + "\nDone"
 
