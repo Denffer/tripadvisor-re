@@ -6,7 +6,7 @@ from operator import itemgetter
 class Merge:
     """ This program aims to
         (1) Merge data/backend_reviews/location/*.txt into corpora/location.txt
-        (2) Merge data/backend_stars_reviews/location/*.txt into corpus_all/corpus_all.txt
+        (2) Merge data/backend_stars_reviews/location/*.txt into all_stars/all_stars.txt
         (3) Merge data/sentiment_statistics/*.json into sentiment_statistics.json  """
 
     def __init__(self):
@@ -16,6 +16,7 @@ class Merge:
 
         self.backend_stars_reviews = []
         self.dst = "data/corpora/"
+        self.dst_as = "data/corpora/All_Stars/"
         self.dst_ss = "data/lexicon/sentiment_statistics.json"
 
     def get_corpora(self):
@@ -93,13 +94,13 @@ class Merge:
                 print "No file is found"
                 print "-"*80
 
-    def render_corpus_all(self):
+    def render_all_stars(self):
         """ all backend_stars_reviews in location1~20.txt -> All.txt """
 
         print "Saving data to: " + self.dst + "\033[1m" + "All_Stars.txt" + "\033[0m"
         review_cnt = 0
         corpus_length = len(self.backend_stars_reviews)
-        f_backend_stars_reviews = open(self.dst + "All_Stars.txt", 'w+') # br stands for backend_review
+        f_backend_stars_reviews = open(self.dst_as + "All_Stars.txt", 'w+') # br stands for backend_review
         for review in self.backend_stars_reviews:
             review_cnt += 1
             f_backend_stars_reviews.write(review)
@@ -257,6 +258,7 @@ class Merge:
         """ create the directory if not exist"""
         dir1 = os.path.dirname(self.dst)
         dir2 = os.path.dirname(self.dst_ss)
+        dir3 = os.path.dirname(self.dst_as)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
@@ -264,6 +266,9 @@ class Merge:
         if not os.path.exists(dir2):
             print "Creating directory: " + dir2
             os.makedirs(dir2)
+        if not os.path.exists(dir3):
+            print "Creating directory: " + dir3
+            os.makedirs(dir3)
 
         print "-"*80
 
@@ -297,6 +302,6 @@ if __name__ == '__main__':
     merge.create_dirs()
     merge.get_corpora()
     merge.get_backend_stars_reviews()
-    merge.render_corpus_all()
+    merge.render_all_stars()
     merge.save_sentiment_statistics()
 
