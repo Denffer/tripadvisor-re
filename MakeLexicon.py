@@ -5,7 +5,7 @@ from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import opinion_lexicon
 
 
-class LexiconMaker:
+class MakeLexicon:
     """ This program aims to
     (1) extract useful information out of the raw lexicon
     (2) render lexicon.json with positive words and negative words
@@ -171,5 +171,5 @@ class NoIndentEncoder(json.JSONEncoder):
         return result
 
 if __name__ == '__main__':
-    lexiconMaker = LexiconMaker()
-    lexiconMaker.render()
+    Makelexicon = MakeLexicon()
+    Makelexicon.render()
