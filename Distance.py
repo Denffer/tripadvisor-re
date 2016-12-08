@@ -26,7 +26,6 @@ class Distance:
 
         self.topN = 300
         self.queries = []
-        #self.queries = {"star_1":1, "star_2":2, "star_3":3, "star_4":4, "star_5":5}
         self.positive_statistics = []
         self.negative_statistics = []
         self.vocab_size = 0
@@ -269,10 +268,7 @@ class Distance:
         """ save every cosine_list for top1~5 as json file"""
         self.get_source()
         self.get_sentiment_statistics()
-        if not self.queries:
-            if self.verbose:
-                print "Assigning attraction_names to queries"
-            self.queries = self.get_attractions().keys()
+        self.queries = self.get_attractions().keys()
         self.create_dirs()
 
         positive_cosine_topN, negative_cosine_topN = self.get_cosine_topN()
@@ -380,10 +376,7 @@ class Distance:
             rank_ordered_dict = OrderedDict()
             rank_ordered_dict['attraction_name'] = rank_dict['attraction_name']
             rank_ordered_dict['ranking'] = ranking
-            if not self.attractions:
-                rank_ordered_dict['original_ranking'] = self.queries[rank_dict['attraction_name']]
-            else:
-                rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
+            rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
             rank_ordered_dict['score'] = rank_dict['score']
             processed_ranking_list.append(rank_ordered_dict)
         outer_ordered_dict['dot_ranking'] = processed_ranking_list
@@ -405,20 +398,20 @@ class Distance:
             rank_ordered_dict = OrderedDict()
             rank_ordered_dict['attraction_name'] = rank_dict['attraction_name']
             rank_ordered_dict['ranking'] = ranking
-            if not self.attractions:
-                rank_ordered_dict['original_ranking'] = self.queries[rank_dict['attraction_name']]
-            else:
-                rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
+            rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
             rank_ordered_dict['score'] = rank_dict['score']
             processed_ranking_list.append(rank_ordered_dict)
         outer_ordered_dict['cosine_ranking'] = processed_ranking_list
 
         # Writing to data/ranking/Amsterdam.json
-        print "Writing to " + "\033[1m" + str(self.dst_r) + "\033[0m"
+        if self.verbose:
+            print "Writing to " + "\033[1m" + str(self.dst_r) + "\033[0m"
         f = open(self.dst_r, "w")
         f.write(json.dumps(outer_ordered_dict, indent = 4, cls=NoIndentEncoder))
+
         # Writing to data/ranking/location/Amsterdam_lambda04
-        print "Writing to " + "\033[1m" + str(self.dst_rl) + "\033[0m"
+        if self.verbose:
+            print "Writing to " + "\033[1m" + str(self.dst_rl) + "\033[0m"
         f = open(self.dst_rl, "w")
         f.write(json.dumps(outer_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
