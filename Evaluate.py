@@ -1,5 +1,6 @@
 import matplotlib, json, os, sys, linecache, re, scipy
 import matplotlib.pyplot as plt
+from matplotlib.legend_handler import HandlerLine2D
 import numpy as np
 from Distance import Distance
 
@@ -48,11 +49,14 @@ class Evaluate:
         self.create_dirs()
 
         matplotlib.rcParams['axes.unicode_minus'] = False
-        fig, ax = plt.subplots()
+        fig = plt.figure()
+        plt.xlabel("Lambda")
+        plt.ylabel("Spearmanr & Kendalltau")
+        #plt.xlabel('Lambda', fontsize=14)
         #ax.set_xlim(-0.05, 1.1)
         #ax.set_ylim(-0.05, 1.1)
 
-        lambdas = [float(x)/5 for x in range(0, 6)]
+        lambdas = [float(x)/2 for x in range(0, 3)]
         #lambdas = [float(x)/20 for x in range(0, 21)]
         #print lambdas
 
@@ -62,25 +66,32 @@ class Evaluate:
 
             self.get_json_data()
             spearmanr, kendalltau = self.get_sk()
+            print "S:", spearmanr
+            print "K:", kendalltau
 
             try:
-                ax.plot(l, spearmanr, 'bo')
-                ax.plot(l, kendalltau, 'go')
+                line1, = plt.plot( l, spearmanr, 'bo', label='Spearmanr')
+                line2, = plt.plot( l, kendalltau, 'go', label='Kendalltau')
+
+                #ax.plot(l, spearmanr, 'bo', label='Spearmanr')
+                #ax.plot(l, kendalltau, 'go', label='Kendalltau')
                 plt.text( l+0.001, spearmanr+0.001, str(spearmanr), fontsize=8)
                 plt.text( l+0.001, kendalltau+0.001, str(kendalltau), fontsize=8)
-                plt.xlabel('Lambda', fontsize=14)
-                plt.ylabel('Spearmanr & Kendalltau', fontsize=14)
             except:
                 print 'Error'
                 self.PrintException()
 
             #sys.stdout.write("\rStatus: %s / %s"%(r,))
 
-        ax.set_title('Spearmanr & Kendalltau on: ' + self.filename)
+        # set legend # aka indicator
+        # plt.legend(handles=[line1, line2], loc=2)
+        plt.legend(handles = [line1, line2], loc='best', numpoints=1)
+        plt.title(self.filename)
         print "-"*80
         filename = self.filename + ".png"
         print "Saving", "\033[1m" + filename + "\033[0m", "to", self.dst
-        plt.savefig(self.dst + filename)
+        fig.savefig(self.dst + filename)
+        #plt.savefig(self.dst + filename)
         plt.show()
 
     def PrintException(self):
