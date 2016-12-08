@@ -356,7 +356,8 @@ class Distance:
         if self.verbose:
             print "-"*80
 
-        print "Ranking queries according to average cosine_similarity and dot_product"
+        if self.verbose:
+            print "Ranking queries according to average cosine_similarity and dot_product"
         outer_ordered_dict = OrderedDict() #FIXME positive - negative
 
         # (1) dot_score
