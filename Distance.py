@@ -13,7 +13,7 @@ class Distance:
 
     def __init__(self, argv1, argv2):
         self.src = argv1
-        self.src_ss = "data/lexicon/sentiment_statistics.json"
+        self.src_ss = "data/lexicon/enhanced_lexicon.json"
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src_fr = "data/frontend_reviews/" + self.filename + "/"
         #self.dst_d = "./data/distance/" + self.filename + ".json"
@@ -24,7 +24,7 @@ class Distance:
         self.dst_rl = "./data/ranking/" + self.filename + "/" + self.filename + "_lambda" + str(argv2).replace(".","") + ".json"
         self.verbose = 0
 
-        self.topN = 300
+        self.topN = 200
         self.queries = []
         self.positive_statistics = []
         self.negative_statistics = []
@@ -114,7 +114,7 @@ class Distance:
         with open(self.src_ss, 'r') as f_ss:
             sentiment_statistics = json.load(f_ss)
 
-        positive_statistics = sentiment_statistics["positive_statistics"]
+        positive_statistics = sentiment_statistics["positive"]
         """ E.g. {"index": 1, "count": 3, "stemmed_word": "good", "word": ["good"]} """
         for word_dict in positive_statistics:
             # Only put positive word matched in unique_words into self.negative_statistics
@@ -123,7 +123,7 @@ class Distance:
                     self.positive_statistics.append(word_dict)
                     self.positive_vectors200.append(self.vectors200[value])
 
-        negative_statistics = sentiment_statistics["negative_statistics"]
+        negative_statistics = sentiment_statistics["negative"]
         """ E.g. {"index": 1, "count": 4, "stemmed_word": "bad", "word": ["bad"]} """
         for word_dict in negative_statistics:
             # Only put negative word matched in unique_words into self.negative_statistics
