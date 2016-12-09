@@ -160,7 +160,9 @@ class Distance:
 
             topN_cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list]
             # calculate the score out of topN cosine similarity
-            cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
+            topN_cos_sim_list = sorted(topN_cos_sim_list)
+            cos_score =  self.tuning_lambda * sum(topN_cos_sim_list[:3])/len(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list)/len(topN_cos_sim_list)
+            # cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
             positive_cosine_topN.append({"query": query, "positive_topN_cosine_similarity": word_dict_list, "cos_score": cos_score})
 
         if self.verbose:
@@ -185,7 +187,9 @@ class Distance:
 
             topN_cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list]
             # calculate the score out of topN cosine similarity
-            cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
+            topN_cos_sim_list = sorted(topN_cos_sim_list)
+            cos_score =  self.tuning_lambda * sum(topN_cos_sim_list[:3])/len(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list)/len(topN_cos_sim_list)
+            # cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
             negative_cosine_topN.append({"query": query, "negative_topN_cosine_similarity": word_dict_list, "cos_score": cos_score})
 
         if self.verbose:
@@ -216,7 +220,9 @@ class Distance:
                     word_dict_list.append(word_dict)
 
             topN_dot_prod_list = [float(word_dict["dot_prod"]) for word_dict in word_dict_list]
-            dot_score =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
+            topN_dot_prod_list = sorted(topN_dot_prod_list)
+            dot_score =  self.tuning_lambda * sum(topN_dot_prod_list[:3])/len(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list)/len(topN_dot_prod_list)
+            # dot_score =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
             positive_dot_topN.append({"query": query, "positive_topN_dot_product": word_dict_list, "dot_score": dot_score})
 
         if self.verbose:
@@ -241,7 +247,9 @@ class Distance:
                     word_dict_list.append(word_dict)
 
             topN_dot_prod_list = [float(word_dict["dot_prod"]) for word_dict in word_dict_list]
-            dot_score =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
+            topN_dot_prod_list = sorted(topN_dot_prod_list)
+            dot_score =  self.tuning_lambda * sum(topN_dot_prod_list[:3])/len(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list)/len(topN_dot_prod_list)
+            # dot_score =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
             negative_dot_topN.append({"query": query, "negative_topN_dot_product": word_dict_list, "dot_score": dot_score})
 
         if self.verbose:
@@ -282,38 +290,6 @@ class Distance:
             query_ordered_dict = OrderedDict()
             query_ordered_dict["query"] = p_cos_word_dict["query"]
 
-            # positive dot
-            positive_dot_word_dict_list = []
-            index = 0
-            for dot_word_dict in p_dot_word_dict["positive_topN_dot_product"]:
-
-                index += 1
-                ordered_dict = OrderedDict()
-                ordered_dict["index"] = index
-                ordered_dict["dot_product"] = dot_word_dict["dot_prod"]
-                ordered_dict["count"] = dot_word_dict["word"]["count"]
-                ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
-                ordered_dict["word"] = dot_word_dict["word"]["word"]
-                positive_dot_word_dict_list.append(NoIndent(ordered_dict))
-
-            query_ordered_dict["positive_topN_dot_product"] = positive_dot_word_dict_list
-
-            # negative dot
-            negative_dot_word_dict_list = []
-            index = 0
-            for dot_word_dict in n_dot_word_dict["negative_topN_dot_product"]:
-
-                index += 1
-                ordered_dict = OrderedDict()
-                ordered_dict["index"] = index
-                ordered_dict["dot_product"] = dot_word_dict["dot_prod"]
-                ordered_dict["count"] = dot_word_dict["word"]["count"]
-                ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
-                ordered_dict["word"] = dot_word_dict["word"]["word"]
-                negative_dot_word_dict_list.append(NoIndent(ordered_dict))
-
-            query_ordered_dict["negative_topN_dot_product"] = negative_dot_word_dict_list
-
             # positive cosine
             positive_cosine_word_dict_list = []
             index = 0
@@ -346,6 +322,38 @@ class Distance:
 
             query_ordered_dict["negative_topN_cosine_similarity"] = negative_cosine_word_dict_list
 
+            # positive dot
+            positive_dot_word_dict_list = []
+            index = 0
+            for dot_word_dict in p_dot_word_dict["positive_topN_dot_product"]:
+
+                index += 1
+                ordered_dict = OrderedDict()
+                ordered_dict["index"] = index
+                ordered_dict["dot_product"] = dot_word_dict["dot_prod"]
+                ordered_dict["count"] = dot_word_dict["word"]["count"]
+                ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
+                ordered_dict["word"] = dot_word_dict["word"]["word"]
+                positive_dot_word_dict_list.append(NoIndent(ordered_dict))
+
+            query_ordered_dict["positive_topN_dot_product"] = positive_dot_word_dict_list
+
+            # negative dot
+            negative_dot_word_dict_list = []
+            index = 0
+            for dot_word_dict in n_dot_word_dict["negative_topN_dot_product"]:
+
+                index += 1
+                ordered_dict = OrderedDict()
+                ordered_dict["index"] = index
+                ordered_dict["dot_product"] = dot_word_dict["dot_prod"]
+                ordered_dict["count"] = dot_word_dict["word"]["count"]
+                ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
+                ordered_dict["word"] = dot_word_dict["word"]["word"]
+                negative_dot_word_dict_list.append(NoIndent(ordered_dict))
+
+            query_ordered_dict["negative_topN_dot_product"] = negative_dot_word_dict_list
+
             # append one query after another
             query_ordered_dict_list.append(query_ordered_dict)
 
@@ -360,29 +368,7 @@ class Distance:
             print "Ranking queries according to average cosine_similarity and dot_product"
         outer_ordered_dict = OrderedDict() #FIXME positive - negative
 
-        # (1) dot_score
-        score_list = []
-        for p_dot_word_dict, n_dot_word_dict in zip(positive_dot_topN, negative_dot_topN):
-            #score = p_dot_word_dict["dot_score"]
-            score = p_dot_word_dict["dot_score"] - n_dot_word_dict["dot_score"]
-            score_list.append({"attraction_name": p_dot_word_dict["query"], "score": score})
-
-        # derive ranking_list from a the unsorted score_list
-        ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
-
-        processed_ranking_list = []
-        ranking = 0
-        for rank_dict in ranking_list:
-            ranking += 1
-            rank_ordered_dict = OrderedDict()
-            rank_ordered_dict['attraction_name'] = rank_dict['attraction_name']
-            rank_ordered_dict['ranking'] = ranking
-            rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
-            rank_ordered_dict['score'] = rank_dict['score']
-            processed_ranking_list.append(rank_ordered_dict)
-        outer_ordered_dict['dot_ranking'] = processed_ranking_list
-
-        # (2) cos_score
+        # (1) cos_score
         score_list = []
         for p_cos_word_dict, n_cos_word_dict in zip(positive_cosine_topN, negative_cosine_topN):
             #score = p_cos_word_dict["cos_score"]
@@ -403,6 +389,28 @@ class Distance:
             rank_ordered_dict['score'] = rank_dict['score']
             processed_ranking_list.append(rank_ordered_dict)
         outer_ordered_dict['cosine_ranking'] = processed_ranking_list
+
+        # (2) dot_score
+        score_list = []
+        for p_dot_word_dict, n_dot_word_dict in zip(positive_dot_topN, negative_dot_topN):
+            #score = p_dot_word_dict["dot_score"]
+            score = p_dot_word_dict["dot_score"] - n_dot_word_dict["dot_score"]
+            score_list.append({"attraction_name": p_dot_word_dict["query"], "score": score})
+
+        # derive ranking_list from a the unsorted score_list
+        ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
+
+        processed_ranking_list = []
+        ranking = 0
+        for rank_dict in ranking_list:
+            ranking += 1
+            rank_ordered_dict = OrderedDict()
+            rank_ordered_dict['attraction_name'] = rank_dict['attraction_name']
+            rank_ordered_dict['ranking'] = ranking
+            rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
+            rank_ordered_dict['score'] = rank_dict['score']
+            processed_ranking_list.append(rank_ordered_dict)
+        outer_ordered_dict['dot_ranking'] = processed_ranking_list
 
         # Writing to data/ranking/Amsterdam.json
         if self.verbose:
