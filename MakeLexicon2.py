@@ -35,7 +35,7 @@ class MakeLexicon:
                 #  print {key:word_dict}
                 positive.append({str(key):word_dict})
 
-        #print positive
+        #print len(positive)
         return positive
 
     def get_negative(self):
@@ -63,21 +63,23 @@ class MakeLexicon:
                     try:
                         word_dict = word_dict.get(str(i))
                         del word_dict['index']
+                        del word_dict['cos_sim']
                         #  print word_dict
                     except KeyError:
                         pass
                     filtered_positive.append(word_dict)
         #  print filtered_positive
-
         print "Numbers of words in filtered_positive: " + "\033[1m" + str(len(filtered_positive)) +"\033[0m"
+
         print "Removing overlaps in filtered_positive"
         processed_positive = []
         for i in xrange(len(filtered_positive)):
             if filtered_positive[i] not in filtered_positive[i+1:]:
                 processed_positive.append(filtered_positive[i])
-        #  print processed_positive
+        print "Numbers of words in processed_positive: " + "\033[1m" + str(len(processed_positive)) +"\033[0m"
 
         print "-"*40
+
         print "Collecting negative words from star_1 & star_2 & star_3"
         # a list of word_dicts
         negative = self.get_negative()
@@ -89,18 +91,21 @@ class MakeLexicon:
                     try:
                         word_dict = word_dict.get(str(i))
                         del word_dict['index']
+                        del word_dict['cos_sim']
                         #  print word_dict
                     except KeyError:
                         pass
                     filtered_negative.append(word_dict)
-
+        #print filtered_negative
         print "Numbers of words in filtered_negative: " + "\033[1m" + str(len(filtered_negative)) +"\033[0m"
+
         print "Removing overlaps in filtered_negative"
         processed_negative = []
         for i in xrange(len(filtered_negative)):
             if filtered_negative[i] not in filtered_negative[i+1:]:
                 processed_negative.append(filtered_negative[i])
         #  print processed_negative
+        print "Numbers of words in processed_negative: " + "\033[1m" + str(len(processed_negative)) +"\033[0m"
 
         return processed_positive, processed_negative
 
