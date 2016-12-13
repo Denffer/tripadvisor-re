@@ -55,8 +55,7 @@ class MakeLexicon:
         print "Collecting positive words from star_3 & star_4 & star_5"
         # a list of word_dicts
         positive = self.get_positive()
-        #print positive
-        filtered_positive = []
+        extreme_positive, strong_positive, moderate_positive = [], [], []
         for i in range(3,6):
             for word_dict in positive:
                 if word_dict.get(str(i)):
@@ -67,24 +66,27 @@ class MakeLexicon:
                         #  print word_dict
                     except KeyError:
                         pass
-                    filtered_positive.append(word_dict)
-        #  print filtered_positive
-        print "Numbers of words in filtered_positive: " + "\033[1m" + str(len(filtered_positive)) +"\033[0m"
+                    if i == 3:
+                        moderate_positive.append(word_dict)
+                    elif i == 4:
+                        strong_positive.append(word_dict)
+                    elif i == 5:
+                        extreme_positive.append(word_dict)
+                    else:
+                        self.PrintException()
+                else:
+                    pass
 
-        print "Removing overlaps in filtered_positive"
-        processed_positive = []
-        for i in xrange(len(filtered_positive)):
-            if filtered_positive[i] not in filtered_positive[i+1:]:
-                processed_positive.append(filtered_positive[i])
-        print "Numbers of words in processed_positive: " + "\033[1m" + str(len(processed_positive)) +"\033[0m"
-
+        print "Numbers of words in extreme_positive: " + "\033[1m" + str(len(extreme_positive)) +"\033[0m"
+        print "Numbers of words in strong_positive: " + "\033[1m" + str(len(strong_positive)) +"\033[0m"
+        print "Numbers of words in moderate_positive: " + "\033[1m" + str(len(moderate_positive)) +"\033[0m"
         print "-"*40
 
         print "Collecting negative words from star_1 & star_2 & star_3"
         # a list of word_dicts
         negative = self.get_negative()
         #  print negative
-        filtered_negative = []
+        extreme_negative, strong_negative, moderate_negative = [], [], []
         for i in range(1,4):
             for word_dict in negative:
                 if word_dict.get(str(i)):
@@ -95,33 +97,39 @@ class MakeLexicon:
                         #  print word_dict
                     except KeyError:
                         pass
-                    filtered_negative.append(word_dict)
-        #print filtered_negative
-        print "Numbers of words in filtered_negative: " + "\033[1m" + str(len(filtered_negative)) +"\033[0m"
+                    if i == 3:
+                        moderate_negative.append(word_dict)
+                    elif i == 2:
+                        strong_negative.append(word_dict)
+                    elif i == 1:
+                        extreme_negative.append(word_dict)
+                    else:
+                        self.PrintException()
+                else:
+                    pass
 
-        print "Removing overlaps in filtered_negative"
-        processed_negative = []
-        for i in xrange(len(filtered_negative)):
-            if filtered_negative[i] not in filtered_negative[i+1:]:
-                processed_negative.append(filtered_negative[i])
-        #  print processed_negative
-        print "Numbers of words in processed_negative: " + "\033[1m" + str(len(processed_negative)) +"\033[0m"
+        print "Numbers of words in extreme_negative: " + "\033[1m" + str(len(extreme_negative)) +"\033[0m"
+        print "Numbers of words in strong_negative: " + "\033[1m" + str(len(strong_negative)) +"\033[0m"
+        print "Numbers of words in moderate_negative: " + "\033[1m" + str(len(moderate_negative)) +"\033[0m"
 
-        return processed_positive, processed_negative
+        return extreme_positive, strong_positive, moderate_positive, extreme_negative, strong_negative, moderate_negative
 
     def render(self):
         """ put keys in order and render json file """
 
         self.get_source()
         print "-"*70
-        positive, negative = self.get_lexicon()
+        extreme_positive, strong_positive, moderate_positive, extreme_negative, strong_negative, moderate_negative = self.get_lexicon()
         print "-"*70
 
         print "Merging positive"
+        positive = OrderedDict()
+
+        # (1) extreme_positive
         cnt = 0
-        length = len(positive)
-        positive_ordered_dict_list = []
-        for word_dict in positive:
+        length = len(extreme_positive)
+        extreme_positive_ordered_dict_list = []
+        for word_dict in extreme_positive:
             cnt += 1
             ordered_dict = OrderedDict()
             ordered_dict["index"] = cnt
@@ -129,16 +137,59 @@ class MakeLexicon:
             ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
             ordered_dict["word"] = word_dict["word"]
 
-            positive_ordered_dict_list.append(NoIndent(ordered_dict))
+            extreme_positive_ordered_dict_list.append(NoIndent(ordered_dict))
 
             sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
             sys.stdout.flush()
+
+        positive["extreme_positive"] = extreme_positive_ordered_dict_list
+
+        # (2) strong_positive
+        cnt = 0
+        length = len(strong_positive)
+        strong_positive_ordered_dict_list = []
+        for word_dict in strong_positive:
+            cnt += 1
+            ordered_dict = OrderedDict()
+            ordered_dict["index"] = cnt
+            ordered_dict["count"] = word_dict["count"]
+            ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
+            ordered_dict["word"] = word_dict["word"]
+
+            strong_positive_ordered_dict_list.append(NoIndent(ordered_dict))
+
+            sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+            sys.stdout.flush()
+
+        positive["strong_positive"] = strong_positive_ordered_dict_list
+
+        # (3) moderate_positive
+        cnt = 0
+        length = len(moderate_positive)
+        moderate_positive_ordered_dict_list = []
+        for word_dict in moderate_positive:
+            cnt += 1
+            ordered_dict = OrderedDict()
+            ordered_dict["index"] = cnt
+            ordered_dict["count"] = word_dict["count"]
+            ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
+            ordered_dict["word"] = word_dict["word"]
+
+            moderate_positive_ordered_dict_list.append(NoIndent(ordered_dict))
+
+            sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+            sys.stdout.flush()
+
+        positive["moderate_positive"] = moderate_positive_ordered_dict_list
 
         print "\nMerging negative"
+        negative = OrderedDict()
+
+        # (1) extreme_negative
         cnt = 0
-        length = len(negative)
-        negative_ordered_dict_list = []
-        for word_dict in negative:
+        length = len(extreme_negative)
+        extreme_negative_ordered_dict_list = []
+        for word_dict in extreme_negative:
             cnt += 1
             ordered_dict = OrderedDict()
             ordered_dict["index"] = cnt
@@ -146,14 +197,55 @@ class MakeLexicon:
             ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
             ordered_dict["word"] = word_dict["word"]
 
-            negative_ordered_dict_list.append(NoIndent(ordered_dict))
+            extreme_negative_ordered_dict_list.append(NoIndent(ordered_dict))
 
             sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
             sys.stdout.flush()
 
-        sentiment_ordered_dict = OrderedDict()
-        sentiment_ordered_dict["positive"] = positive_ordered_dict_list
-        sentiment_ordered_dict["negative"] = negative_ordered_dict_list
+        negative["extreme_negative"] = extreme_negative_ordered_dict_list
+
+        # (2) strong_negative
+        cnt = 0
+        length = len(strong_negative)
+        strong_negative_ordered_dict_list = []
+        for word_dict in strong_negative:
+            cnt += 1
+            ordered_dict = OrderedDict()
+            ordered_dict["index"] = cnt
+            ordered_dict["count"] = word_dict["count"]
+            ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
+            ordered_dict["word"] = word_dict["word"]
+
+            strong_negative_ordered_dict_list.append(NoIndent(ordered_dict))
+
+            sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+            sys.stdout.flush()
+
+        negative["strong_negative"] = strong_negative_ordered_dict_list
+
+        # (3) moderate_negative
+        cnt = 0
+        length = len(moderate_negative)
+        moderate_negative_ordered_dict_list = []
+        for word_dict in moderate_negative:
+            cnt += 1
+            ordered_dict = OrderedDict()
+            ordered_dict["index"] = cnt
+            ordered_dict["count"] = word_dict["count"]
+            ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
+            ordered_dict["word"] = word_dict["word"]
+
+            moderate_negative_ordered_dict_list.append(NoIndent(ordered_dict))
+
+            sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+            sys.stdout.flush()
+
+        negative["moderate_negative"] = moderate_negative_ordered_dict_list
+
+        # putting everything together
+	sentiment_ordered_dict = OrderedDict()
+        sentiment_ordered_dict["positive"] = positive
+        sentiment_ordered_dict["negative"] = negative
         f = open(self.dst, 'w+')
         f.write(json.dumps(sentiment_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
