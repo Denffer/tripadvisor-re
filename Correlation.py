@@ -107,7 +107,6 @@ class Correlation:
                 #self.cooccur_matrix[index2][index1] = line[2]
             else:
                 pass
-
         #print len(self.cooccur_matrix)
 
     def create_dirs(self):
