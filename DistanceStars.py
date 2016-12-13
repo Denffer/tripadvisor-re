@@ -12,7 +12,8 @@ class DistanceStars:
     """
 
     def __init__(self):
-        self.src = "data/line/vectors200/All_Stars.txt"
+        self.src = sys.argv[1]
+        #self.src = "data/line/vectors200/All_Stars.txt"
         self.src_ss = "data/lexicon/sentiment_statistics.json"
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
 
@@ -22,7 +23,7 @@ class DistanceStars:
         self.dst_r = "./data/ranking/" + self.filename + ".json"
         #self.dst_rl = "./data/ranking/" + self.filename + "/" + self.filename + "_lambda" + str(argv2).replace(".","") + ".json"
 
-        self.topN = 10
+        self.topN = 200
         self.queries = {"star_1":1, "star_2":2, "star_3":3, "star_4":4, "star_5":5}
         self.positive_statistics = []
         self.negative_statistics = []

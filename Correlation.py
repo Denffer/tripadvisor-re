@@ -16,7 +16,7 @@ class Correlation:
         self.src_cooccur = "data/line/cooccur/" + self.filename + ".txt"
         self.dst = "data/correlation/"
         self.verbose = 1
-        self.norm_flag = 0
+        self.norm_flag = 1
 
         self.unique_words = {}
         # hd stands for high dimension
@@ -154,14 +154,16 @@ class Correlation:
         #dot = pearsonr(dot_1D, cooccur_1D)
 
         # norm_cos vs cooccur
-        print "Calculating correlation between normalized cosine_similarity_matrix and cooccurrence_matrix"
-        cosine1 = np.corrcoef(norm_cosine_1D, cooccur_1D)[0,1]
-        #cosine1 = pearsonr(norm_cosine_1D, cooccur_1D)
+        if self.norm_flag:
+            print "Calculating correlation between normalized cosine_similarity_matrix and cooccurrence_matrix"
+            cosine1 = np.corrcoef(norm_cosine_1D, cooccur_1D)[0,1]
+            #cosine1 = pearsonr(norm_cosine_1D, cooccur_1D)
 
         # norm_dot vs cooccur
-        print "Calculating correlation between normalized dot_product_matrix and cooccurrence_matrix"
-        dot1 = np.corrcoef(norm_dot_1D, cooccur_1D)[0,1]
-        #dot1 = pearsonr(norm_dot_1D, cooccur_1D)
+        if self.norm_flag:
+            print "Calculating correlation between normalized dot_product_matrix and cooccurrence_matrix"
+            dot1 = np.corrcoef(norm_dot_1D, cooccur_1D)[0,1]
+            #dot1 = pearsonr(norm_dot_1D, cooccur_1D)
 
         indices = np.nonzero(cooccur_1D)[0]
         cooccur_noZeros_1D = [cooccur_1D[index] for index in indices]
@@ -183,21 +185,23 @@ class Correlation:
         #dot2 = pearsonr(dot_noZeros_1D, cooccur_noZeros_1D)
 
         # noZeros norm_cos vs noZeros cooccur
-        print "Calculating correlation between noZeros cosine_similarity_matrix and noZeros cooccurrence_matrix"
-        cosine3 = np.corrcoef(norm_cosine_noZeros_1D, cooccur_noZeros_1D)[0,1]
-        #cosine3 = pearsonr(norm_cosine_noZeros_1D, cooccur_noZeros_1D)
+        if self.norm_flag:
+            print "Calculating correlation between noZeros cosine_similarity_matrix and noZeros cooccurrence_matrix"
+            cosine3 = np.corrcoef(norm_cosine_noZeros_1D, cooccur_noZeros_1D)[0,1]
+            #cosine3 = pearsonr(norm_cosine_noZeros_1D, cooccur_noZeros_1D)
 
         # noZeros norm_dot vs noZeros cooccur
-        print "Calculating correlation between noZeros dot_product_matrix and noZeros cooccurrence_matrix"
-        dot3 = np.corrcoef(norm_dot_noZeros_1D, cooccur_noZeros_1D)[0,1]
-        #dot3 = pearsonr(norm_dot_noZeros_1D, cooccur_noZeros_1D)
+        if self.norm_flag:
+            print "Calculating correlation between noZeros dot_product_matrix and noZeros cooccurrence_matrix"
+            dot3 = np.corrcoef(norm_dot_noZeros_1D, cooccur_noZeros_1D)[0,1]
+            #dot3 = pearsonr(norm_dot_noZeros_1D, cooccur_noZeros_1D)
 
         if self.verbose:
             print "-"*50
             print "All values are included:"
             print "cosine:", cosine
             print "dot:", dot
-            if self.verbose:
+            if self.norm_flag:
                 print "norm_cosine:", cosine1
                 print "norm_dot:", dot1
 
@@ -205,14 +209,14 @@ class Correlation:
             print "Zeros and diagonal elements are excluded:"
             print "cosine:", cosine2
             print "dot:", dot2
-            if self.verbose:
+            if self.norm_flag:
                 print "norm_cosine:", cosine3
                 print "norm_dot:", dot3
             print "-"*80
 
         print "Writing data to" + self.dst + "\033[1m" + self.filename + "\033[0m" + ".txt"
         f_out = open(self.dst + self.filename + ".txt", "w")
-        if self.verbose:
+        if self.norm_flag:
             f_out.write(json.dumps(
                 {"cosine": cosine, "norm_cosine": cosine1,
                 "dot": dot, "norm_dot": dot1,
@@ -221,10 +225,8 @@ class Correlation:
                 , indent = 4))
         else:
             f_out.write(json.dumps(
-                {"cosine": cosine, "norm_cosine": cosine1,
-                "dot": dot, "norm_dot": dot1,
-                "noZeros_cosine": cosine2, "noZeros_norm_cosine": cosine3,
-                "noZeros_dot": dot2, "noZeros_norm_dot": dot3}
+                {"cosine": cosine, "dot": dot,
+                "noZeros_cosine": cosine2, "noZeros_dot": dot2}
                 , indent = 4))
 
         print '-'*80 + "\nDone"
