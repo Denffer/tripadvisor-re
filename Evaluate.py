@@ -10,7 +10,7 @@ class Evaluate:
         self.src = sys.argv[1]
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src = "data/ranking/" + self.filename + ".json"
-        self.dst = "data/graphic_output/precision/"
+        self.dst = "data/graphic_output/sk/"
 
         self.step = 0.5
         self.json_data = []
@@ -26,12 +26,13 @@ class Evaluate:
         """ Get spearmanr & kendalltau """
         rankings = []
         original_rankings = []
-        for attraction_dict in self.json_data["dot_ranking"]:
+        for attraction_dict in self.json_data["cosine_ranking"]:
+        #for attraction_dict in self.json_data["dot_ranking"]:
             rankings.append(attraction_dict["ranking"])
             original_rankings.append(attraction_dict["original_ranking"])
 
-            spearmanr = scipy.stats.spearmanr(rankings, original_rankings).correlation
-            kendalltau = scipy.stats.kendalltau(rankings, original_rankings).correlation
+        spearmanr = scipy.stats.spearmanr(rankings, original_rankings).correlation
+        kendalltau = scipy.stats.kendalltau(rankings, original_rankings).correlation
 
         return spearmanr, kendalltau
 
@@ -58,7 +59,6 @@ class Evaluate:
 
         lambdas = [float(x)/2 for x in range(0, 3)]
         #lambdas = [float(x)/20 for x in range(0, 21)]
-        #print lambdas
 
         for l in lambdas:
             distance = Distance("data/line/vectors200/" + self.filename + ".txt", l)
