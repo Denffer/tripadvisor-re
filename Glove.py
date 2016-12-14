@@ -376,11 +376,7 @@ def main(arguments):
     print "Saving txt file to: " + dst_cooccur + "\033[1m" + filename + "\033[0m"
     string2 = ""
     with open(dst_cooccur+"/"+filename, 'w') as fp:
-        string2 = '\n'.join('%s %s %s' % (inv_vocab[x[0]], inv_vocab[x[1]], x[2]) for x in cooccurrences)
-        fp.write(string)
-
-    #fp.write('\n'.join('%s %s %s' % (inv_vocab[x[0]], inv_vocab[x[1]], x[2]) for x in cooccurrences))
-
+        fp.write('\n'.join('%s %s %s' % (inv_vocab[x[0]], inv_vocab[x[1]], x[2]) for x in cooccurrences))
 
 if __name__ == '__main__':
     #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
