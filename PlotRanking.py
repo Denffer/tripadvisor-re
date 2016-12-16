@@ -16,7 +16,7 @@ class PlotRanking:
         self.cosine_source = []
         self.dot_source = []
         self.cosine_flag = 1
-        self.dot_flag = 0
+        self.dot_flag = 1
 
     def get_cosine_ranking(self):
         """ load all json file in data/ranking/cosine/"""
@@ -71,6 +71,7 @@ class PlotRanking:
                 file_cnt = 0
                 length = len(file_list)
                 ranking_dicts_list = []
+                spearmanr_list, kendalltau_list = [], []
                 for f in file_list:
                     if str(f) == ".DS_Store":
                         print "Removing " + dirpath + str(f)
@@ -91,7 +92,7 @@ class PlotRanking:
                 #  print "Ranking_dict_list: ", ranking_dicts_list
                 #  print "Spearmanr_list:", spearmanr_list
                 #  print "Kendalltau_list", kendalltau_list
-                self.plot(ranking_dict_list,spearsmanr_list, kendalltau_list, filename)
+                self.plot(ranking_dicts_list, spearmanr_list, kendalltau_list, filename)
 
             else:
                 print "No file is found"
@@ -103,12 +104,12 @@ class PlotRanking:
         rankings = []
         original_rankings = []
 
-        if self.cosine_flag:
+        if self.cosine_flag and "cosine_ranking" in x:
             for attraction_dict in x["cosine_ranking"]:
                 rankings.append(attraction_dict["ranking"])
                 original_rankings.append(attraction_dict["original_ranking"])
 
-        if self.dot_flag:
+        if self.dot_flag and "dot_ranking" in x:
             for attraction_dict in x["dot_ranking"]:
                 rankings.append(attraction_dict["ranking"])
                 original_rankings.append(attraction_dict["original_ranking"])
@@ -121,12 +122,12 @@ class PlotRanking:
         rankings = []
         original_rankings = []
 
-        if self.cosine_flag:
+        if self.cosine_flag and "cosine_ranking" in x:
             for attraction_dict in x["cosine_ranking"]:
                 rankings.append(attraction_dict["ranking"])
                 original_rankings.append(attraction_dict["original_ranking"])
 
-        if self.dot_flag:
+        if self.dot_flag and "dot_ranking" in x:
             for attraction_dict in x["dot_ranking"]:
                 rankings.append(attraction_dict["ranking"])
                 original_rankings.append(attraction_dict["original_ranking"])
@@ -184,8 +185,8 @@ class PlotRanking:
 
         if self.dot_flag:
             print "-"*80
-            print "Saving", "\033[1m" + self.filename + ".png" + "\033[0m", "to", self.dst_d
-            fig.savefig(self.dst_d + self.filename + ".png")
+            print "Saving", "\033[1m" + filename + ".png" + "\033[0m", "to", self.dst_d
+            fig.savefig(self.dst_d + filename + ".png")
             plt.show()
         else:
             pass
