@@ -16,27 +16,18 @@ class ReviewProcess:
     def __init__(self):
         self.src = sys.argv[1]  # E.g. data/reviews/bangkok_3.json
         print "Processing " + self.src[:12] +"\033[1m" + self.src[12:] + "\033[0m"
-        self.verbose = 0
+        self.verbose = 1
 
         self.attraction = {}
-        self.attraction_name = ""
-        self.attraction_regexr = ""
-        self.attraction_al = ""
-        self.attraction_marked = ""
+        self.attraction_name, self.attraction_regexr, self.attraction_al, self.attraction_marked = "", "", "", ""
 
-        self.lexicon = []
-        self.positive = []
-        self.negative = []
-        self.ratings = []
-        self.clean_reviews = []
-        self.frontend_reviews = []
-        self.backend_reviews = []
-        self.backend_stars_reviews = []
-        self.sentiment_statistics = []
+        self.lexicon, self.positive, self.negative, self.ratings = [], [], [], []
+        self.clean_reviews, self.frontend_reviews, self.backend_reviews, self.backend_stars_reviews, self.hybrid_reviews, self.sentiment_statistics = [], [], [], [], [], []
 
         self.dst_frontend = "data/frontend_reviews/"
         self.dst_backend = "data/backend_reviews/"
         self.dst_stars = "data/backend_stars_reviews/"
+        self.dst_hybrid = "data/hybrid_reviews/"
         self.dst_sentiment_statistics = "data/sentiment_statistics/"
         self.dst_lexicon = "data/lexicon/lexicon.json"
 
@@ -128,6 +119,7 @@ class ReviewProcess:
     def get_lexicon(self):
         """ return lexicon, a dictionary of positive_lexicon(list) and negative_lexicon(list) """
         if self.verbose:
+            print "-"*80
             print "Loading lexicon from " + "\033[1m" + self.dst_lexicon + "\033[0m"
 
         with open(self.dst_lexicon) as f:
@@ -293,6 +285,21 @@ class ReviewProcess:
                 sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
                 sys.stdout.flush()
 
+    def get_hybrid_reviews(self):
+        """ create parallel comparision for origin reviews and processed reviews """
+        if self.verbose:
+            print "\n" + "-"*80 + "\nProcessing hybrid_reviews"
+
+        review_cnt = 0
+        review_length = len(self.clean_reviews)
+        for review, clean_review in zip(self.backend_reviews, self.clean_reviews):
+            review_cnt += 1
+            self.hybrid_reviews.append({"review": review, "clean_review": clean_review})
+
+            if self.verbose:
+                sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
+                sys.stdout.flush()
+
     def get_sentiment_statistics(self):
         """ count the sentiment words in reviews """
         if self.verbose:
@@ -359,10 +366,14 @@ class ReviewProcess:
         if not os.path.exists(dir3):
             print "Creating Directory: " + dir3 + "/"
             os.makedirs(dir3)
-        dir4 = os.path.dirname(self.dst_sentiment_statistics + location)
+        dir4 = os.path.dirname(self.dst_hybrid + location)
         if not os.path.exists(dir4):
             print "Creating Directory: " + dir4 + "/"
             os.makedirs(dir4)
+        dir5 = os.path.dirname(self.dst_sentiment_statistics + location)
+        if not os.path.exists(dir5):
+            print "Creating Directory: " + dir5 + "/"
+            os.makedirs(dir5)
 
     def render(self):
         """ render frontend_review & backend_reviews & sentiment_statistics """
@@ -420,15 +431,34 @@ class ReviewProcess:
 
         """ (3) save location_*.txt in ./backend_reviews/location/ """
 
-        stars_txt = open(self.dst_stars +"/"+ self.attraction["location"].replace("-","_") +"/"+ filename + ".txt", "w+")
+        stars_txt_file = open(self.dst_stars +"/"+ self.attraction["location"].replace("-","_") +"/"+ filename + ".txt", "w+")
         for review in self.backend_stars_reviews:
-            stars_txt.write(review.encode("utf-8") + '\n')
-        stars_txt.close()
+            stars_txt_file.write(review.encode("utf-8") + '\n')
+        stars_txt_file.close()
 
         if self.verbose:
             print filename, "'s backend_stars is complete"
 
-        """ (4) render location.json containing a dictionaries of two key:list """
+        """ (4) save location_*.json in ./hybrid_reviews/location/ """
+        hybrid_json_file = open(self.dst_hybrid +"/"+ self.attraction["location"].replace("-","_") +"/"+ filename + ".json", "w+")
+
+        cnt = 0
+        hybrid_ordered_dict_list = []
+        for review_dict in self.hybrid_reviews:
+            cnt += 1
+            hybrid_orderedDict = OrderedDict()
+            hybrid_orderedDict["index"] = cnt
+            hybrid_orderedDict["review"] = review_dict["review"].encode("utf-8")
+            hybrid_orderedDict["clean_review"] = review_dict["clean_review"].encode("utf-8")
+            hybrid_ordered_dict_list.append(hybrid_orderedDict)
+
+        hybrid_json_file.write(json.dumps(hybrid_ordered_dict_list, indent = 4))
+        hybrid_json_file.close()
+
+        if self.verbose:
+            print filename, "'s hybrid is complete"
+
+        """ (5) render location.json containing a dictionaries of two key:list """
         statistics_orderedDict = OrderedDict()
         statistics_orderedDict["positive_statistics"] = self.sentiment_statistics["positive_statistics"]
         statistics_orderedDict["negative_statistics"] = self.sentiment_statistics["negative_statistics"]
@@ -489,6 +519,7 @@ if  __name__ == '__main__':
     process.get_frontend_reviews()
     process.get_backend_reviews()
     process.get_backend_stars_reviews()
+    process.get_hybrid_reviews()
     process.get_sentiment_statistics()
     process.render()
 
