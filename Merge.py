@@ -41,7 +41,7 @@ class Merge:
                         break
                     else:
                         file_cnt += 1
-                        print "Merging " + str(dirpath) + "/" + str(f)
+                        # print "Merging " + str(dirpath) + "/" + str(f)
                         with open(dirpath +"/"+ f) as file:
                             corpus.append(file.read())
 
@@ -91,7 +91,7 @@ class Merge:
                         break
                     else:
                         file_cnt += 1
-                        print "Merging " + str(dirpath) + "/" + str(f)
+                        # print "Merging " + str(dirpath) + "/" + str(f)
                         with open(dirpath +"/"+ f) as file:
                             self.backend_stars_reviews.append(file.read())
             else:
@@ -146,7 +146,7 @@ class Merge:
                         os.remove(dirpath + f)
                         break
                     else:
-                        print "Appending " + str(dirpath) + "/" + str(f) + " into sentiment_statistics"
+                        # print "Appending " + str(dirpath) + "/" + str(f) + " into sentiment_statistics"
                         sentiment_statistics.append(json.load(open(dirpath+"/"+f)))
 
             else:
