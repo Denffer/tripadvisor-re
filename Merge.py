@@ -15,8 +15,10 @@ class Merge:
         self.src_ss = "data/sentiment_statistics/"
 
         self.backend_stars_reviews = []
+        self.all = []
         self.dst = "data/corpora/"
         self.dst_as = "data/corpora/All_Stars/"
+        self.dst_a = "data/corpora/All/"
         self.dst_ss = "data/lexicon/sentiment_statistics.json"
 
     def get_corpora(self):
@@ -62,6 +64,8 @@ class Merge:
         for review in corpus:
             review_cnt += 1
             f_corpus.write(review)
+            # collect all reviews
+            self.all.append(review)
 
             sys.stdout.write("\rStatus: %s / %s"%(review_cnt, corpus_length))
             sys.stdout.flush()
@@ -95,12 +99,12 @@ class Merge:
                 print "-"*80
 
     def render_all_stars(self):
-        """ all backend_stars_reviews in location1~20.txt -> All.txt """
+        """ all backend_stars_reviews in location1~20.txt -> All_Stars.txt """
 
         print "Saving data to: " + self.dst + "\033[1m" + "All_Stars.txt" + "\033[0m"
         review_cnt = 0
         corpus_length = len(self.backend_stars_reviews)
-        f_backend_stars_reviews = open(self.dst_as + "All_Stars.txt", 'w+') # br stands for backend_review
+        f_backend_stars_reviews = open(self.dst_as + "All_Stars.txt", 'w+')
         for review in self.backend_stars_reviews:
             review_cnt += 1
             f_backend_stars_reviews.write(review)
@@ -108,6 +112,23 @@ class Merge:
             sys.stdout.write("\rStatus: %s / %s"%(review_cnt, corpus_length))
             sys.stdout.flush()
 
+        print "\n" + "-"*80
+
+    def render_all(self):
+        """ corpora of all locations -> All.txt """
+
+        print "Saving data to: " + self.dst_a + "\033[1m" + "All.txt" + "\033[0m"
+        cnt = 0
+        length = len(self.all)
+        f_all = open(self.dst_a + "All.txt", 'w+')
+        for review in self.all:
+            cnt += 1
+            f_all.write(review)
+
+            sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+            sys.stdout.flush()
+
+        f_all.close()
         print "\n" + "-"*80
 
     def get_sentiment_statistics(self):
@@ -259,6 +280,7 @@ class Merge:
         dir1 = os.path.dirname(self.dst)
         dir2 = os.path.dirname(self.dst_ss)
         dir3 = os.path.dirname(self.dst_as)
+        dir4 = os.path.dirname(self.dst_a)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
@@ -269,6 +291,9 @@ class Merge:
         if not os.path.exists(dir3):
             print "Creating directory: " + dir3
             os.makedirs(dir3)
+        if not os.path.exists(dir4):
+            print "Creating directory: " + dir4
+            os.makedirs(dir4)
 
         print "-"*80
 
@@ -303,5 +328,6 @@ if __name__ == '__main__':
     merge.get_corpora()
     merge.get_backend_stars_reviews()
     merge.render_all_stars()
+    merge.render_all()
     merge.save_sentiment_statistics()
 
