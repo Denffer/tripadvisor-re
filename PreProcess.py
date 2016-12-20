@@ -101,7 +101,9 @@ class PreProcess:
                 review_ordered_dict["index"] = review_cnt
                 review_ordered_dict["rating"] = review_dict["rating"]
                 """ This is the part where 'title' and 'review' are merged """
-                review_ordered_dict["review"] = review_dict["title"] + ". " + review_dict["review"]
+                review_ordered_dict["title"] = review_dict["title"]
+                review_ordered_dict["review"] = review_dict["review"]
+                #review_ordered_dict["review"] = review_dict["title"] + ". " + review_dict["review"]
                 review_ordered_dict_list.append(review_ordered_dict)
 
             attraction_ordered_dict["reviews"] = review_ordered_dict_list
