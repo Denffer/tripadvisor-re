@@ -8,8 +8,8 @@ class Plot:
         self.input = "bangkok.json"
         self.dst_o = "data/graphic_output/"
 
-        self.src_v2 = "data/line/vectors2/"
-        self.src_ss = "data/line/sentiment_statistics.json"
+        self.src_v2 = "data/vectors2/"
+        self.src_ss = "data/line/enhanced_lexicon.json"
         self.src_fr = "data/frontend_reviews/"
 
         self.json_data = []

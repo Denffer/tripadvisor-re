@@ -9,7 +9,7 @@ class LowerDimension:
 
     def __init__(self):
         self.src_f = sys.argv[1]
-        self.dst = "data/line/vectors2/"
+        self.dst = "data/vectors2/"
 
         self.unique_words = []
 
