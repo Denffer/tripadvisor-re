@@ -142,6 +142,7 @@ class ReviewProcess:
         for review_dict in reviews:
             cnt += 1
             text = review_dict["review"]
+            #print text
             #FIXME Remove accents
             text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore')
             # Just to be sure, rid all website urls written in the review # might slow down the process
@@ -168,6 +169,7 @@ class ReviewProcess:
             #self.mergeNot(text)
             text = re.sub("(\s)+", r" ", text)
 
+            #  print text
             self.clean_reviews.append(text)
             self.ratings.append(review_dict["rating"])
 
@@ -225,7 +227,7 @@ class ReviewProcess:
 
         review_cnt = 0
         review_length = len(self.clean_reviews)
-        for review in self.clean_reviews:
+        for review, review_dict in zip(self.clean_reviews, self.attraction["reviews"]):
             review_cnt += 1
             # lower review to ensure words like 'good' and 'Good' are counted as the same
             review = review.lower()
@@ -233,8 +235,12 @@ class ReviewProcess:
             review = re.sub("(\W|\_)",r" ", review)
             # remove extra spaces
             review = re.sub("(\s)+", r" ", review)
-            """ Replacement | E.g. I love happy temple. -> I love Happy-Temple_Bangkok. """
-            review = re.sub(self.attraction_regexr, self.attraction_al, review, flags = re.IGNORECASE)
+
+            """ Replacement | E.g. I love happy temple. -> I love "title" Happy-Temple_Bangkok "title" . """
+            review = re.sub(self.attraction_regexr, " " + review_dict["title"] + self.attraction_al + review_dict["title"] + " ", review, flags = re.IGNORECASE)
+
+            ## remove all punctuations
+            review = re.sub("(\W) | (\W)",r" ", review)
             # remove extra spaces
             review = re.sub("(\s)+", r" ", review)
             # split review into a list of words
@@ -242,8 +248,8 @@ class ReviewProcess:
             # remove stopwords
             words_stopwords_removed = [w.lower() for w in words if w not in self.stopwords]
             words_stemmed = [self.stemmer.stem(w) if '_' not in w else w for w in words_stopwords_removed]
+
             review = ' '.join(words_stemmed)
-            #print review
             self.backend_reviews.append(review)
 
             if self.verbose:
@@ -277,7 +283,9 @@ class ReviewProcess:
             # remove stopwords
             words_stopwords_removed = [w.lower() for w in words if w not in self.stopwords]
             words_stemmed = [self.stemmer.stem(w) if '_' not in w else w for w in words_stopwords_removed]
+
             review = ' '.join(words_stemmed)
+
             #print review
             self.backend_stars_reviews.append(review)
 
@@ -292,9 +300,9 @@ class ReviewProcess:
 
         review_cnt = 0
         review_length = len(self.clean_reviews)
-        for review, clean_review in zip(self.backend_reviews, self.clean_reviews):
+        for review_dict, review, clean_review in zip(self.attraction["reviews"], self.backend_reviews, self.clean_reviews):
             review_cnt += 1
-            self.hybrid_reviews.append({"review": review, "clean_review": clean_review})
+            self.hybrid_reviews.append({"title": review_dict["title"], "review": review, "clean_review": clean_review})
 
             if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
@@ -307,6 +315,7 @@ class ReviewProcess:
 
         positive = self.lexicon["positive"]
 
+        # FIXME add avg count
         positive_statistics = []
         sentiment_index = 0
         sentiment_length = len(positive)
@@ -448,7 +457,8 @@ class ReviewProcess:
             cnt += 1
             hybrid_orderedDict = OrderedDict()
             hybrid_orderedDict["index"] = cnt
-            hybrid_orderedDict["review"] = review_dict["review"].encode("utf-8")
+            hybrid_orderedDict["title"] = review_dict["title"].encode("utf-8")
+            hybrid_orderedDict["processed_review"] = review_dict["review"].encode("utf-8")
             hybrid_orderedDict["clean_review"] = review_dict["clean_review"].encode("utf-8")
             hybrid_ordered_dict_list.append(hybrid_orderedDict)
 
