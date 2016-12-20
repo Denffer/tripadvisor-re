@@ -13,7 +13,7 @@ class PreProcess:
         self.dst = "data/reviews/"
 
         self.review_count = 0
-        self.dst_log = "data/reviews/_log.txt"
+        self.dst_log = "data/_log.txt"
 
     def walk(self):
         """ recursively load data from ./data | search every file under any directory, if any """
@@ -193,7 +193,7 @@ class PreProcess:
             self.PrintException()
 
     def render_log(self):
-        """ Save log in ./data/raw_data/ for future reference (to be added) """
+        """ Save log in ./data/ for future reference (to be added) """
         print "Saving log file to", '\033[1m' + self.dst_log + '\033[0m'
         f = open(self.dst_log, 'w+')
         f.write("Total Review Count: " + str(self.review_count))
