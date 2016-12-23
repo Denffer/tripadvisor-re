@@ -8,95 +8,97 @@ class PlotRanking:
     """ This program calculate spearmanr and kendalltau """
     def __init__(self):
         # data/ranking/cosine/ or data/ranking/dot/
-        self.src_c = "data/ranking/cosine/"
-        self.src_d = "data/ranking/dot/"
+        self.src = "data/ranking/"
         self.dst_c = "data/graphic_output/sk/cosine/"
         self.dst_d = "data/graphic_output/sk/dot/"
 
         self.cosine_source = []
         self.dot_source = []
+        self.filename = ""
         self.cosine_flag = 1
         self.dot_flag = 1
 
     def get_cosine_ranking(self):
         """ load all json file in data/ranking/cosine/"""
-        print "Loading data from: " + self.src_c
-        for dirpath, dir_list, file_list in os.walk(self.src_c):
+        print "Loading data from: " + self.src
+        for dirpath, dir_list, file_list in os.walk(self.src):
             print "Walking into directory: " + str(dirpath)
 
-            # in case there is a goddamn .DS_Store file
-            if len(file_list) > 0:
-                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+            if "cosine" in dirpath:
+                if len(file_list) > 0:
+                    print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
 
-                file_cnt = 0
-                length = len(file_list)
-                ranking_dicts_list = []
-                spearmanr_list, kendalltau_list = [], []
+                    file_cnt = 0
+                    length = len(file_list)
+                    ranking_dicts_list = []
+                    spearmanr_list, kendalltau_list = [], []
 
-                for f in file_list:
-                    if str(f) == ".DS_Store":
-                        print "Removing " + dirpath + "/" + str(f)
-                        os.remove(dirpath+ "/"+ f)
-                        break
-                    else:
-                        file_cnt += 1
-                        print "Merging " + str(dirpath) + "/" + str(f)
+                    for f in file_list:
+                        # in case there is a goddamn .DS_Store file
+                        if str(f) == ".DS_Store":
+                            print "Removing " + dirpath + "/" + str(f)
+                            os.remove(dirpath+ "/"+ f)
+                            break
+                        else:
+                            file_cnt += 1
+                            print "Merging " + str(dirpath) + "/" + str(f)
 
-                        with open(dirpath +"/"+ f) as file:
-                            filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)-", f).group(1) # E.g. Bangkok
-                            file_data = json.loads(file.read())
+                            with open(dirpath +"/"+ f) as file:
+                                self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)-", f).group(1) # E.g. Bangkok
+                                file_data = json.loads(file.read())
 
-                            ranking_dicts_list.append(file_data)
-                            spearmanr_list.append(self.get_spearmanr(file_data))
-                            kendalltau_list.append(self.get_kendalltau(file_data))
+                                ranking_dicts_list.append(file_data)
+                                spearmanr_list.append(self.get_spearmanr(file_data))
+                                kendalltau_list.append(self.get_kendalltau(file_data))
 
-                #  print "Ranking_dict_list: ", ranking_dicts_list
-                #  print "Spearmanr_list:", spearmanr_list
-                #  print "Kendalltau_list", kendalltau_list
-                self.plot(ranking_dicts_list, spearmanr_list, kendalltau_list, filename)
-            else:
-                print "No file is found"
-                print "-"*80
+                    #  print "Ranking_dict_list: ", ranking_dicts_list
+                    #  print "Spearmanr_list:", spearmanr_list
+                    #  print "Kendalltau_list", kendalltau_list
+                    self.plot(ranking_dicts_list, spearmanr_list, kendalltau_list, self.filename)
+                else:
+                    print "No file is found"
+                    print "-"*80
 
     def get_dot_ranking(self):
         """ load all json file in data/ranking/dot/ """
-        print "Loading data from: " + self.src_d
-        for dirpath, dir_list, file_list in os.walk(self.src_d):
+        print "Loading data from: " + self.src
+        for dirpath, dir_list, file_list in os.walk(self.src):
             print "Walking into directory: " + str(dirpath)
 
-            # in case there is a goddamn .DS_Store file
-            if len(file_list) > 0:
-                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+            if "dot" in dirpath:
+                if len(file_list) > 0:
+                    print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
 
-                file_cnt = 0
-                length = len(file_list)
-                ranking_dicts_list = []
-                spearmanr_list, kendalltau_list = [], []
-                for f in file_list:
-                    if str(f) == ".DS_Store":
-                        print "Removing " + dirpath + str(f)
-                        os.remove(dirpath+ "/"+ f)
-                        break
-                    else:
-                        file_cnt += 1
-                        print "Merging " + str(dirpath) + "/" + str(f)
+                    file_cnt = 0
+                    length = len(file_list)
+                    ranking_dicts_list = []
+                    spearmanr_list, kendalltau_list = [], []
+                    for f in file_list:
+                        # in case there is a goddamn .DS_Store file
+                        if str(f) == ".DS_Store":
+                            print "Removing " + dirpath + str(f)
+                            os.remove(dirpath+ "/"+ f)
+                            break
+                        else:
+                            file_cnt += 1
+                            print "Merging " + str(dirpath) + "/" + str(f)
 
-                        with open(dirpath +"/"+ f) as file:
-                            filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)-", f).group(1) # E.g. Bangkok
-                            file_data = json.loads(file.read())
+                            with open(dirpath +"/"+ f) as file:
+                                self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)-", f).group(1) # E.g. Bangkok
+                                file_data = json.loads(file.read())
 
-                            ranking_dicts_list.append(file_data)
-                            spearmanr_list.append(self.get_spearmanr(file_data))
-                            kendalltau_list.append(self.get_kendalltau(file_data))
+                                ranking_dicts_list.append(file_data)
+                                spearmanr_list.append(self.get_spearmanr(file_data))
+                                kendalltau_list.append(self.get_kendalltau(file_data))
 
-                #  print "Ranking_dict_list: ", ranking_dicts_list
-                #  print "Spearmanr_list:", spearmanr_list
-                #  print "Kendalltau_list", kendalltau_list
-                self.plot(ranking_dicts_list, spearmanr_list, kendalltau_list, filename)
+                    #  print "Ranking_dict_list: ", ranking_dicts_list
+                    #  print "Spearmanr_list:", spearmanr_list
+                    #  print "Kendalltau_list", kendalltau_list
+                    self.plot(ranking_dicts_list, spearmanr_list, kendalltau_list, self.filename)
 
-            else:
-                print "No file is found"
-                print "-"*80
+                else:
+                    print "No file is found"
+                    print "-"*80
 
     def get_spearmanr(self, x):
         """ Get spearmanr correlation """
@@ -163,6 +165,7 @@ class PlotRanking:
             l = ranking_dicts["lambda"]
             try:
                 line1, = plt.plot( l, spearmanr_score, 'bo', label='Spearmanr')
+                #print type(line1)
                 line2, = plt.plot( l, kendalltau_score, 'go', label='Kendalltau')
 
                 plt.text( l+0.001, spearmanr_score+0.001, str(spearmanr_score), fontsize=8)

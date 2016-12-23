@@ -18,12 +18,11 @@ class Distance:
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src_fr = "data/frontend_reviews/" + self.filename + "/"
 
-        self.dst_dc = "data/distance/cosine/" + self.filename + "/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_dd = "data/distance/dot/" + self.filename + "/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_rc = "data/ranking/cosine/" + self.filename + "/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_rd = "data/ranking/dot/" + self.filename + "/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_r = "data/ranking/" + self.filename + ".json"
         self.verbose = 1
+        self.dst_dc = "data/distance/" + self.filename + "/cosine/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        self.dst_dd = "data/distance/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        self.dst_rc = "data/ranking/" + self.filename + "/cosine/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        self.dst_rd = "data/ranking/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
         self.cosine_flag = 1
         self.dot_flag = 1
 
@@ -430,7 +429,6 @@ class Distance:
         dir2 = os.path.dirname(self.dst_dd)
         dir3 = os.path.dirname(self.dst_rc)
         dir4 = os.path.dirname(self.dst_rd)
-        dir5 = os.path.dirname(self.dst_r)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
@@ -444,9 +442,6 @@ class Distance:
         if not os.path.exists(dir4):
             print "Creating directory: " + dir4
             os.makedirs(dir4)
-        if not os.path.exists(dir5):
-            print "Creating directory: " + dir5
-            os.makedirs(dir5)
 
     def render(self):
         """ save every cosine_list for top1~5 as json file"""
@@ -725,7 +720,7 @@ class Distance:
             score_list = []
             for p_cos_word_dict, n_cos_word_dict in zip(positive_cosine_topN, negative_cosine_topN):
                 #score = p_cos_word_dict["cos_score"]
-                score = p_cos_word_dict["cos_score"] - n_cos_word_dict["cos_score"]
+                score = p_cos_word_dict["cos_score"] #- n_cos_word_dict["cos_score"]
                 score_list.append({"attraction_name": p_cos_word_dict["query"], "score": score})
 
             # derive ranking_list from a the unsorted score_list
@@ -761,7 +756,7 @@ class Distance:
             score_list = []
             for p_dot_word_dict, n_dot_word_dict in zip(positive_dot_topN, negative_dot_topN):
                 #score = p_dot_word_dict["dot_score"]
-                score = p_dot_word_dict["dot_score"] - n_dot_word_dict["dot_score"]
+                score = p_dot_word_dict["dot_score"] #- n_dot_word_dict["dot_score"]
                 score_list.append({"attraction_name": p_dot_word_dict["query"], "score": score})
 
             # derive ranking_list from a the unsorted score_list
