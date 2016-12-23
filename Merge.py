@@ -10,8 +10,10 @@ class Merge:
         (3) Merge data/sentiment_statistics/*.json into sentiment_statistics.json  """
 
     def __init__(self):
-        self.src_br = "data/backend_reviews/"
-        self.src_bsr = "data/backend_stars_reviews/"
+        #self.src_br = "data/backend_reviews/"
+        self.src_br = "data/backend_reviews/New_York_City/"
+        #self.src_bsr = "data/backend_stars_reviews/"
+        self.src_bsr = "data/backend_stars_reviews/New_York_City"
         self.src_ss = "data/sentiment_statistics/"
 
         self.backend_stars_reviews = []
@@ -239,6 +241,8 @@ class Merge:
 
     def save_sentiment_statistics(self):
         """ put keys in order and render json file """
+        reload(sys)
+        sys.setdefaultencoding("utf-8")
 
         positive_statistics, negative_statistics = self.get_merged_sentiment_statistics()
         print "Saving data to:", "\033[1m" + self.dst_ss + "\033[0m"
