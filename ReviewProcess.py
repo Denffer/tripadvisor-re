@@ -16,7 +16,7 @@ class ReviewProcess:
     def __init__(self):
         self.src = sys.argv[1]  # E.g. data/reviews/bangkok_3.json
         print "Processing " + self.src[:12] +"\033[1m" + self.src[12:] + "\033[0m"
-        self.verbose = 1
+        self.verbose = 0
 
         self.attraction = {}
         self.attraction_name, self.attraction_regexr, self.attraction_al, self.attraction_marked = "", "", "", ""
@@ -249,7 +249,7 @@ class ReviewProcess:
             words_stopwords_removed = [w.lower() for w in words if w not in self.stopwords]
             words_stemmed = [self.stemmer.stem(w) if '_' not in w else w for w in words_stopwords_removed]
 
-            review = ' '.join(words_stemmed)
+            review = ' '.join(words_stemmed).encode('utf-8').strip()
             self.backend_reviews.append(review)
 
             if self.verbose:
@@ -470,8 +470,8 @@ class ReviewProcess:
 
         """ (5) render location.json containing a dictionaries of two key:list """
         statistics_orderedDict = OrderedDict()
-        statistics_orderedDict["positive_statistics"] = self.sentiment_statistics["positive_statistics"]
-        statistics_orderedDict["negative_statistics"] = self.sentiment_statistics["negative_statistics"]
+        statistics_orderedDict["positive_statistics"] = self.sentiment_statistics["positive_statistics"].encode("utf-8")
+        statistics_orderedDict["negative_statistics"] = self.sentiment_statistics["negative_statistics"].encode("utf-8")
 
         sentiment_statistics_json = open(self.dst_sentiment_statistics + "/" + self.attraction["location"].replace("-","_") + "/" + filename + ".json", "w+")
         sentiment_statistics_json.write(json.dumps(statistics_orderedDict, indent = 4, cls=NoIndentEncoder))
