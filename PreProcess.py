@@ -13,7 +13,7 @@ class PreProcess:
         self.dst = "data/reviews/"
 
         self.review_count = 0
-        self.dst_log = "data/_log.txt"
+        self.dst_log = "data/log.txt"
 
     def walk(self):
         """ recursively load data from ./data | search every file under any directory, if any """
@@ -43,16 +43,15 @@ class PreProcess:
                 pass
             print '-'*100
 
-    def create_dir(self):
+    def create_dir(self, location):
         """ create the directory if not exist """
-        dir1 = os.path.dirname(self.dst)
+        dir1 = os.path.dirname(self.dst + "/" + location + "/")
         if not os.path.exists(dir1):
             print "Making directory: " + dir1
             os.makedirs(dir1)
 
     def render(self, data):
         """ Check data | if it is tour_dict_list, then merge | if it is attraction, then render """
-        self.create_dir()
 
         if isinstance(data, dict):
             attraction = data
@@ -63,14 +62,13 @@ class PreProcess:
             else:
                 file_name = attraction["location"] + "_" + attraction["ranking"] + ".json"
 
-            print "Saving json file: " + '\033[1m' + file_name + '\033[0m' +" into data/reviews/"
-
             attraction_ordered_dict = OrderedDict()
 
             """ Refine location | E.g. Hong_Kong, (Nickname). ->  Hong-Kong """ #FIXME on whether to lower()
             location = attraction["location"].replace("_","-").replace("&","and").replace("\'","").replace(".","")
             location = re.sub(r'\(.*?\)', r'', location)
             attraction_ordered_dict["location"] = location
+            self.create_dir(location)
 
             """ Refine attraction_name | E.g. Happy'_Temple_(Nickname). -> Happy-Temple """
             attraction_name = attraction["attraction_name"].replace("_","-").replace("-"," ").replace("\'", "").replace(".","").replace(",","")
@@ -112,7 +110,8 @@ class PreProcess:
 
             attraction_ordered_dict["reviews"] = review_ordered_dict_list
 
-            f = open(self.dst+'/'+file_name, 'w+')
+            print "Saving json file: " + '\033[1m' + file_name + '\033[0m' +" into data/reviews/" + location + "/"
+            f = open(self.dst+'/'+location+'/'+file_name, 'w+')
             f.write(json.dumps(attraction_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
         elif isinstance(data, list):
@@ -129,6 +128,7 @@ class PreProcess:
             """ Refine location | E.g. Hong_Kong, (Nickname). ->  Hong-Kong """ #FIXME on whether to lower()
             location = tour_list[0]["location"].replace("_","-").replace("&","and").replace("\'","").replace(".","")
             location = re.sub(r'\(.*?\)', r'', location)
+            self.create_dir(location)
             attraction_ordered_dict["location"] = location
 
             """ Refine attraction_name | E.g. Happy'_Temple, (Nickname). -> Happy-Temple """
@@ -199,8 +199,8 @@ class PreProcess:
 
             attraction_ordered_dict["reviews"] = review_ordered_dict_list
 
-            print "Saving json file: " + '\033[1m' + file_name + '\033[0m' +" into data/reviews/"
-            f = open(self.dst+'/'+file_name, 'w+')
+            print "Saving json file: " + '\033[1m' + file_name + '\033[0m' +" into data/reviews/" + location + "/"
+            f = open(self.dst+'/'+location+'/'+file_name, 'w+')
             f.write(json.dumps(attraction_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
         else:
