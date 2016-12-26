@@ -91,7 +91,7 @@ class PreProcess2:
             else:
                 file_name = attraction["location"] + "_" + str(index) + ".json"
 
-            print "Saving data to: " + self.dst + "\033[1m" + file_name + ".json" + "\033[0m"
+            print "Saving data to: " + self.dst + "\033[1m" + file_name + "\033[0m"
             f_out = open(self.dst+file_name, 'w+')
             f_out.write( json.dumps( ordered_dict, indent = 4, cls=NoIndentEncoder))
 
