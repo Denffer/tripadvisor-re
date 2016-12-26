@@ -16,7 +16,7 @@ class ReviewProcess:
     def __init__(self):
         self.src = sys.argv[1]  # E.g. data/reviews/bangkok_3.json
         print "Processing " + self.src[:12] +"\033[1m" + self.src[12:] + "\033[0m"
-        self.verbose = 1
+        self.verbose = 0
 
         self.attraction = {}
         self.attraction_name, self.attraction_regexr, self.attraction_al, self.attraction_marked = "", "", "", ""
@@ -167,7 +167,6 @@ class ReviewProcess:
 
             text = text.replace("\'"," ")
             # Search for negation and merge them | E.g. not bad -> not-bad
-            #self.mergeNot(text)
             text = re.sub("(\s)+", r" ", text)
 
             #  print text
@@ -177,18 +176,6 @@ class ReviewProcess:
             if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(cnt, review_length))
                 sys.stdout.flush()
-
-    def mergeNot(self, text):
-        """ Search for negation and merge them | E.g. not bad -> not-bad """
-        positive = []
-        for word_dict in self.lexicon["positive"]:
-            negation = "not-" + word_dict["stemmed_word"]
-            text = re.sub("not " + word_dict["stemmed_word"], negation, text, flags = re.IGNORECASE)
-
-        negative = []
-        for word_dict in self.lexicon["negative"]:
-            negation = "not-" + word_dict["stemmed_word"]
-            text = re.sub("not " + word_dict["stemmed_word"], negation, text, flags = re.IGNORECASE)
 
     def get_frontend_reviews(self):
         """ Match attraction by attraction_regexr and replace them by attraction_marked """
@@ -239,11 +226,9 @@ class ReviewProcess:
 
             """ Replacement | E.g. I love happy temple. -> I love "title" Happy-Temple_Bangkok "title" . """
             title = review_dict["title"]
-            review = re.sub(self.attraction_regexr, " " + title + self.attraction_al + title + " ", review, flags = re.IGNORECASE)
+            review = re.sub(self.attraction_regexr, self.attraction_al, review, flags = re.IGNORECASE)
             # remove accent again for title
 
-            ## remove all punctuations
-            review = re.sub("(\W) | (\W)",r" ", review)
             # remove extra spaces
             review = re.sub("(\s)+", r" ", review)
             # split review into a list of words
