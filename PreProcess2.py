@@ -87,9 +87,9 @@ class PreProcess2:
 
             """ render out new ranking as json file in data/reranked_reviews/ """
             if int(index) < 10:
-                file_name = attraction["location"] + "_0" + str(index) + ".json"
+                file_name = attraction["location"].replace("-", "_") + "_0" + str(index) + ".json"
             else:
-                file_name = attraction["location"] + "_" + str(index) + ".json"
+                file_name = attraction["location"].replace("-", "_") + "_" + str(index) + ".json"
 
             print "Saving data to: " + self.dst + "\033[1m" + file_name + "\033[0m"
             f_out = open(self.dst+file_name, 'w+')
