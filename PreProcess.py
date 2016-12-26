@@ -92,6 +92,10 @@ class PreProcess:
 
             attraction_ordered_dict["rating_stats"] = NoIndent(rating_stats_dict)
 
+            x = attraction["rating_stats"]
+            score = float(int(x["excellent"]) * 5 + int(x["very good"]) * 4 + int(x["average"]) *3 + int(x["poor"]) * 2 + int(x["terrible"])) / float(int(x["excellent"]) + int(x["very good"]) + int(x["average"]) + int(x["poor"]) + int(x["terrible"]))
+            attraction_ordered_dict["score"] = score
+
             review_ordered_dict_list = []
             review_cnt = 0
             for review_dict in attraction["reviews"]:
@@ -102,7 +106,7 @@ class PreProcess:
                 review_ordered_dict["rating"] = review_dict["rating"]
                 """ This is the part where 'title' and 'review' are merged """
                 review_ordered_dict["title"] = review_dict["title"]
-                review_ordered_dict["review"] = review_dict["review"]
+                review_ordered_dict["review"] = attraction_name + review_dict["title"] + ". " + review_dict["review"]
                 #review_ordered_dict["review"] = review_dict["title"] + ". " + review_dict["review"]
                 review_ordered_dict_list.append(review_ordered_dict)
 
@@ -162,14 +166,22 @@ class PreProcess:
             attraction_ordered_dict["review_count"] = review_count
 
             rating_stats_dict = OrderedDict()
-            rating_stats_dict["excellent"] = sum([int(str(i).replace(",","")) for i in excellent_list])
+            excellent = sum([int(str(i).replace(",","")) for i in excellent_list])
+            rating_stats_dict["excellent"] = excellent
+            very_good = sum([int(str(i).replace(",","")) for i in very_good_list])
             rating_stats_dict["very good"] = sum([int(str(i).replace(",","")) for i in very_good_list])
+            average = sum([int(str(i).replace(",","")) for i in average_list])
             rating_stats_dict["average"] = sum([int(str(i).replace(",","")) for i in average_list])
+            poor = sum([int(str(i).replace(",","")) for i in poor_list])
             rating_stats_dict["poor"] = sum([int(str(i).replace(",","")) for i in poor_list])
+            terrible = sum([int(str(i).replace(",","")) for i in terrible_list])
             rating_stats_dict["terrible"] = sum([int(str(i).replace(",","")) for i in terrible_list])
             attraction_ordered_dict["rating_stats"] = NoIndent(rating_stats_dict)
 
             attraction_ordered_dict["sub_attraction_list"] = NoIndent(sub_attraction_list)
+
+            score = float(int(excellent)*5 + int(very_good)*4 + int(average)*3 + int(poor)*2 + int(terrible)) / float(int(excellent) + int(very_good) + int(average) + int(poor) + int(terrible))
+            attraction_ordered_dict["score"] = score
 
             review_ordered_dict_list = []
             review_cnt = 0
@@ -182,7 +194,7 @@ class PreProcess:
                 """ This is the part where 'title' and 'review' are merged """
                 #review_ordered_dict["review"] = review_dict["title"] + ". " + review_dict["review"]
                 review_ordered_dict["title"] = review_dict["title"]
-                review_ordered_dict["review"] = review_dict["review"]
+                review_ordered_dict["review"] = attraction_name + review_dict["title"] + ". " + review_dict["review"]
                 review_ordered_dict_list.append(review_ordered_dict)
 
             attraction_ordered_dict["reviews"] = review_ordered_dict_list
