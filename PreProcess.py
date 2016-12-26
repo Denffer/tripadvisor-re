@@ -94,7 +94,7 @@ class PreProcess:
 
             x = attraction["rating_stats"]
             score = float(int(x["excellent"]) * 5 + int(x["very good"]) * 4 + int(x["average"]) *3 + int(x["poor"]) * 2 + int(x["terrible"])) / float(int(x["excellent"]) + int(x["very good"]) + int(x["average"]) + int(x["poor"]) + int(x["terrible"]))
-            attraction_ordered_dict["score"] = score
+            attraction_ordered_dict["ranking_score"] = score
 
             review_ordered_dict_list = []
             review_cnt = 0
@@ -181,7 +181,7 @@ class PreProcess:
             attraction_ordered_dict["sub_attraction_list"] = NoIndent(sub_attraction_list)
 
             score = float(int(excellent)*5 + int(very_good)*4 + int(average)*3 + int(poor)*2 + int(terrible)) / float(int(excellent) + int(very_good) + int(average) + int(poor) + int(terrible))
-            attraction_ordered_dict["score"] = score
+            attraction_ordered_dict["ranking_score"] = score
 
             review_ordered_dict_list = []
             review_cnt = 0
