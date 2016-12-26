@@ -10,10 +10,10 @@ class Merge:
         (3) Merge data/sentiment_statistics/*.json into sentiment_statistics.json  """
 
     def __init__(self):
-        #self.src_br = "data/backend_reviews/"
-        self.src_br = "data/backend_reviews/New_York_City/"
-        #self.src_bsr = "data/backend_stars_reviews/"
-        self.src_bsr = "data/backend_stars_reviews/New_York_City"
+        self.src_br = "data/backend_reviews/"
+        #self.src_br = "data/backend_reviews/New_York_City/"
+        self.src_bsr = "data/backend_stars_reviews/"
+        #self.src_bsr = "data/backend_stars_reviews/New_York_City"
         self.src_ss = "data/sentiment_statistics/"
 
         self.backend_stars_reviews = []
