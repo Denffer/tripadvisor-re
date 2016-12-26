@@ -7,7 +7,7 @@ class PreProcess2:
 
     def __init__(self):
         self.src = "data/reviews/"
-        self.dst = "data/reranked_corpora/"
+        self.dst = "data/reranked_reviews/"
 
     def get_attractions(self):
         """ load all reviews in data/reviews/ and merge them """
@@ -31,13 +31,13 @@ class PreProcess2:
                         file_cnt += 1
                         # print "Merging " + str(dirpath) + "/" + str(f)
                         with open(dirpath +"/"+ f) as file:
-                            attractions.append(json.load(file.read()))
+                            attractions.append(json.load(file))
+
+                self.rerank(attractions)
 
             else:
                 print "No file is found"
                 print "-"*80
-
-            self.rerank(attractions)
 
         print "Done"
 
@@ -55,7 +55,7 @@ class PreProcess2:
 
             index += 1
             ordered_dict = OrderedDict()
-            ordered_dict["location"] = location
+            ordered_dict["location"] = attraction["location"]
             ordered_dict["attraction_name"] = attraction["attraction_name"]
             ordered_dict["ranking_score"] = attraction["ranking_score"]
             ordered_dict["reranked_ranking"] = index
@@ -82,8 +82,8 @@ class PreProcess2:
             ordered_dict["review_count"] = attraction["review_count"]
             ordered_dict["reviews"] = review_ordered_dict_list
 
-            sys.stdout.write("\rStatus: %s / %s"%(index, attraction_length))
-            sys.stdout.flush()
+            #sys.stdout.write("\rStatus: %s / %s"%(index, attraction_length))
+            #sys.stdout.flush()
 
             """ render out new ranking as json file in data/reranked_reviews/ """
             if int(index) < 10:
@@ -91,11 +91,11 @@ class PreProcess2:
             else:
                 file_name = attraction["location"] + "_" + str(index) + ".json"
 
-            print "Saving data to: " + self.dst + "\033[1m" + ".json" + "\033[0m"
+            print "Saving data to: " + self.dst + "\033[1m" + file_name + ".json" + "\033[0m"
             f_out = open(self.dst+file_name, 'w+')
             f_out.write( json.dumps( ordered_dict, indent = 4, cls=NoIndentEncoder))
 
-        print "\n" + "-"*80
+        print "-"*80
 
     def create_dirs(self):
         """ create the directory if not exist"""
