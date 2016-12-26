@@ -76,7 +76,9 @@ class PreProcess2:
                 review_cnt += 1
                 review_ordered_dict = OrderedDict()
                 review_ordered_dict['index'] = review_cnt
-                review_ordered_dict['review'] = review
+                review_ordered_dict['rating'] = review["rating"]
+                review_ordered_dict['title'] = review["title"]
+                review_ordered_dict['review'] = review["review"]
                 review_ordered_dict_list.append(review_ordered_dict)
 
             ordered_dict["review_count"] = attraction["review_count"]
