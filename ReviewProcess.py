@@ -401,7 +401,9 @@ class ReviewProcess:
         frontend_orderedDict = OrderedDict()
         frontend_orderedDict["location"] = self.attraction["location"]
         frontend_orderedDict["attraction_name"] = self.attraction["attraction_name"]
-        frontend_orderedDict["ranking"] = self.attraction["ranking"]
+        frontend_orderedDict["ranking_score"] = self.attraction["ranking_score"]
+        frontend_orderedDict["rerank_ranking"] = self.attraction["rerank_ranking"]
+        frontend_orderedDict["original_ranking"] = self.attraction["original_ranking"]
         frontend_orderedDict["avg_rating"] = self.attraction["avg_rating"]
 
         rating_stats_dict = OrderedDict()
