@@ -237,7 +237,9 @@ class ReviewProcess:
             review = re.sub("(\s)+", r" ", review)
 
             """ Replacement | E.g. I love happy temple. -> I love "title" Happy-Temple_Bangkok "title" . """
-            review = re.sub(self.attraction_regexr, " " + review_dict["title"] + self.attraction_al + review_dict["title"] + " ", review, flags = re.IGNORECASE)
+            title = review_dict["title"]
+            review = re.sub(self.attraction_regexr, " " + title + self.attraction_al + title + " ", review, flags = re.IGNORECASE)
+            # remove accent again for title
 
             ## remove all punctuations
             review = re.sub("(\W) | (\W)",r" ", review)
@@ -323,7 +325,7 @@ class ReviewProcess:
             sentiment_index += 1
             sentiment_count = 0
             for review in self.backend_reviews:
-                sentiment_count += review.count(" " + word_dict["stemmed_word"] + " ")
+                sentiment_count += review.count(" " + word_dict["stemmed_word"].encode("utf-8") + " ")
             orderedDict = OrderedDict()
             orderedDict["index"] = sentiment_index
             orderedDict["count"] = sentiment_count
@@ -347,7 +349,7 @@ class ReviewProcess:
             sentiment_index += 1
             sentiment_count = 0
             for review in self.backend_reviews:
-                sentiment_count += review.count(" " + word_dict["stemmed_word"] + " ")
+                sentiment_count += review.count(" " + word_dict["stemmed_word"].encode("utf-8") + " ")
             orderedDict = OrderedDict()
             orderedDict["index"] = sentiment_index
             orderedDict["count"] = sentiment_count
@@ -386,6 +388,9 @@ class ReviewProcess:
 
     def render(self):
         """ render frontend_review & backend_reviews & sentiment_statistics """
+        reload(sys)
+        sys.setdefaultencoding("utf-8")
+
         if self.verbose:
             print "\n" + "-"*80
             print "Saving files"
@@ -470,8 +475,8 @@ class ReviewProcess:
 
         """ (5) render location.json containing a dictionaries of two key:list """
         statistics_orderedDict = OrderedDict()
-        statistics_orderedDict["positive_statistics"] = self.sentiment_statistics["positive_statistics"].encode("utf-8")
-        statistics_orderedDict["negative_statistics"] = self.sentiment_statistics["negative_statistics"].encode("utf-8")
+        statistics_orderedDict["positive_statistics"] = self.sentiment_statistics["positive_statistics"]
+        statistics_orderedDict["negative_statistics"] = self.sentiment_statistics["negative_statistics"]
 
         sentiment_statistics_json = open(self.dst_sentiment_statistics + "/" + self.attraction["location"].replace("-","_") + "/" + filename + ".json", "w+")
         sentiment_statistics_json.write(json.dumps(statistics_orderedDict, indent = 4, cls=NoIndentEncoder))
