@@ -167,7 +167,7 @@ class ReviewProcess:
             text = re.sub(r"n't", " not", text)
             text = re.sub(r"'ll", " will", text)
 
-            text = text.replace("\'"," ")
+            text = text.replace("\'","")
             # Search for negation and merge them | E.g. not bad -> not-bad
             text = re.sub("(\s)+", r" ", text)
 
@@ -418,7 +418,7 @@ class ReviewProcess:
 
         frontend_orderedDict["review_with_attraction_mentioned_count"] = len(self.frontend_reviews)
         frontend_orderedDict["avg_sentiment_counts"] = self.avg_positive_sentiment_count + self.avg_negative_sentiment_count
-        frontend_orderedDict["avg_word_counts"] = float(self.total_review_count) / float(len(self.backend_reviews))
+        frontend_orderedDict["avg_word_counts"] = float(self.total_words_count) / float(len(self.backend_reviews))
 
         review_ordered_dict_list = []
         review_cnt = 0
