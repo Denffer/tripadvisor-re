@@ -14,8 +14,9 @@ class ReviewProcess:
     """
 
     def __init__(self):
-        self.src = sys.argv[1]  # E.g. data/reviews/bangkok_3.json
-        print "Processing " + self.src[:12] +"\033[1m" + self.src[12:] + "\033[0m"
+        self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
+        filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+\.json)", self.src).group(1)
+        print "Processing " +"\033[1m" + filename + "\033[0m"
         self.verbose = 0
 
         self.attraction = {}
@@ -402,7 +403,7 @@ class ReviewProcess:
         frontend_orderedDict["location"] = self.attraction["location"]
         frontend_orderedDict["attraction_name"] = self.attraction["attraction_name"]
         frontend_orderedDict["ranking_score"] = self.attraction["ranking_score"]
-        frontend_orderedDict["rerank_ranking"] = self.attraction["rerank_ranking"]
+        frontend_orderedDict["reranked_ranking"] = self.attraction["reranked_ranking"]
         frontend_orderedDict["original_ranking"] = self.attraction["original_ranking"]
         frontend_orderedDict["avg_rating"] = self.attraction["avg_rating"]
 

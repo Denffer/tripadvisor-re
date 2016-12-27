@@ -46,7 +46,7 @@ class PreProcess2:
 
         print "Processing: " + "\033[1m" + attractions[0]["location"] + "\033[0m"
         # rerank by score
-        reranked_attractions = sorted(attractions, key=lambda k: k['ranking_score'])
+        reranked_attractions = sorted(attractions, key=lambda k: k['ranking_score'], reverse = True)
 
 
         index = 0
