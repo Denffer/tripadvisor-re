@@ -26,15 +26,20 @@ class Distance:
         self.cosine_flag = 1
         self.dot_flag = 1
 
+<<<<<<< HEAD
         self.topN = 1000
         self.topN_max = 20
+=======
+        self.topN = 200
+        self.topN_max = 5
+>>>>>>> c914d883408daaac0f2d1ab30f7934ce1b083ea2
         self.queries = []
         self.extreme_positive, self.strong_positive, self.moderate_positive = [], [], []
         self.extreme_negative, self.strong_negative, self.moderate_negative = [], [], []
         self.vocab_size = 0
         self.dimension_size = 0
 
-        self.attractions = {}
+        self.attractions, self.attractions2 = {}, {}
 	self.unique_words = {}
         self.vectors200 = []
         self.extreme_positive_vectors200, self.strong_positive_vectors200, self.moderate_positive_vectors200 = [], [], []
@@ -97,8 +102,11 @@ class Distance:
                             attraction = json.load(file)
                             # attraction_al => attraction append location E.g. Happy-Temple_Bangkok
                             attraction_al = attraction["attraction_name"].lower() + "_" + attraction["location"].lower()
-                            attraction_ranking = attraction["ranking"]
-                            self.attractions.update({attraction_al: attraction_ranking})
+                            # attraction_ranking = attraction["ranking"]
+                            reranked_ranking = attraction["reranked_ranking"]
+                            self.attractions.update({attraction_al: reranked_ranking})
+                            original_ranking = attraction["original_ranking"]
+                            self.attractions2.update({attraction_al: original_ranking})
             else:
                 if self.verbose:
                     print "No file is found"
@@ -229,7 +237,7 @@ class Distance:
             # generate cosine score
             #cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
             cos_score = extreme_cos_score
-            print "positive:", cos_score
+            print "positive cosine score:", cos_score
 
             positive_cosine_topN.append({"query": query,
                 "extreme_positive_topN_cosine_similarity": extreme_word_dict_list,
@@ -288,8 +296,8 @@ class Distance:
 
             # generate cosine score
             #cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
-            cos_score = extreme_cos_score
-            print "negative:", cos_score
+            cos_socre = extreme_cos_score
+            print "negative cosine score:", cos_score
 
             negative_cosine_topN.append({"query": query,
                 "extreme_negative_topN_cosine_similarity": extreme_word_dict_list,
@@ -357,6 +365,7 @@ class Distance:
             # generate dot score
             #dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
             dot_score = extreme_dot_prod
+            print "positive dot score:", dot_score
 
             positive_dot_topN.append({"query": query,
                 "extreme_positive_topN_dot_product": extreme_word_dict_list,
@@ -416,6 +425,7 @@ class Distance:
             # generate dot score
             #dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
             dot_score = extreme_dot_prod
+            print "Negative dot score:", dot_score
 
             negative_dot_topN.append({"query": query,
                 "extreme_negative_topN_dot_product": extreme_word_dict_list,
@@ -736,8 +746,9 @@ class Distance:
                 ranking += 1
                 rank_ordered_dict = OrderedDict()
                 rank_ordered_dict['attraction_name'] = rank_dict['attraction_name']
-                rank_ordered_dict['ranking'] = str(ranking)
-                rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
+                rank_ordered_dict['computed_ranking'] = str(ranking)
+                rank_ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
+                rank_ordered_dict['original_ranking'] = self.attractions2[rank_dict['attraction_name']]
                 rank_ordered_dict['score'] = rank_dict['score']
                 processed_ranking_list.append(rank_ordered_dict)
             location_ordered_dict['cosine_ranking'] = processed_ranking_list
@@ -772,8 +783,9 @@ class Distance:
                 ranking += 1
                 rank_ordered_dict = OrderedDict()
                 rank_ordered_dict['attraction_name'] = rank_dict['attraction_name']
-                rank_ordered_dict['ranking'] = str(ranking)
-                rank_ordered_dict['original_ranking'] = self.attractions[rank_dict['attraction_name']]
+                rank_ordered_dict['computed_ranking'] = str(ranking)
+                rank_ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
+                rank_ordered_dict['original_ranking'] = self.attractions2[rank_dict['attraction_name']]
                 rank_ordered_dict['score'] = rank_dict['score']
                 processed_ranking_list.append(rank_ordered_dict)
             location_ordered_dict['dot_ranking'] = processed_ranking_list
