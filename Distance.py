@@ -26,8 +26,8 @@ class Distance:
         self.cosine_flag = 1
         self.dot_flag = 1
 
-        self.topN = 200
-        self.topN_max = 10
+        self.topN = 1000
+        self.topN_max = 20
         self.queries = []
         self.extreme_positive, self.strong_positive, self.moderate_positive = [], [], []
         self.extreme_negative, self.strong_negative, self.moderate_negative = [], [], []
@@ -126,7 +126,7 @@ class Distance:
             cnt += 1
             # (1) extreme_positive
             for word_dict in positive["extreme_positive"]:
-                if word_dict["stemmed_word"] == key:
+                if word_dict["stemmed_word"] == key.decode("utf-8"):
                     self.extreme_positive.append(word_dict)
                     self.extreme_positive_vectors200.append(self.vectors200[value])
             # (2) strong_positive
@@ -227,7 +227,8 @@ class Distance:
             moderate_cos_score =  self.tuning_lambda * sum(moderate_topN_cos_sim_list[:self.topN_max])/len(moderate_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_cos_sim_list)/len(moderate_topN_cos_sim_list)
 
             # generate cosine score
-            cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
+            #cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
+            cos_score = extreme_cos_score
             print "positive:", cos_score
 
             positive_cosine_topN.append({"query": query,
@@ -286,7 +287,8 @@ class Distance:
             moderate_cos_score =  self.tuning_lambda * sum(moderate_topN_cos_sim_list[:self.topN_max])/len(moderate_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_cos_sim_list)/len(moderate_topN_cos_sim_list)
 
             # generate cosine score
-            cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
+            #cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
+            cos_score = extreme_cos_score
             print "negative:", cos_score
 
             negative_cosine_topN.append({"query": query,
@@ -353,7 +355,8 @@ class Distance:
             moderate_dot_prod =  self.tuning_lambda * sum(moderate_topN_dot_prod_list[:self.topN_max])/len(moderate_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_dot_prod_list)/len(moderate_topN_dot_prod_list)
 
             # generate dot score
-            dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
+            #dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
+            dot_score = extreme_dot_prod
 
             positive_dot_topN.append({"query": query,
                 "extreme_positive_topN_dot_product": extreme_word_dict_list,
@@ -411,7 +414,8 @@ class Distance:
             moderate_dot_prod =  self.tuning_lambda * sum(moderate_topN_dot_prod_list[:self.topN_max])/len(moderate_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_dot_prod_list)/len(moderate_topN_dot_prod_list)
 
             # generate dot score
-            dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
+            #dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
+            dot_score = extreme_dot_prod
 
             negative_dot_topN.append({"query": query,
                 "extreme_negative_topN_dot_product": extreme_word_dict_list,
