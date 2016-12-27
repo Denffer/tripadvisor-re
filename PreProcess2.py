@@ -48,7 +48,6 @@ class PreProcess2:
         # rerank by score
         reranked_attractions = sorted(attractions, key=lambda k: k['ranking_score'], reverse = True)
 
-
         index = 0
         attraction_length = len(attractions)
         for attraction in reranked_attractions:
@@ -58,6 +57,7 @@ class PreProcess2:
             ordered_dict["location"] = attraction["location"]
             ordered_dict["attraction_name"] = attraction["attraction_name"]
             ordered_dict["ranking_score"] = attraction["ranking_score"]
+            print attraction["ranking_score"]
             ordered_dict["reranked_ranking"] = index
             ordered_dict["original_ranking"] = attraction["ranking"]
             ordered_dict["avg_rating"] = attraction["avg_rating"]
