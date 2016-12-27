@@ -82,22 +82,22 @@ class NDCG:
     def get_g(self, ranking_dict):
         """ get g """
 
-        rankings = []
-        original_rankings = []
+        computed_rankings = []
+        reranked_rankings = []
 
         if "cosine_ranking" in ranking_dict:
             for x in ranking_dict["cosine_ranking"]:
-                rankings.append(x["ranking"])
-                original_rankings.append(x["original_ranking"])
+                computed_rankings.append(x["computed_ranking"])
+                reranked_rankings.append(x["reranked_ranking"])
         #  print rankings
         #  print original_rankings
         if "dot_ranking" in ranking_dict:
             for x in ranking_dict["dot_ranking"]:
-                rankings.append(x["ranking"])
-                original_rankings.append(x["original_ranking"])
+                computed_rankings.append(x["computed_ranking"])
+                reranked_rankings.append(x["reranked_ranking"])
 
         g = []
-        for i, j in zip(rankings, original_rankings):
+        for i, j in zip(computed_rankings, reranked_rankings):
             if int(j)-1 <= int(i) <= int(j)+1:
                 g.append(3)
             elif int(j)-2 <= int(i) <= int(j)+2:

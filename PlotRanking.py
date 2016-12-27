@@ -103,38 +103,42 @@ class PlotRanking:
     def get_spearmanr(self, x):
         """ Get spearmanr correlation """
         # ranking_input will be [{"query":Happy-Temple_Bangkok, "lambda": 0.1, "extreme_positive_cos_sim:": 0.58 } * 20]
-        rankings = []
-        original_rankings = []
+        computed_rankings = []
+        reranked_rankings = []
 
         if self.cosine_flag and "cosine_ranking" in x:
             for attraction_dict in x["cosine_ranking"]:
-                rankings.append(attraction_dict["ranking"])
-                original_rankings.append(attraction_dict["original_ranking"])
+                computed_rankings.append(attraction_dict["computed_ranking"])
+                reranked_rankings.append(attraction_dict["reranked_ranking"])
+                #original_rankings.append(attraction_dict["original_ranking"])
 
         if self.dot_flag and "dot_ranking" in x:
             for attraction_dict in x["dot_ranking"]:
-                rankings.append(attraction_dict["ranking"])
-                original_rankings.append(attraction_dict["original_ranking"])
+                computed_rankings.append(attraction_dict["computed_ranking"])
+                reranked_rankings.append(attraction_dict["reranked_ranking"])
+                #original_rankings.append(attraction_dict["original_ranking"])
 
-        spearmanr = scipy.stats.spearmanr(rankings, original_rankings).correlation
+        spearmanr = scipy.stats.spearmanr(computed_rankings, reranked_rankings).correlation
         return spearmanr
 
     def get_kendalltau(self, x):
         """ get kendalltau correlation """
-        rankings = []
-        original_rankings = []
+        computed_rankings = []
+        reranked_rankings = []
 
         if self.cosine_flag and "cosine_ranking" in x:
             for attraction_dict in x["cosine_ranking"]:
-                rankings.append(attraction_dict["ranking"])
-                original_rankings.append(attraction_dict["original_ranking"])
+                computed_rankings.append(attraction_dict["computed_ranking"])
+                reranked_rankings.append(attraction_dict["reranked_ranking"])
+                #original_rankings.append(attraction_dict["original_ranking"])
 
         if self.dot_flag and "dot_ranking" in x:
             for attraction_dict in x["dot_ranking"]:
-                rankings.append(attraction_dict["ranking"])
-                original_rankings.append(attraction_dict["original_ranking"])
+                computed_rankings.append(attraction_dict["computed_ranking"])
+                reranked_rankings.append(attraction_dict["reranked_ranking"])
+                #original_rankings.append(attraction_dict["original_ranking"])
 
-        kendalltau = scipy.stats.kendalltau(rankings, original_rankings).correlation
+        kendalltau = scipy.stats.kendalltau(computed_rankings, reranked_rankings).correlation
         return kendalltau
 
     def create_dirs(self):
