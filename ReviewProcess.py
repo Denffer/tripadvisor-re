@@ -150,14 +150,14 @@ class ReviewProcess:
             text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore')
             # Just to be sure, rid all website urls written in the review # might slow down the process
             text = re.sub(r'https?:\/\/.*[\r\n]*', ' ', text, flags=re.MULTILINE)
+            # space out every sign & symbol & punctuation
+            text = re.sub("(\W|\_)",r" \1 ", text)
             # Remove non english letters or words
-            text = re.sub(r'[^a-zA-Z0-9!@#$%^&*():;/\\<>\"+_\-.,?=]', ' ', text)
+            text = re.sub(r'[^a-zA-Z0-9!@#$%^&*():;/\\<>\"\'+_\-.,?=]', ' ', text)
             # Remove numbers
             text = re.sub(r'[0-9]', ' ', text)
             # Remove extra nextline
             text = re.sub("(\\n)+", r" ", text)
-            # space out every sign & symbol & punctuation
-            text = re.sub("(\W|\_)",r" \1 ", text)
 
             text = re.sub(r"'m", " am", text)
             text = re.sub(r"'re", " are", text)
