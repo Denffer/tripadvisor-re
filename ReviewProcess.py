@@ -150,7 +150,7 @@ class ReviewProcess:
             # Just to be sure, rid all website urls written in the review # might slow down the process
             text = re.sub(r'https?:\/\/.*[\r\n]*', ' ', text, flags=re.MULTILINE)
             # Remove non english letters or words
-            text = re.sub(r'[^a-zA-Z0-9!@#$%^&*():;/\\<>\"\'+_\-.,?=]', ' ', text)
+            text = re.sub(r'[^a-zA-Z0-9!@#$%^&*():;/\\<>\"+_\-.,?=]', ' ', text)
             # Remove numbers
             text = re.sub(r'[0-9]', ' ', text)
             # Remove extra nextline
