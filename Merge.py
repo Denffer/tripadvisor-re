@@ -14,14 +14,16 @@ class Merge:
         #self.src_br = "data/backend_reviews/New_York_City/"
         self.src_bsr = "data/backend_stars_reviews/"
         #self.src_bsr = "data/backend_stars_reviews/New_York_City"
+        self.src_fr = "data/frontend_reviews/"
         self.src_ss = "data/sentiment_statistics/"
 
-        self.backend_stars_reviews = []
+        self.backend_stars_reviews, self.frontend_reviews = [], []
         self.all = []
         self.dst = "data/corpora/"
         self.dst_as = "data/corpora/All_Stars/"
         self.dst_a = "data/corpora/All/"
         self.dst_ss = "data/lexicon/sentiment_statistics.json"
+        self.dst_log = "data/log.txt"
 
     def get_corpora(self):
         """ load all reviews in data/backend_reviews/ and merge them """
@@ -157,6 +159,7 @@ class Merge:
         #print sentiment_statistics
         return sentiment_statistics
 
+
     def get_merged_sentiment_statistics(self):
         """ accumulate the count for every sentiment word
         E.g. list[0] = {"good":1, "great":2}, list[1] = {"good":3, "great":4} -> sentiment_statistics = {"good":4, "great":6}
@@ -279,12 +282,48 @@ class Merge:
         f_ss.write( json.dumps( ss_ordered_dict, indent = 4, cls=NoIndentEncoder))
         print "Done"
 
+    def get_frontend_reviews(self):
+        """ Get avg_sentiment_counts and avg_word_counts from frontend reviews """
+
+        for dirpath, dir_list, file_list in os.walk(self.src_fr):
+            print "Walking into:", dirpath
+
+            if len(file_list) > 0:
+                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+                for f in file_list:
+                    if f == ".DS_Store":
+                        print "Removing " + dirpath + str(f)
+                        os.remove(dirpath + f)
+                    else:
+                        self.frontend_reviews.append(json.load(open(dirpath+"/"+f)))
+            else:
+                print "No file is found"
+            print "-"*80
+
+    def render_log(self):
+        """ save avg_words_count_per_review & avg_sentiment_count_per_review in data/log.txt """
+        total_words_count = 0.0
+        total_sentiment_count= 0.0
+
+        for attraction in self.frontend_reviews:
+            total_words_count += attraction["avg_word_counts"]
+            total_sentiment_count += attraction["avg_sentiment_counts"]
+
+        avg_words_count_per_review = total_words_count / len(self.frontend_reviews)
+        avg_sentiment_count_per_review = total_sentiment_count / len(self.frontend_reviews)
+
+        with open(self.dst_log, "a") as log_file:
+            log_file.write("\nAverage word count per review:" + str(avg_words_count_per_review))
+            log_file.write("\nAverage sentiment count per review:" + str(avg_sentiment_count_per_review))
+
+
     def create_dirs(self):
         """ create the directory if not exist"""
         dir1 = os.path.dirname(self.dst)
         dir2 = os.path.dirname(self.dst_ss)
         dir3 = os.path.dirname(self.dst_as)
         dir4 = os.path.dirname(self.dst_a)
+        dir5 = os.path.dirname(self.dst_log)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
@@ -298,6 +337,9 @@ class Merge:
         if not os.path.exists(dir4):
             print "Creating directory: " + dir4
             os.makedirs(dir4)
+        if not os.path.exists(dir5):
+            print "Creating directory: " + dir5
+            os.makedirs(dir5)
 
         print "-"*80
 
@@ -333,5 +375,7 @@ if __name__ == '__main__':
     merge.get_backend_stars_reviews()
     merge.render_all_stars()
     merge.render_all()
+    merge.get_frontend_reviews()
+    merge.render_log()
     merge.save_sentiment_statistics()
 
