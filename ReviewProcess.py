@@ -15,8 +15,8 @@ class ReviewProcess:
 
     def __init__(self):
         self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
-        filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+\.json)", self.src).group(1)
-        print "Processing " +"\033[1m" + filename + "\033[0m"
+        self.filename = re.findall("([A-Z]\w+)", self.src)[0]
+        print "Processing " +"\033[1m" + self.filename + ".json" + "\033[0m"
         self.verbose = 0
 
         self.attraction = {}
@@ -396,8 +396,6 @@ class ReviewProcess:
             print "Saving files"
         self.create_dirs(self.attraction["location"].replace("-","_") + "/")
 
-        filename = sys.argv[1][13:-5] # E.g. data/reviews/ | Amsterdam_18 | .json
-
         """ (1) save location_*.json in ./frontend_reviews """
         frontend_orderedDict = OrderedDict()
         frontend_orderedDict["location"] = self.attraction["location"]
@@ -429,33 +427,33 @@ class ReviewProcess:
 
         frontend_orderedDict["reviews"] = review_ordered_dict_list
 
-        frontend_json = open(self.dst_frontend + self.attraction["location"].replace("-","_") + "/" + filename + ".json", "w+")
+        frontend_json = open(self.dst_frontend + self.attraction["location"].replace("-","_") + "/" + self.filename + ".json", "w+")
         frontend_json.write(json.dumps( frontend_orderedDict, indent = 4, cls=NoIndentEncoder))
         frontend_json.close()
 
         if self.verbose:
-            print filename, "'s frontend is complete"
+            print self.filename, "'s frontend is complete"
 
         """ (2) save location_*.txt in ./backend_reviews/location/ """
-        backend_txt = open(self.dst_backend +"/"+ self.attraction["location"].replace("-","_") +"/"+ filename + ".txt", "w+")
+        backend_txt = open(self.dst_backend +"/"+ self.attraction["location"].replace("-","_") +"/"+ self.filename + ".txt", "w+")
         for review in self.backend_reviews:
             backend_txt.write(review.encode("utf-8") + '\n')
         backend_txt.close()
 
         if self.verbose:
-            print filename, "'s backend is complete"
+            print self.filename, "'s backend is complete"
 
         """ (3) save location_*.txt in ./backend_reviews/location/ """
-        stars_txt_file = open(self.dst_stars +"/"+ self.attraction["location"].replace("-","_") +"/"+ filename + ".txt", "w+")
+        stars_txt_file = open(self.dst_stars +"/"+ self.attraction["location"].replace("-","_") +"/"+ self.filename + ".txt", "w+")
         for review in self.backend_stars_reviews:
             stars_txt_file.write(review.encode("utf-8") + '\n')
         stars_txt_file.close()
 
         if self.verbose:
-            print filename, "'s backend_stars is complete"
+            print self.filename, "'s backend_stars is complete"
 
         """ (4) save location_*.json in ./hybrid_reviews/location/ """
-        hybrid_json_file = open(self.dst_hybrid +"/"+ self.attraction["location"].replace("-","_") +"/"+ filename + ".json", "w+")
+        hybrid_json_file = open(self.dst_hybrid +"/"+ self.attraction["location"].replace("-","_") +"/"+ self.filename + ".json", "w+")
 
         cnt = 0
         hybrid_ordered_dict_list = []
@@ -472,7 +470,7 @@ class ReviewProcess:
         hybrid_json_file.close()
 
         if self.verbose:
-            print filename, "'s hybrid is complete"
+            print self.filename, "'s hybrid is complete"
 
         """ (5) render location.json containing a dictionaries of two key:list """
         statistics_orderedDict = OrderedDict()
@@ -481,15 +479,15 @@ class ReviewProcess:
         statistics_orderedDict["positive_statistics"] = self.sentiment_statistics["positive_statistics"]
         statistics_orderedDict["negative_statistics"] = self.sentiment_statistics["negative_statistics"]
 
-        sentiment_statistics_json = open(self.dst_sentiment_statistics + "/" + self.attraction["location"].replace("-","_") + "/" + filename + ".json", "w+")
+        sentiment_statistics_json = open(self.dst_sentiment_statistics + "/" + self.attraction["location"].replace("-","_") + "/" + self.filename + ".json", "w+")
         sentiment_statistics_json.write(json.dumps(statistics_orderedDict, indent = 4, cls=NoIndentEncoder))
         sentiment_statistics_json.close()
 
         if self.verbose:
-            print filename, "'s sentiment analysis is complete"
+            print self.filename, "'s sentiment analysis is complete"
             print "-"*80
 
-        print filename, "is complete"
+        print self.filename, "is complete"
 
     def PrintException(self):
         exc_type, exc_obj, tb = sys.exc_info()
