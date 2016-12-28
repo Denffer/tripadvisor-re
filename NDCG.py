@@ -133,7 +133,7 @@ class NDCG:
         for ranking_dict in self.cosine_source:
             g = self.get_g(ranking_dict)
             ndcg = self.get_ndcg(g)
-            ndcg_dict = {"g": NoIndent(g), "ndcg": NoIndent(ndcg)}
+            ndcg_dict = {"lambda": ranking_dict["lambda"], "g": NoIndent(g), "ndcg": NoIndent(ndcg)}
             ndcg_dict_list.append(ndcg_dict)
 
         f = open(self.dst + self.filename + "_Cosine.json", "w")
@@ -144,7 +144,7 @@ class NDCG:
         for ranking_dict in self.dot_source:
             g = self.get_g(ranking_dict)
             ndcg = self.get_ndcg(g)
-            ndcg_dict = {"g": NoIndent(g), "ndcg": NoIndent(ndcg)}
+            ndcg_dict = {"lambda": ranking_dict["lambda"], "g": NoIndent(g), "ndcg": NoIndent(ndcg)}
             ndcg_dict_list.append(ndcg_dict)
 
         f = open(self.dst + self.filename + "_Dot.json", "w")
