@@ -6,7 +6,7 @@ class NDCG:
     """ This program take ranking.json as input and yield NDCG results """
     def __init__(self):
         self.src = "data/ranking/"
-        self.dst = "data/NDCG/"
+        self.dst = "data/output/NDCG/"
 
         self.filename = ""
         self.cosine_source = []
