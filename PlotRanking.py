@@ -9,8 +9,8 @@ class PlotRanking:
     def __init__(self):
         # data/ranking/cosine/ or data/ranking/dot/
         self.src = "data/ranking/"
-        self.dst_c = "data/graphic_output/sk/cosine/"
-        self.dst_d = "data/graphic_output/sk/dot/"
+        self.dst_c = "data/output/sk/cosine/"
+        self.dst_d = "data/output/sk/dot/"
 
         self.cosine_source = []
         self.dot_source = []
