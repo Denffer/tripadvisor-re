@@ -14,13 +14,13 @@ then
     mkdir $dir2
 fi
     
-for i in data/line/cooccur/Istanbul.txt
+for i in data/line/cooccur/New_York_City.txt
 do
     echo "Running Line (first-order) on:\033[1m" $i "\033[0m"
     filename=$(echo $i | cut -d'/' -f 4)
     echo $filename
-    #./Line/line -train $i -output data/line/vectors200/$filename -size 200 -order 1 -negative 30 -samples 300 -threads 5
-    ./Line/normalize -input data/line/vectors200/$filename -output data/line/norm_vectors200/$filename -binary 0
+    ./Line/line -train $i -output data/line/vectors200/$filename -size 200 -order 1 -negative 30 -samples 300 -threads 5
+    # ./Line/normalize -input data/line/vectors200/$filename -output data/line/norm_vectors200/$filename -binary 0
     echo "-------------------------------------------"
 done    
 
