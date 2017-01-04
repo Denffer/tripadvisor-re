@@ -17,12 +17,12 @@ class ReviewProcess:
         self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
         self.filename = re.findall("([A-Z]\w+)", self.src)[0]
         print "Processing " +"\033[1m" + self.filename + ".json" + "\033[0m"
-        self.verbose = 0
+        self.verbose = 1
 
         self.attraction = {}
         self.attraction_name, self.attraction_regexr, self.attraction_al, self.attraction_marked = "", "", "", ""
         self.total_words_count = 0
-        self.avg_positive_sentiment_count, self.avg_negative_sentiment_count = 0.0, 0.0
+        self.avg_positive_sentiment_count, self.avg_negative_sentiment_count, self.avg_nearest_sentiment_distance = 0.0, 0.0, 0.0
 
         self.lexicon, self.positive, self.negative, self.ratings = [], [], [], []
         self.clean_reviews, self.frontend_reviews, self.backend_reviews, self.backend_stars_reviews, self.hybrid_reviews, self.sentiment_statistics = [], [], [], [], [], []
@@ -300,6 +300,59 @@ class ReviewProcess:
                 sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
                 sys.stdout.flush()
 
+    def get_avg_nearest_sentiment_distance(self):
+        """ walk into reviews and get distance with attraction and sentiment_word """
+
+        sentiment_words = []
+        for p in self.lexicon["positive"]:
+            sentiment_words.append(p["stemmed_word"])
+        for n in self.lexicon["negative"]:
+            sentiment_words.append(n["stemmed_word"])
+
+        nearest_sentiment_distance_list = []
+        for review in self.backend_stars_reviews:
+            words = review.split(" ")
+            num_of_words = len(words)
+
+            indexes = [i for i,w in enumerate(words) if "star_" in w]
+
+            for index in indexes:
+                #print "-"*20
+                #print "Index:", index
+                #print "Word:", words[index]
+                cnt = 0
+                nearest_sentiment_distance = 0
+
+                while True:
+                #for cnt in xrange(1, num_of_words):
+                    cnt += 1
+                    # forward search
+                    try:
+                        for s in sentiment_words:
+                            #print "Matching for", s
+                            if index+cnt < num_of_words:
+                                #print "Forward +", cnt, ":", words[index+cnt]
+                                if s == words[index+cnt]:
+                                    #print "Forward Match:", s
+                                    nearest_sentiment_distance = cnt
+                                    raise
+
+                            if index-cnt >= 0:
+                                #print "Backward +", cnt, ":", words[index-cnt]
+                                if s == words[index-cnt]:
+                                    #print "Backward Match:", s
+                                    nearest_sentiment_distance = cnt
+                                    raise
+                        #print "-"*10
+                    except:
+                        break
+
+                nearest_sentiment_distance_list.append(nearest_sentiment_distance)
+
+        #  nearest_sentiment_distance_list
+        n = nearest_sentiment_distance_list
+        self.avg_nearest_sentiment_distance = float(sum(n)/float(len(n)))
+
     def get_sentiment_statistics(self):
         """ count the sentiment words in reviews """
         if self.verbose:
@@ -419,6 +472,7 @@ class ReviewProcess:
         frontend_orderedDict["review_with_attraction_mentioned_count"] = len(self.frontend_reviews)
         frontend_orderedDict["avg_sentiment_counts"] = self.avg_positive_sentiment_count + self.avg_negative_sentiment_count
         frontend_orderedDict["avg_word_counts"] = float(self.total_words_count) / float(len(self.backend_reviews))
+        frontend_orderedDict["avg_nearest_sentiment_distance"] = self.avg_nearest_sentiment_distance
 
         review_ordered_dict_list = []
         review_cnt = 0
@@ -539,6 +593,7 @@ if  __name__ == '__main__':
     process.get_frontend_reviews()
     process.get_backend_reviews()
     process.get_backend_stars_reviews()
+    process.get_avg_nearest_sentiment_distance()
     process.get_hybrid_reviews()
     process.get_sentiment_statistics()
     process.render()
