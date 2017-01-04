@@ -14,7 +14,7 @@ then
     mkdir $dir2
 fi
     
-for i in data/line/cooccur/Rome.txt
+for i in data/line/cooccur/New_York_City.txt
 do
     echo "Running Line (first-order) on:\033[1m" $i "\033[0m"
     filename=$(echo $i | cut -d'/' -f 4)
