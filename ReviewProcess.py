@@ -303,14 +303,19 @@ class ReviewProcess:
     def get_avg_nearest_sentiment_distance(self):
         """ walk into reviews and get distance with attraction and sentiment_word """
 
+        if self.verbose:
+            print "\nCalculating average nearest sentiment distance"
         sentiment_words = []
         for p in self.lexicon["positive"]:
             sentiment_words.append(p["stemmed_word"])
         for n in self.lexicon["negative"]:
             sentiment_words.append(n["stemmed_word"])
 
+        review_cnt = 0
+        review_length = len(self.backend_stars_reviews)
         nearest_sentiment_distance_list = []
         for review in self.backend_stars_reviews:
+            review_cnt += 1
             words = review.split(" ")
             num_of_words = len(words)
 
@@ -326,7 +331,7 @@ class ReviewProcess:
                 while True:
                 #for cnt in xrange(1, num_of_words):
                     cnt += 1
-                    # forward search
+                    #forward search
                     try:
                         for s in sentiment_words:
                             #print "Matching for", s
@@ -343,11 +348,19 @@ class ReviewProcess:
                                     #print "Backward Match:", s
                                     nearest_sentiment_distance = cnt
                                     raise
+                            if index+cnt >= num_of_words or index-cnt < 0:
+                                raise
                         #print "-"*10
                     except:
                         break
 
                 nearest_sentiment_distance_list.append(nearest_sentiment_distance)
+
+            if self.verbose:
+                sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
+                sys.stdout.flush()
+
+
 
         #  nearest_sentiment_distance_list
         n = nearest_sentiment_distance_list
