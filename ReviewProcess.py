@@ -304,7 +304,7 @@ class ReviewProcess:
         """ walk into reviews and get distance with attraction and sentiment_word """
 
         if self.verbose:
-            print "\nCalculating average nearest sentiment distance"
+            print "\n" + "-"*80 + "\nCalculating average nearest sentiment distance"
         sentiment_words = []
         for p in self.lexicon["positive"]:
             sentiment_words.append(p["stemmed_word"])
