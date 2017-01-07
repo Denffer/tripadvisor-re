@@ -237,8 +237,8 @@ class Merge:
         #Sorting by count
         negative_statistics = sorted(negative_word_dict_list, key=itemgetter('count'), reverse = True)
 
-	positive_statistics[:] = [dictionary for dictionary in positive_statistics if dictionary.get('count') > 10]
-	negative_statistics[:] = [dictionary for dictionary in negative_statistics if dictionary.get('count') > 10]
+	positive_statistics[:] = [dictionary for dictionary in positive_statistics if dictionary.get('count') > 20]
+	negative_statistics[:] = [dictionary for dictionary in negative_statistics if dictionary.get('count') > 20]
 
         return positive_statistics, negative_statistics
 
@@ -303,18 +303,24 @@ class Merge:
     def render_log(self):
         """ save avg_words_count_per_review & avg_sentiment_count_per_review in data/log.txt """
         total_words_count = 0.0
-        total_sentiment_count= 0.0
+        total_sentiment_count = 0.0
+        total_nearest_sentiment_distance = 0.0
+
 
         for attraction in self.frontend_reviews:
             total_words_count += attraction["avg_word_counts"]
             total_sentiment_count += attraction["avg_sentiment_counts"]
+            total_nearest_sentiment_distance += attraction["avg_nearest_sentiment_distance"]
 
         avg_words_count_per_review = total_words_count / len(self.frontend_reviews)
         avg_sentiment_count_per_review = total_sentiment_count / len(self.frontend_reviews)
+        avg_sentiment_nearest_sentiment_distance = total_nearest_sentiment_distance / len(self.frontend_reviews)
+
 
         with open(self.dst_log, "a") as log_file:
-            log_file.write("\nAverage word count per review:" + str(avg_words_count_per_review))
-            log_file.write("\nAverage sentiment count per review:" + str(avg_sentiment_count_per_review))
+            log_file.write("\nAverage word count per review: " + str(avg_words_count_per_review))
+            log_file.write("\nAverage sentiment count per review: " + str(avg_sentiment_count_per_review))
+            log_file.write("\nAverage sentiment nearest sentiment distance: " + str(avg_sentiment_nearest_sentiment_distance))
 
 
     def create_dirs(self):
