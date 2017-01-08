@@ -19,20 +19,17 @@ class Distance:
         self.src_fr = "data/frontend_reviews/" + self.filename + "/"
 
         self.verbose = 1
-        self.dst_dc = "data/distance/" + self.filename + "/cosine/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_dd = "data/distance/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_rc = "data/ranking/" + self.filename + "/cosine/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_rd = "data/ranking/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        self.dst_dc = "data/distance/" + self.filename + "/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        #self.dst_dd = "data/distance/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        self.dst_rc = "data/ranking/" + self.filename + "/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        #self.dst_rd = "data/ranking/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        self.pn_flag = 1
+        self.positive_minus_negative_flag = 0
         self.cosine_flag = 1
-        self.dot_flag = 1
+        self.dot_flag = 0
 
-<<<<<<< HEAD
-        self.topN = 1000
-        self.topN_max = 20
-=======
-        self.topN = 200
+        self.topN = 300
         self.topN_max = 5
->>>>>>> c914d883408daaac0f2d1ab30f7934ce1b083ea2
         self.queries = []
         self.extreme_positive, self.strong_positive, self.moderate_positive = [], [], []
         self.extreme_negative, self.strong_negative, self.moderate_negative = [], [], []
@@ -235,8 +232,10 @@ class Distance:
             moderate_cos_score =  self.tuning_lambda * sum(moderate_topN_cos_sim_list[:self.topN_max])/len(moderate_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_cos_sim_list)/len(moderate_topN_cos_sim_list)
 
             # generate cosine score
-            #cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
-            cos_score = extreme_cos_score
+            if self.pn_flag == 3:
+                cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
+            if self.pn_flag == 1:
+                cos_score = extreme_cos_score
             print "positive cosine score:", cos_score
 
             positive_cosine_topN.append({"query": query,
@@ -295,8 +294,10 @@ class Distance:
             moderate_cos_score =  self.tuning_lambda * sum(moderate_topN_cos_sim_list[:self.topN_max])/len(moderate_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_cos_sim_list)/len(moderate_topN_cos_sim_list)
 
             # generate cosine score
-            #cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
-            cos_socre = extreme_cos_score
+            if self.pn_flag == 3:
+                cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
+            if self.pn_flag == 1:
+                cos_score = extreme_cos_score
             print "negative cosine score:", cos_score
 
             negative_cosine_topN.append({"query": query,
@@ -363,8 +364,10 @@ class Distance:
             moderate_dot_prod =  self.tuning_lambda * sum(moderate_topN_dot_prod_list[:self.topN_max])/len(moderate_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_dot_prod_list)/len(moderate_topN_dot_prod_list)
 
             # generate dot score
-            #dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
-            dot_score = extreme_dot_prod
+            if self.pn_flag == 3:
+                dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
+            if self.pn_flag == 1:
+                dot_score = extreme_dot_prod
             print "positive dot score:", dot_score
 
             positive_dot_topN.append({"query": query,
@@ -423,8 +426,10 @@ class Distance:
             moderate_dot_prod =  self.tuning_lambda * sum(moderate_topN_dot_prod_list[:self.topN_max])/len(moderate_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_dot_prod_list)/len(moderate_topN_dot_prod_list)
 
             # generate dot score
-            #dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
-            dot_score = extreme_dot_prod
+            if self.pn_flag == 3:
+                dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
+            if self.pn_flag == 1:
+                dot_score = extreme_dot_prod
             print "Negative dot score:", dot_score
 
             negative_dot_topN.append({"query": query,
@@ -440,22 +445,22 @@ class Distance:
     def create_dirs(self):
         """ create the directory if not exist"""
         dir1 = os.path.dirname(self.dst_dc)
-        dir2 = os.path.dirname(self.dst_dd)
+        #dir2 = os.path.dirname(self.dst_dd)
         dir3 = os.path.dirname(self.dst_rc)
-        dir4 = os.path.dirname(self.dst_rd)
+        #dir4 = os.path.dirname(self.dst_rd)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
             os.makedirs(dir1)
-        if not os.path.exists(dir2):
-            print "Creating directory: " + dir2
-            os.makedirs(dir2)
+        #  if not os.path.exists(dir2):
+        #      print "Creating directory: " + dir2
+        #      os.makedirs(dir2)
         if not os.path.exists(dir3):
             print "Creating directory: " + dir3
             os.makedirs(dir3)
-        if not os.path.exists(dir4):
-            print "Creating directory: " + dir4
-            os.makedirs(dir4)
+        #  if not os.path.exists(dir4):
+        #      print "Creating directory: " + dir4
+        #      os.makedirs(dir4)
 
     def render(self):
         """ save every cosine_list for top1~5 as json file"""
@@ -729,12 +734,16 @@ class Distance:
         if self.cosine_flag:
             location_ordered_dict = OrderedDict()
             location_ordered_dict['lambda'] = self.tuning_lambda
+            location_ordered_dict['topN'] = self.topN
+            location_ordered_dict['topN_max'] = self.topN_max
             if self.verbose:
                 print "Ranking queries according to cosine score"
             score_list = []
             for p_cos_word_dict, n_cos_word_dict in zip(positive_cosine_topN, negative_cosine_topN):
-                #score = p_cos_word_dict["cos_score"]
-                score = p_cos_word_dict["cos_score"] #- n_cos_word_dict["cos_score"]
+                if self.positive_minus_negative_flag:
+                    score = p_cos_word_dict["cos_score"] - n_cos_word_dict["cos_score"]
+                else:
+                    score = p_cos_word_dict["cos_score"]
                 score_list.append({"attraction_name": p_cos_word_dict["query"], "score": score})
 
             # derive ranking_list from a the unsorted score_list
@@ -765,13 +774,17 @@ class Distance:
         if self.dot_flag:
             location_ordered_dict = OrderedDict()
             location_ordered_dict['lambda'] = self.tuning_lambda
+            location_ordered_dict['topN'] = self.topN
+            location_ordered_dict['topN_max'] = self.topN_max
 
             if self.verbose:
                 print "Ranking queries according to dot score"
             score_list = []
             for p_dot_word_dict, n_dot_word_dict in zip(positive_dot_topN, negative_dot_topN):
-                #score = p_dot_word_dict["dot_score"]
-                score = p_dot_word_dict["dot_score"] #- n_dot_word_dict["dot_score"]
+                if self.positive_minus_negative_flag:
+                    score = p_cos_word_dict["cos_score"] - n_cos_word_dict["cos_score"]
+                else:
+                    score = p_cos_word_dict["cos_score"]
                 score_list.append({"attraction_name": p_dot_word_dict["query"], "score": score})
 
             # derive ranking_list from a the unsorted score_list
