@@ -11,18 +11,18 @@ class RenderRanking:
     """ This program calculate spearmanr and kendalltau """
     def __init__(self):
         # data/ranking/cosine/ or data/ranking/dot/
-        self.src = "data/ranking/"
+        #self.src = "data/ranking/New_York_City/"
+        self.src = sys.argv[1]
         self.dst_g = "data/results/sk_graphic/"
         self.dst = "data/results/"
 
-        self.window_size = 5
-        self.min_count = 20
+        self.window_size = "2"
+        self.min_count = "20"
+        self.ranking_function = "1p"
 
         self.cosine_source = []
-        self.dot_source = []
         self.filename = ""
         self.cosine_flag = 1
-        self.dot_flag = 1
 
     def get_cosine_ranking(self):
         """ load all json file in data/ranking/cosine/"""
@@ -30,171 +30,158 @@ class RenderRanking:
         for dirpath, dir_list, file_list in os.walk(self.src):
             print "Walking into directory: " + str(dirpath)
 
-            if "cosine" in dirpath:
-                if len(file_list) > 0:
-                    print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+            if len(file_list) > 0:
+                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
 
-                    file_cnt = 0
-                    length = len(file_list)
-                    ranking_dict_list = []
-                    spearmanr_list, kendalltau_list = [], []
+                file_cnt = 0
+                length = len(file_list)
+                ranking_dict_list = []
+                computed_vs_reranked_spearmanr_list, computed_vs_original_spearmanr_list = [], []
+                computed_vs_reranked_kendalltau_list, computed_vs_original_kendalltau_list = [], []
 
-                    for f in file_list:
-                        # in case there is a goddamn .DS_Store file
-                        if str(f) == ".DS_Store":
-                            print "Removing " + dirpath + "/" + str(f)
-                            os.remove(dirpath+ "/"+ f)
-                        else:
-                            file_cnt += 1
-                            print "Merging " + str(dirpath) + "/" + str(f)
 
-                            with open(dirpath +"/"+ f) as file:
-                                self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)-", f).group(1) # E.g. Bangkok
-                                file_data = json.loads(file.read())
+                for f in file_list:
+                    # in case there is a goddamn .DS_Store file
+                    if str(f) == ".DS_Store":
+                        print "Removing " + dirpath + "/" + str(f)
+                        os.remove(dirpath+ "/"+ f)
+                    else:
+                        file_cnt += 1
+                        print "Merging " + str(dirpath) + "/" + str(f)
 
-                                ranking_dict_list.append(file_data)
-                                spearmanr_list.append(self.get_spearmanr(file_data))
-                                kendalltau_list.append(self.get_kendalltau(file_data))
+                        with open(dirpath +"/"+ f) as file:
+                            self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)-", f).group(1) # E.g. Bangkok
+                            file_data = json.loads(file.read())
 
-                    #  print "Ranking_dict_list: ", ranking_dict_list
-                    #  print "Spearmanr_list:", spearmanr_list
-                    #  print "Kendalltau_list", kendalltau_list
-                    self.plot_cosine(ranking_dict_list, spearmanr_list, kendalltau_list, self.filename)
-                    ndcg_list = self.get_ndcg_list(ranking_dict_list)
-                    self.render_cosine(ranking_dict_list, spearmanr_list, kendalltau_list, ndcg_list, self.filename)
-                else:
-                    print "No file is found"
-                    print "-"*80
+                            ranking_dict_list.append(file_data)
+                            s = self.get_spearmanr(file_data)
+                            computed_vs_reranked_spearmanr_list.append(s[0])
+                            computed_vs_original_spearmanr_list.append(s[1])
+                            k = self.get_kendalltau(file_data)
+                            computed_vs_reranked_kendalltau_list.append(k[0])
+                            computed_vs_original_kendalltau_list.append(k[1])
 
-    def get_dot_ranking(self):
-        """ load all json file in data/ranking/dot/ """
-        print "Loading data from: " + self.src
-        for dirpath, dir_list, file_list in os.walk(self.src):
-            print "Walking into directory: " + str(dirpath)
+                self.plot_cosine(ranking_dict_list, computed_vs_reranked_spearmanr_list, computed_vs_original_spearmanr_list, computed_vs_reranked_kendalltau_list, computed_vs_original_kendalltau_list, self.filename)
 
-            if "dot" in dirpath:
-                if len(file_list) > 0:
-                    print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
-
-                    file_cnt = 0
-                    length = len(file_list)
-                    ranking_dict_list = []
-                    spearmanr_list, kendalltau_list = [], []
-                    for f in file_list:
-                        # in case there is a goddamn .DS_Store file
-                        if str(f) == ".DS_Store":
-                            print "Removing " + dirpath + str(f)
-                            os.remove(dirpath+ "/"+ f)
-                        else:
-                            file_cnt += 1
-                            print "Merging " + str(dirpath) + "/" + str(f)
-
-                            with open(dirpath +"/"+ f) as file:
-                                self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)-", f).group(1) # E.g. Bangkok
-                                file_data = json.loads(file.read())
-
-                                ranking_dict_list.append(file_data)
-                                spearmanr_list.append(self.get_spearmanr(file_data))
-                                kendalltau_list.append(self.get_kendalltau(file_data))
-
-                    #  print "Ranking_dict_list: ", ranking_dict_list
-                    #  print "Spearmanr_list:", spearmanr_list
-                    #  print "Kendalltau_list", kendalltau_list
-                    self.plot_dot(ranking_dict_list, spearmanr_list, kendalltau_list, self.filename)
-                    ndcg_list = self.get_ndcg_list(ranking_dict_list)
-                    self.render_dot(ranking_dict_list, spearmanr_list, kendalltau_list, ndcg_list, self.filename)
-                else:
-                    print "No file is found"
-                    print "-"*80
+                #computed_vs_reranked_ndcg_list, computed_vs_original_ndcg_list
+                cvrn_list, cvon_list = self.get_ndcg_list(ranking_dict_list)
+                self.render_cosine(ranking_dict_list, computed_vs_reranked_spearmanr_list, computed_vs_original_spearmanr_list, computed_vs_reranked_kendalltau_list, computed_vs_original_kendalltau_list, cvrn_list, cvon_list, self.filename)
+            else:
+                print "No file is found"
+                print "-"*80
 
     def get_spearmanr(self, x):
         """ Get spearmanr correlation """
         # ranking_input will be [{"query":Happy-Temple_Bangkok, "lambda": 0.1, "extreme_positive_cos_sim:": 0.58 } * 20]
-        computed_rankings = []
-        reranked_rankings = []
+        computed_rankings, reranked_rankings, original_rankings = [], [], []
 
         if self.cosine_flag and "cosine_ranking" in x:
             for attraction_dict in x["cosine_ranking"]:
                 computed_rankings.append(attraction_dict["computed_ranking"])
                 reranked_rankings.append(attraction_dict["reranked_ranking"])
-                #original_rankings.append(attraction_dict["original_ranking"])
+                original_rankings.append(attraction_dict["original_ranking"])
 
-        if self.dot_flag and "dot_ranking" in x:
-            for attraction_dict in x["dot_ranking"]:
-                computed_rankings.append(attraction_dict["computed_ranking"])
-                reranked_rankings.append(attraction_dict["reranked_ranking"])
-                #original_rankings.append(attraction_dict["original_ranking"])
-
-        spearmanr = scipy.stats.spearmanr(computed_rankings, reranked_rankings).correlation
-        print "Spearmanr:", spearmanr
-        return spearmanr
+        computed_vs_reranked_spearmanr = scipy.stats.spearmanr(computed_rankings, reranked_rankings).correlation
+        computed_vs_original_spearmanr = scipy.stats.spearmanr(computed_rankings, original_rankings).correlation
+        #print "Spearmanr:", spearmanr
+        return computed_vs_reranked_spearmanr, computed_vs_original_spearmanr
 
     def get_kendalltau(self, x):
         """ get kendalltau correlation """
-        computed_rankings = []
-        reranked_rankings = []
+        computed_rankings, reranked_rankings, original_rankings = [], [], []
 
         if self.cosine_flag and "cosine_ranking" in x:
             for attraction_dict in x["cosine_ranking"]:
                 computed_rankings.append(attraction_dict["computed_ranking"])
                 reranked_rankings.append(attraction_dict["reranked_ranking"])
-                #original_rankings.append(attraction_dict["original_ranking"])
+                original_rankings.append(attraction_dict["original_ranking"])
 
-        if self.dot_flag and "dot_ranking" in x:
-            for attraction_dict in x["dot_ranking"]:
-                computed_rankings.append(attraction_dict["computed_ranking"])
-                reranked_rankings.append(attraction_dict["reranked_ranking"])
-                #original_rankings.append(attraction_dict["original_ranking"])
-
-        kendalltau = scipy.stats.kendalltau(computed_rankings, reranked_rankings).correlation
-        print "kendalltau:", kendalltau
-        return kendalltau
+        computed_vs_reranked_kendalltau = scipy.stats.kendalltau(computed_rankings, reranked_rankings).correlation
+        computed_vs_original_kendalltau = scipy.stats.kendalltau(computed_rankings, original_rankings).correlation
+        #print "kendalltau:", kendalltau
+        return computed_vs_reranked_kendalltau, computed_vs_original_kendalltau
 
     def get_ndcg_list(self, ranking_dict_list):
         """ get g """
 
-        computed_rankings_list = []
-        reranked_rankings_list = []
+        computed_rankings_list, reranked_rankings_list, original_rankings_list = [], [], []
 
         for ranking_dict in ranking_dict_list:
-            computed_rankings = []
-            reranked_rankings = []
+            computed_rankings, reranked_rankings, original_rankings = [], [], []
 
             try:
                 if "cosine_ranking" in ranking_dict:
                     for x in ranking_dict["cosine_ranking"]:
                         computed_rankings.append(x["computed_ranking"])
                         reranked_rankings.append(x["reranked_ranking"])
-            except:
-                pass
-
-            try:
-                if "dot_ranking" in ranking_dict:
-                    for x in ranking_dict["dot_ranking"]:
-                        computed_rankings.append(x["computed_ranking"])
-                        reranked_rankings.append(x["reranked_ranking"])
+                        original_rankings.append(x["original_ranking"])
             except:
                 pass
 
             computed_rankings_list.append(computed_rankings)
             reranked_rankings_list.append(reranked_rankings)
+            original_rankings_list.append(original_rankings)
 
-        ndcg_list = []
+        computed_vs_reranked_ndcg_list = []
         for computed_rankings, reranked_rankings in zip(computed_rankings_list, reranked_rankings_list):
+            print "c:", computed_rankings
+            #reranked_rankings = [i for i in xrange(1,21)]
+            print "r:", reranked_rankings
             g = []
             for i, j in zip(computed_rankings, reranked_rankings):
-                if int(j)-1 <= int(i) <= int(j)+1:
-                    g.append(3)
-                elif int(j)-2 <= int(i) <= int(j)+2:
-                    g.append(2)
-                elif int(j)-3 <= int(i) <= int(j)+3:
-                    g.append(1)
+                if int(j)<5:
+                    if int(i)<=5:
+                        g.append(3)
+                    else:
+                        g.append(0)
+                elif 5 < int(j) <= 10:
+                    if 5 < int(i) <= 10:
+                        g.append(2)
+                    else:
+                        g.append(0)
+                elif 10 < int(j) <= 20:
+                    if 10< int(i) <= 20:
+                        g.append(1)
+                    else:
+                        g.append(0)
                 else:
                     g.append(0)
-            ndcg_list.append(self.get_ndcg(g))
+            print "g:", g
+            computed_vs_reranked_ndcg_list.append(self.get_ndcg(g))
+            print "ndcg:", self.get_ndcg(g)
+            print "-"*30
+
+        computed_vs_original_ndcg_list = []
+        for computed_rankings, original_rankings in zip(computed_rankings_list, original_rankings_list):
+            print "c:", computed_rankings
+            #original_rankings = [i for i in xrange(1,21)]
+            print "r:", original_rankings
+            g = []
+            for i, j in zip(computed_rankings, original_rankings):
+                if int(j)<5:
+                    if int(i)<=5:
+                        g.append(3)
+                    else:
+                        g.append(0)
+                elif 5 < int(j) <= 10:
+                    if 5 < int(i) <= 10:
+                        g.append(2)
+                    else:
+                        g.append(0)
+                elif 10 < int(j) <= 20:
+                    if 10< int(i) <= 20:
+                        g.append(1)
+                    else:
+                        g.append(0)
+                else:
+                    g.append(0)
+            print "g:", g
+            print "ndcg:", self.get_ndcg(g)
+            computed_vs_original_ndcg_list.append(self.get_ndcg(g))
+            print "-"*30
 
         #print ndcg_list
-        return ndcg_list
+        return computed_vs_reranked_ndcg_list, computed_vs_original_ndcg_list
 
     def get_dcg(self, r):
         return reduce(lambda dcgs, dg: dcgs + [dg+dcgs[-1]], map(lambda(rank, g): (2**g-1)/log(rank+2,2),enumerate(r)), [0])[1:]
@@ -210,7 +197,8 @@ class RenderRanking:
             print "Creating directory:", dir1
             os.makedirs(dir1)
 
-    def plot_cosine(self, ranking_dict_list,spearmanr_list, kendalltau_list, filename):
+    # computed = c, reranked = r, original = g, spearmanr = s, kendalltau = k
+    def plot_cosine(self, ranking_dict_list, cvrs_list, cvos_list, cvrk_list, cvok_list, filename):
         """ Draw spearmanr and kendalltau according to lambda in cosine_source"""
 
         self.create_dirs(self.dst_g, filename, "cosine")
@@ -220,126 +208,78 @@ class RenderRanking:
         plt.xlabel("Lambda")
         plt.ylabel("Spearmanr & Kendalltau")
 
-        for ranking_dict, spearmanr_score, kendalltau_score in zip( ranking_dict_list, spearmanr_list, kendalltau_list):
-            l = ranking_dict["lambda"]
+        for ranking_dict, spearmanr1, spearmanr2, kendalltau1,  kendalltau2 in zip( ranking_dict_list, cvrs_list, cvos_list, cvrk_list, cvok_list):
+            #l = ranking_dict["lambda"]
+            l = ranking_dict["threshold"]
             try:
-                line1, = plt.plot( l, spearmanr_score, 'bo', label='Spearmanr')
-                line2, = plt.plot( l, kendalltau_score, 'go', label='Kendalltau')
+                line1, = plt.plot( l, spearmanr1, 'bo', label='Computed_vs_Reranked_Spearmanr')
+                line2, = plt.plot( l, kendalltau1, 'go', label='Computed_vs_Reranked_Kendalltau')
+                line3, = plt.plot( l, spearmanr2, 'bx', label='Computed_vs_Original_Spearmanr')
+                line4, = plt.plot( l, kendalltau2, 'gx', label='Computed_vs_Original_Kendalltau')
 
-                plt.text( l+0.001, spearmanr_score+0.001, str(spearmanr_score), fontsize=8)
-                plt.text( l+0.001, kendalltau_score+0.001, str(kendalltau_score), fontsize=8)
+                plt.text( l+0.001, spearmanr1+0.001, str(spearmanr1), fontsize=8)
+                plt.text( l+0.001, kendalltau1+0.001, str(kendalltau1), fontsize=8)
+                plt.text( l+0.001, spearmanr2+0.001, str(spearmanr2), fontsize=8)
+                plt.text( l+0.001, kendalltau2+0.001, str(kendalltau2), fontsize=8)
             except:
                 print 'Error'
                 self.PrintException()
 
         # set legend # aka indicator
-        plt.legend(handles = [line1, line2], loc='best', numpoints=1)
+        plt.legend(handles = [line1, line2, line3, line4], loc='best', numpoints=1)
         plt.title(filename)
 
         if self.cosine_flag:
             print "-"*80
-            print "Saving", "\033[1m" + filename + ".png" + "\033[0m", "to", self.dst_g + filename + "/cosine/"
-            fig.savefig(self.dst_g + filename + "/cosine/" + filename + ".png")
+            print "Saving", "\033[1m" + filename + "_w" + self.window_size + "_mc" + self.min_count + "_" + self.ranking_function +".png" + "\033[0m", "to", self.dst_g + filename + "/"
+            fig.savefig(self.dst_g + filename + "_w" + self.window_size + "_mc" + self.min_count + "_" + self.ranking_function + ".png")
         else:
             pass
 
-    def plot_dot(self, ranking_dict_list,spearmanr_list, kendalltau_list, filename):
-        """ Draw spearmanr and kendalltau according to lambda in cosine_source"""
-
-        self.create_dirs(self.dst_g, filename, "dot")
-
-        matplotlib.rcParams['axes.unicode_minus'] = False
-        fig = plt.figure()
-        plt.xlabel("Lambda")
-        plt.ylabel("Spearmanr & Kendalltau")
-
-        for ranking_dict, spearmanr_score, kendalltau_score in zip( ranking_dict_list, spearmanr_list, kendalltau_list):
-            l = ranking_dict["lambda"]
-            try:
-                line1, = plt.plot( l, spearmanr_score, 'bo', label='Spearmanr')
-                #print type(line1)
-                line2, = plt.plot( l, kendalltau_score, 'go', label='Kendalltau')
-
-                plt.text( l+0.001, spearmanr_score+0.001, str(spearmanr_score), fontsize=8)
-                plt.text( l+0.001, kendalltau_score+0.001, str(kendalltau_score), fontsize=8)
-            except:
-                print 'Error'
-                self.PrintException()
-
-        # set legend # aka indicator
-        plt.legend(handles = [line1, line2], loc='best', numpoints=1)
-        plt.title(filename)
-
-        if self.dot_flag:
-            print "-"*80
-            print "Saving", "\033[1m" + filename + ".png" + "\033[0m", "to", self.dst_g + filename + "/dot/"
-            fig.savefig(self.dst_g + filename + "/dot/" + filename + ".png")
-            # plt.show()
-        else:
-            pass
-
-    def render_cosine(self, ranking_dict_list, spearmanr_list, kendalltau_list, ndcg_list, filename):
+    # computed = c, reranked = r, original = g, spearmanr = s, kendalltau = k
+    def render_cosine(self, ranking_dict_list, cvrs_list, cvos_list, cvrk_list, cvok_list, cvrn_list, cvon_list, filename):
         """ Draw spearmanr and kendalltau according to lambda in cosine_source"""
 
         self.create_dirs(self.dst, filename, "cosine")
 
         ordered_ranking_dict_list = []
-        for ranking_dict, spearmanr, kendalltau, ndcg in zip(ranking_dict_list, spearmanr_list, kendalltau_list, ndcg_list):
+        for ranking_dict, spearmanr1, spearmanr2, kendalltau1, kendalltau2, ndcg1, ndcg2 in zip(ranking_dict_list, cvrs_list, cvos_list, cvrk_list, cvok_list, cvrn_list, cvon_list):
             ordered_dict = OrderedDict()
-            ordered_dict["lambda"] = ranking_dict["lambda"]
+            #  ordered_dict["lambda"] = ranking_dict["lambda"]
+            ordered_dict["threshold"] = ranking_dict["threshold"]
+            ordered_dict["topN"] = ranking_dict["topN"]
+            #ordered_dict["topN_max"] = ranking_dict["topN_max"]
             ordered_dict["window_size"] = self.window_size
             ordered_dict["min_count"] = self.min_count
-            ordered_dict["spearmanr"] = spearmanr
-            ordered_dict["kendalltau"] = kendalltau
-            ordered_dict["ndcg@5"] = ndcg[4]
-            ordered_dict["ndcg@10"] = ndcg[9]
-            ordered_dict["ndcg"] = NoIndent(ndcg)
+            ordered_dict["ranking_function"] = self.ranking_function
+            ordered_dict["computed_vs_reranked_spearmanr"] = spearmanr1
+            ordered_dict["computed_vs_reranked_kendalltau"] = kendalltau1
+            ordered_dict["computed_vs_original_spearmanr"] = spearmanr2
+            ordered_dict["computed_vs_original_kendalltau"] = kendalltau2
+            ordered_dict["computed_vs_reranked_ndcg@5"] = ndcg1[4]
+            ordered_dict["computed_vs_reranked_ndcg@10"] = ndcg1[9]
+            #ordered_dict["computed_vs_reranked_ndcg@15"] = ndcg1[14]
+            #ordered_dict["computed_vs_reranked_ndcg@20"] = ndcg1[19]
+            ordered_dict["computed_vs_original_ndcg@5"] = ndcg2[4]
+            ordered_dict["computed_vs_original_ndcg@10"] = ndcg2[9]
+            #ordered_dict["computed_vs_original_ndcg@15"] = ndcg2[14]
+            #ordered_dict["computed_vs_original_ndcg@20"] = ndcg2[19]
+            #ordered_dict["ndcg"] = NoIndent(ndcg)
 
             ordered_ranking_dict_list.append(ordered_dict)
 
         if self.cosine_flag:
-            print "Saving", "\033[1m" + filename + ".json" + "\033[0m", "to", self.dst + filename + "/cosine/"
-            with open(self.dst + filename + "/cosine/" + filename + ".json", "w") as f:
+            print "Saving", "\033[1m" + filename + "_w" + self.window_size + "_mc" + self.min_count + "_" + self.ranking_function +".json" + "\033[0m", "to", self.dst + filename + "/"
+            with open(self.dst + filename + "/" + filename + "_w" + self.window_size + "_mc" + self.min_count + "_" + self.ranking_function + ".json", "w") as f:
                 f.write(json.dumps(ordered_ranking_dict_list, indent = 4, cls=NoIndentEncoder))
             print "-"*80
         else:
             pass
-
-    def render_dot(self, ranking_dict_list, spearmanr_list, kendalltau_list, ndcg_list, filename):
-        """ Draw spearmanr and kendalltau according to lambda in dot_source """
-
-        self.create_dirs(self.dst, filename, "dot")
-
-        ordered_ranking_dict_list = []
-        for ranking_dict, spearmanr, kendalltau, ndcg in zip(ranking_dict_list, spearmanr_list, kendalltau_list, ndcg_list):
-            ordered_dict = OrderedDict()
-            ordered_dict["lambda"] = ranking_dict["lambda"]
-            ordered_dict["window_size"] = self.window_size
-            ordered_dict["min_count"] = self.min_count
-            ordered_dict["spearmanr"] = spearmanr
-            ordered_dict["kendalltau"] = kendalltau
-            ordered_dict["ndcg@5"] = ndcg[4]
-            ordered_dict["ndcg@10"] = ndcg[9]
-            ordered_dict["ndcg"] = NoIndent(ndcg)
-
-            ordered_ranking_dict_list.append(ordered_dict)
-
-        if self.cosine_flag:
-            print "Saving", "\033[1m" + filename + ".json" + "\033[0m", "to", self.dst + filename + "/dot/"
-            with open(self.dst + filename + "/dot/" + filename + ".json", "w") as f:
-                f.write(json.dumps(ordered_ranking_dict_list, indent = 4, cls=NoIndentEncoder))
-            print "-"*80
-        else:
-            pass
-
-
 
     def run(self):
         """ plot cosine ranking and dot ranking according to the given flags """
         if self.cosine_flag:
             self.get_cosine_ranking()
-        if self.dot_flag:
-            self.get_dot_ranking()
 
     def PrintException(self):
         exc_type, exc_obj, tb = sys.exc_info()
