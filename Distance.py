@@ -1,4 +1,8 @@
-import sys, os, json, uuid, re, linecache
+try:
+    import simplejson as json
+except ImportError:
+    import json
+import sys, os, uuid, re, linecache
 from sklearn.metrics.pairwise import cosine_similarity
 from collections import OrderedDict
 import numpy as np
@@ -13,26 +17,26 @@ class Distance:
 
     def __init__(self, argv1, argv2):
         self.src = argv1
-        self.tuning_lambda = float(argv2)
+        #self.tuning_lambda = float(argv2)
+        self.threshold = float(argv2)
         self.src_lexicon = "data/lexicon/enhanced_lexicon.json"
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src_fr = "data/frontend_reviews/" + self.filename + "/"
 
         self.verbose = 1
-        self.dst_dc = "data/distance/" + self.filename + "/cosine/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_dd = "data/distance/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_rc = "data/ranking/" + self.filename + "/cosine/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_rd = "data/ranking/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        #self.dst_dc = "data/distance/" + self.filename + "/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        self.dst_dc = "data/distance/" + self.filename + "/" + self.filename + "-threshold" + str(float(argv2)) + ".json"
+        #self.dst_dd = "data/distance/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        #self.dst_rc = "data/ranking/" + self.filename + "/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        self.dst_rc = "data/ranking/" + self.filename + "/" + self.filename + "-threshold" + str(float(argv2)) + ".json"
+        #self.dst_rd = "data/ranking/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
+        self.flag = 1
+        self.positive_minus_negative_flag = 0
         self.cosine_flag = 1
-        self.dot_flag = 1
+        self.dot_flag = 0
 
-<<<<<<< HEAD
-        self.topN = 1000
-        self.topN_max = 20
-=======
-        self.topN = 200
+        self.topN = 500
         self.topN_max = 5
->>>>>>> c914d883408daaac0f2d1ab30f7934ce1b083ea2
         self.queries = []
         self.extreme_positive, self.strong_positive, self.moderate_positive = [], [], []
         self.extreme_negative, self.strong_negative, self.moderate_negative = [], [], []
@@ -224,19 +228,24 @@ class Distance:
                     moderate_word_dict = {"word": self.moderate_positive[index], "cos_sim": moderate_cos_sim_list[index]}
                     moderate_word_dict_list.append(moderate_word_dict)
 
-            extreme_topN_cos_sim_list = [float(extreme_word_dict["cos_sim"]) for extreme_word_dict in extreme_word_dict_list]
-            strong_topN_cos_sim_list = [float(strong_word_dict["cos_sim"]) for strong_word_dict in strong_word_dict_list]
-            moderate_topN_cos_sim_list = [float(moderate_word_dict["cos_sim"]) for moderate_word_dict in moderate_word_dict_list]
+            extreme_topN_cos_sim_list = [float(extreme_word_dict["cos_sim"]) for extreme_word_dict in extreme_word_dict_list if float(extreme_word_dict["cos_sim"]) >= self.threshold]
+            strong_topN_cos_sim_list = [float(strong_word_dict["cos_sim"]) for strong_word_dict in strong_word_dict_list if float(strong_word_dict["cos_sim"]) >= self.threshold]
+            moderate_topN_cos_sim_list = [float(moderate_word_dict["cos_sim"]) for moderate_word_dict in moderate_word_dict_list if float(moderate_word_dict["cos_sim"]) >= self.threshold]
 
             # calculate the score out of topN cosine similarity
             #cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
-            extreme_cos_score =  self.tuning_lambda * sum(extreme_topN_cos_sim_list[:self.topN_max])/len(extreme_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(extreme_topN_cos_sim_list)/len(extreme_topN_cos_sim_list)
-            strong_cos_score =  self.tuning_lambda * sum(strong_topN_cos_sim_list[:self.topN_max])/len(strong_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(strong_topN_cos_sim_list)/len(strong_topN_cos_sim_list)
-            moderate_cos_score =  self.tuning_lambda * sum(moderate_topN_cos_sim_list[:self.topN_max])/len(moderate_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_cos_sim_list)/len(moderate_topN_cos_sim_list)
+            extreme_cos_score = sum(extreme_topN_cos_sim_list)
+            strong_cos_score = sum(strong_topN_cos_sim_list)
+            moderate_cos_score = sum(moderate_topN_cos_sim_list)
+            #  extreme_cos_score =  self.tuning_lambda * sum(extreme_topN_cos_sim_list[:self.topN_max])/len(extreme_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(extreme_topN_cos_sim_list)/len(extreme_topN_cos_sim_list)
+            #  strong_cos_score =  self.tuning_lambda * sum(strong_topN_cos_sim_list[:self.topN_max])/len(strong_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(strong_topN_cos_sim_list)/len(strong_topN_cos_sim_list)
+            #  moderate_cos_score =  self.tuning_lambda * sum(moderate_topN_cos_sim_list[:self.topN_max])/len(moderate_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_cos_sim_list)/len(moderate_topN_cos_sim_list)
 
             # generate cosine score
-            #cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
-            cos_score = extreme_cos_score
+            if self.flag == 3:
+                cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
+            if self.flag == 1:
+                cos_score = extreme_cos_score
             print "positive cosine score:", cos_score
 
             positive_cosine_topN.append({"query": query,
@@ -284,19 +293,25 @@ class Distance:
                     moderate_word_dict = {"word": self.moderate_negative[index], "cos_sim": moderate_cos_sim_list[index]}
                     moderate_word_dict_list.append(moderate_word_dict)
 
-            extreme_topN_cos_sim_list = [float(extreme_word_dict["cos_sim"]) for extreme_word_dict in extreme_word_dict_list]
-            strong_topN_cos_sim_list = [float(strong_word_dict["cos_sim"]) for strong_word_dict in strong_word_dict_list]
-            moderate_topN_cos_sim_list = [float(moderate_word_dict["cos_sim"]) for moderate_word_dict in moderate_word_dict_list]
+            extreme_topN_cos_sim_list = [float(extreme_word_dict["cos_sim"]) for extreme_word_dict in extreme_word_dict_list if float(extreme_word_dict["cos_sim"]) >= self.threshold]
+            strong_topN_cos_sim_list = [float(strong_word_dict["cos_sim"]) for strong_word_dict in strong_word_dict_list if float(strong_word_dict["cos_sim"]) >= self.threshold]
+            moderate_topN_cos_sim_list = [float(moderate_word_dict["cos_sim"]) for moderate_word_dict in moderate_word_dict_list if float(moderate_word_dict["cos_sim"]) >= self.threshold]
 
             # calculate the score out of topN cosine similarity
+
             #cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
-            extreme_cos_score =  self.tuning_lambda * sum(extreme_topN_cos_sim_list[:self.topN_max])/len(extreme_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(extreme_topN_cos_sim_list)/len(extreme_topN_cos_sim_list)
-            strong_cos_score =  self.tuning_lambda * sum(strong_topN_cos_sim_list[:self.topN_max])/len(strong_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(strong_topN_cos_sim_list)/len(strong_topN_cos_sim_list)
-            moderate_cos_score =  self.tuning_lambda * sum(moderate_topN_cos_sim_list[:self.topN_max])/len(moderate_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_cos_sim_list)/len(moderate_topN_cos_sim_list)
+            extreme_cos_score = sum(extreme_topN_cos_sim_list)
+            strong_cos_score = sum(strong_topN_cos_sim_list)
+            moderate_cos_score = sum(moderate_topN_cos_sim_list)
+            # extreme_cos_score =  self.tuning_lambda * sum(extreme_topN_cos_sim_list[:self.topN_max])/len(extreme_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(extreme_topN_cos_sim_list)/len(extreme_topN_cos_sim_list)
+            # strong_cos_score =  self.tuning_lambda * sum(strong_topN_cos_sim_list[:self.topN_max])/len(strong_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(strong_topN_cos_sim_list)/len(strong_topN_cos_sim_list)
+            # moderate_cos_score =  self.tuning_lambda * sum(moderate_topN_cos_sim_list[:self.topN_max])/len(moderate_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_cos_sim_list)/len(moderate_topN_cos_sim_list)
 
             # generate cosine score
-            #cos_score = extreme_cos_score * 1 + strong_cos_score * 0.5 + moderate_cos_score * 0.3
-            cos_socre = extreme_cos_score
+            if self.flag == 3:
+                cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
+            if self.flag == 1:
+                cos_score = extreme_cos_score
             print "negative cosine score:", cos_score
 
             negative_cosine_topN.append({"query": query,
@@ -363,8 +378,10 @@ class Distance:
             moderate_dot_prod =  self.tuning_lambda * sum(moderate_topN_dot_prod_list[:self.topN_max])/len(moderate_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_dot_prod_list)/len(moderate_topN_dot_prod_list)
 
             # generate dot score
-            #dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
-            dot_score = extreme_dot_prod
+            if self.flag == 3:
+                dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
+            if self.flag == 1:
+                dot_score = extreme_dot_prod
             print "positive dot score:", dot_score
 
             positive_dot_topN.append({"query": query,
@@ -423,8 +440,10 @@ class Distance:
             moderate_dot_prod =  self.tuning_lambda * sum(moderate_topN_dot_prod_list[:self.topN_max])/len(moderate_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_dot_prod_list)/len(moderate_topN_dot_prod_list)
 
             # generate dot score
-            #dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
-            dot_score = extreme_dot_prod
+            if self.flag == 3:
+                dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
+            if self.flag == 1:
+                dot_score = extreme_dot_prod
             print "Negative dot score:", dot_score
 
             negative_dot_topN.append({"query": query,
@@ -440,22 +459,22 @@ class Distance:
     def create_dirs(self):
         """ create the directory if not exist"""
         dir1 = os.path.dirname(self.dst_dc)
-        dir2 = os.path.dirname(self.dst_dd)
+        #dir2 = os.path.dirname(self.dst_dd)
         dir3 = os.path.dirname(self.dst_rc)
-        dir4 = os.path.dirname(self.dst_rd)
+        #dir4 = os.path.dirname(self.dst_rd)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
             os.makedirs(dir1)
-        if not os.path.exists(dir2):
-            print "Creating directory: " + dir2
-            os.makedirs(dir2)
+        #  if not os.path.exists(dir2):
+        #      print "Creating directory: " + dir2
+        #      os.makedirs(dir2)
         if not os.path.exists(dir3):
             print "Creating directory: " + dir3
             os.makedirs(dir3)
-        if not os.path.exists(dir4):
-            print "Creating directory: " + dir4
-            os.makedirs(dir4)
+        #  if not os.path.exists(dir4):
+        #      print "Creating directory: " + dir4
+        #      os.makedirs(dir4)
 
     def render(self):
         """ save every cosine_list for top1~5 as json file"""
@@ -477,7 +496,8 @@ class Distance:
                 cnt += 1
                 query_ordered_dict = OrderedDict()
                 query_ordered_dict["query"] = p_cos_word_dict["query"]
-                query_ordered_dict["lambda"] = self.tuning_lambda
+                #query_ordered_dict["lambda"] = self.tuning_lambda
+                query_ordered_dict["cosine_threshold"] = self.threshold
 
                 # (1) extreme positive cosine
                 extreme_positive_cosine_word_dict_list = []
@@ -728,13 +748,18 @@ class Distance:
         # (1) cos_ranking
         if self.cosine_flag:
             location_ordered_dict = OrderedDict()
-            location_ordered_dict['lambda'] = self.tuning_lambda
+            #location_ordered_dict['lambda'] = self.tuning_lambda
+            location_ordered_dict['threshold'] = self.threshold
+            location_ordered_dict['topN'] = self.topN
+            #location_ordered_dict['topN_max'] = self.topN_max
             if self.verbose:
                 print "Ranking queries according to cosine score"
             score_list = []
             for p_cos_word_dict, n_cos_word_dict in zip(positive_cosine_topN, negative_cosine_topN):
-                #score = p_cos_word_dict["cos_score"]
-                score = p_cos_word_dict["cos_score"] #- n_cos_word_dict["cos_score"]
+                if self.positive_minus_negative_flag:
+                    score = p_cos_word_dict["cos_score"] - n_cos_word_dict["cos_score"]
+                else:
+                    score = p_cos_word_dict["cos_score"]
                 score_list.append({"attraction_name": p_cos_word_dict["query"], "score": score})
 
             # derive ranking_list from a the unsorted score_list
@@ -765,13 +790,17 @@ class Distance:
         if self.dot_flag:
             location_ordered_dict = OrderedDict()
             location_ordered_dict['lambda'] = self.tuning_lambda
+            location_ordered_dict['topN'] = self.topN
+            location_ordered_dict['topN_max'] = self.topN_max
 
             if self.verbose:
                 print "Ranking queries according to dot score"
             score_list = []
             for p_dot_word_dict, n_dot_word_dict in zip(positive_dot_topN, negative_dot_topN):
-                #score = p_dot_word_dict["dot_score"]
-                score = p_dot_word_dict["dot_score"] #- n_dot_word_dict["dot_score"]
+                if self.positive_minus_negative_flag:
+                    score = p_cos_word_dict["cos_score"] - n_cos_word_dict["cos_score"]
+                else:
+                    score = p_cos_word_dict["cos_score"]
                 score_list.append({"attraction_name": p_dot_word_dict["query"], "score": score})
 
             # derive ranking_list from a the unsorted score_list
