@@ -17,7 +17,7 @@ class ReviewProcess:
         self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
         self.filename = re.findall("([A-Z]\w+)", self.src)[0]
         print "Processing " +"\033[1m" + self.filename + ".json" + "\033[0m"
-        self.verbose = 1
+        self.verbose = 0
 
         self.attraction = {}
         self.attraction_name, self.attraction_regexr, self.attraction_al, self.attraction_marked = "", "", "", ""
