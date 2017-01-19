@@ -124,23 +124,28 @@ class RenderRanking:
 
         computed_vs_reranked_ndcg_list = []
         for computed_rankings, reranked_rankings in zip(computed_rankings_list, reranked_rankings_list):
-            print "c:", computed_rankings
+            print "computed:", computed_rankings
             #reranked_rankings = [i for i in xrange(1,21)]
-            print "r:", reranked_rankings
+            print "reranked:", reranked_rankings
             g = []
             for i, j in zip(computed_rankings, reranked_rankings):
                 if int(j)<5:
                     if int(i)<=5:
-                        g.append(3)
+                        g.append(4)
                     else:
                         g.append(0)
                 elif 5 < int(j) <= 10:
                     if 5 < int(i) <= 10:
+                        g.append(3)
+                    else:
+                        g.append(0)
+                elif 10 < int(j) <= 15:
+                    if 10 < int(i) <= 15:
                         g.append(2)
                     else:
                         g.append(0)
-                elif 10 < int(j) <= 20:
-                    if 10< int(i) <= 20:
+                elif 15 < int(j) <= 20:
+                    if 15 < int(i) <= 20:
                         g.append(1)
                     else:
                         g.append(0)
@@ -153,23 +158,28 @@ class RenderRanking:
 
         computed_vs_original_ndcg_list = []
         for computed_rankings, original_rankings in zip(computed_rankings_list, original_rankings_list):
-            print "c:", computed_rankings
+            print "computed:", computed_rankings
             #original_rankings = [i for i in xrange(1,21)]
-            print "r:", original_rankings
+            print "original:", original_rankings
             g = []
             for i, j in zip(computed_rankings, original_rankings):
                 if int(j)<5:
                     if int(i)<=5:
-                        g.append(3)
+                        g.append(4)
                     else:
                         g.append(0)
                 elif 5 < int(j) <= 10:
                     if 5 < int(i) <= 10:
+                        g.append(3)
+                    else:
+                        g.append(0)
+                elif 10 < int(j) <= 15:
+                    if 10 < int(i) <= 15:
                         g.append(2)
                     else:
                         g.append(0)
-                elif 10 < int(j) <= 20:
-                    if 10< int(i) <= 20:
+                elif 15 < int(j) <= 20:
+                    if 15 < int(i) <= 20:
                         g.append(1)
                     else:
                         g.append(0)
