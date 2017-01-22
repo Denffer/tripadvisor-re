@@ -17,20 +17,20 @@ class Distance:
 
     def __init__(self, argv1, argv2):
         self.src = argv1
-        #self.tuning_lambda = float(argv2)
         self.threshold = float(argv2)
         self.src_lexicon = "data/lexicon/enhanced_lexicon.json"
+        self.src_sentiment_statistics = "data/lexicon/sentiment_statistics.json"
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src_fr = "data/frontend_reviews/" + self.filename + "/"
 
         self.verbose = 1
-        #self.dst_dc = "data/distance/" + self.filename + "/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_dc = "data/distance/" + self.filename + "/" + self.filename + "-threshold" + str(float(argv2)) + ".json"
-        #self.dst_dd = "data/distance/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        #self.dst_rc = "data/ranking/" + self.filename + "/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.dst_rc = "data/ranking/" + self.filename + "/" + self.filename + "-threshold" + str(float(argv2)) + ".json"
-        #self.dst_rd = "data/ranking/" + self.filename + "/dot/" + self.filename + "-lambda" + str(float(argv2)) + ".json"
-        self.flag = 1
+
+        self.dst_distance = "data/distance/" + self.filename + "/" + self.filename + "-threshold" + str(float(argv2)) + ".json"
+        self.dst_ranking = "data/ranking/" + self.filename + "/" + self.filename + "-threshold" + str(float(argv2)) + ".json"
+        self.dst_distance_baseline = "data/distance/" + self.filename + "/baseline-" + self.filename + "-threshold" + str(float(argv2)) + "-baseline.json"
+        self.dst_ranking_baseline = "data/ranking/" + self.filename + "/baseline-" + self.filename + "-threshold" + str(float(argv2)) + "-baseline.json"
+
+
         self.positive_minus_negative_flag = 0
         self.cosine_flag = 1
         self.dot_flag = 0
@@ -38,6 +38,7 @@ class Distance:
         self.topN = 500
         self.topN_max = 5
         self.queries = []
+        self.baseline_positive = []
         self.extreme_positive, self.strong_positive, self.moderate_positive = [], [], []
         self.extreme_negative, self.strong_negative, self.moderate_negative = [], [], []
         self.vocab_size = 0
@@ -46,6 +47,7 @@ class Distance:
         self.attractions, self.attractions2 = {}, {}
 	self.unique_words = {}
         self.vectors200 = []
+        self.baseline_positive_vectors200 = []
         self.extreme_positive_vectors200, self.strong_positive_vectors200, self.moderate_positive_vectors200 = [], [], []
         self.extreme_negative_vectors200, self.strong_negative_vectors200, self.moderate_negative_vectors200 = [], [], []
 
@@ -112,14 +114,39 @@ class Distance:
                             original_ranking = attraction["original_ranking"]
                             self.attractions2.update({attraction_al: original_ranking})
             else:
-                if self.verbose:
-                    print "No file is found"
-                    print "-"*80
+                print "No file is found"
+                print "-"*80
 
-        if self.verbose:
-            print "-"*80
+        print "-"*80
         #print self.attractions
         return self.attractions
+
+    def get_sentiment_statistics(self):
+	""" Open data/lexicon/sentiment_statistics.json and load positive """
+        """ This is for the baseline """
+
+        if self.verbose:
+            print "Loading data from " + "\033[1m" + self.src_sentiment_statistics + "\033[0m"
+        with open(self.src_sentiment_statistics, 'r') as f_ss:
+            sentiment_statistics = json.load(f_ss)
+
+        positive = sentiment_statistics["positive_statistics"]
+        negative = sentiment_statistics["negative_statistics"]
+
+        print "Processing Baseline Lexicon"
+        cnt = 0
+        length = len(self.unique_words.keys())
+        for key, value in self.unique_words.iteritems():
+            cnt += 1
+            for word_dict in positive:
+                if word_dict["stemmed_word"] == key.decode("utf-8"):
+                    self.baseline_positive.append(word_dict)
+                    self.baseline_positive_vectors200.append(self.vectors200[value])
+
+            sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+            sys.stdout.flush()
+
+        print "\n" + "-"*70
 
     def get_lexicon(self):
 	""" open data/lexicon/enhanced_lexicon.json and load extreme_positive & strong_positive & moderate_positive """
@@ -152,9 +179,8 @@ class Distance:
                     self.moderate_positive.append(word_dict)
                     self.moderate_positive_vectors200.append(self.vectors200[value])
 
-            if self.verbose:
-                sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
-                sys.stdout.flush()
+            sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+            sys.stdout.flush()
 
         negative = sentiment_statistics["negative"]
 
@@ -186,6 +212,43 @@ class Distance:
         if self.verbose:
             print "\n" + "-"*70
 
+    def get_baseline_cosine_topN(self):
+        """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
+        """ This is to calculate the baseline """
+
+        print "Calculating Cosine Similarity between queries and every positive word (Baseline)"
+
+        baseline_cosine_topN = []
+        for query in self.queries:
+            baseline_cos_sim_list = []
+
+            for index in xrange(len(self.baseline_positive)):
+                baseline_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.baseline_positive_vectors200[index]))
+
+            print "Generating all baseline sentiment words with " + "\033[1m" + query + "\033[0m"
+            baseline_sorted_index = sorted(range(len(baseline_cos_sim_list)), key=lambda k: baseline_cos_sim_list[k], reverse=True)
+
+            baseline_word_dict_list = []
+            for i, index in enumerate(baseline_sorted_index):
+                # no threshold on topN
+                baseline_word_dict = {"word": self.baseline_positive[index], "cos_sim": baseline_cos_sim_list[index]}
+                baseline_word_dict_list.append(baseline_word_dict)
+
+            # cutting threshold
+            baseline_topN_cos_sim_list = [float(baseline_word_dict["cos_sim"]) for baseline_word_dict in baseline_word_dict_list if float(baseline_word_dict["cos_sim"]) >= self.threshold]
+
+            # calculate the score out of topN cosine similarity
+            baseline_positive_cos_score = sum(baseline_topN_cos_sim_list)
+
+            print "baseline positive cosine score:", baseline_positive_cos_score
+
+            baseline_cosine_topN.append({"query": query,
+                "baseline_positive_topN_cosine_similarity": baseline_word_dict_list,
+                "baseline_positive_cos_score": baseline_positive_cos_score
+                })
+
+        return baseline_cosine_topN
+
     def get_cosine_topN(self):
         """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
         """ cos_sim stands for cosine_similarity """
@@ -196,6 +259,7 @@ class Distance:
         positive_cosine_topN = []
         for query in self.queries:
             extreme_cos_sim_list, strong_cos_sim_list, moderate_cos_sim_list = [], [],[]
+
             # cosine_similarity ranges from -1 ~ 1
             for index in xrange(len(self.extreme_positive)):
                 extreme_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.extreme_positive_vectors200[index]))
@@ -204,8 +268,8 @@ class Distance:
             for index in xrange(len(self.moderate_positive)):
                 moderate_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.moderate_positive_vectors200[index]))
 
-            if self.verbose:
-                print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
+            print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
+            # sorting index
             extreme_sorted_index = sorted(range(len(extreme_cos_sim_list)), key=lambda k: extreme_cos_sim_list[k], reverse=True)
             strong_sorted_index = sorted(range(len(strong_cos_sim_list)), key=lambda k: strong_cos_sim_list[k], reverse=True)
             moderate_sorted_index = sorted(range(len(moderate_cos_sim_list)), key=lambda k: moderate_cos_sim_list[k], reverse=True)
@@ -228,35 +292,30 @@ class Distance:
                     moderate_word_dict = {"word": self.moderate_positive[index], "cos_sim": moderate_cos_sim_list[index]}
                     moderate_word_dict_list.append(moderate_word_dict)
 
+            # cutting threshold
             extreme_topN_cos_sim_list = [float(extreme_word_dict["cos_sim"]) for extreme_word_dict in extreme_word_dict_list if float(extreme_word_dict["cos_sim"]) >= self.threshold]
             strong_topN_cos_sim_list = [float(strong_word_dict["cos_sim"]) for strong_word_dict in strong_word_dict_list if float(strong_word_dict["cos_sim"]) >= self.threshold]
             moderate_topN_cos_sim_list = [float(moderate_word_dict["cos_sim"]) for moderate_word_dict in moderate_word_dict_list if float(moderate_word_dict["cos_sim"]) >= self.threshold]
 
             # calculate the score out of topN cosine similarity
-            #cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
             extreme_cos_score = sum(extreme_topN_cos_sim_list)
             strong_cos_score = sum(strong_topN_cos_sim_list)
             moderate_cos_score = sum(moderate_topN_cos_sim_list)
-            #  extreme_cos_score =  self.tuning_lambda * sum(extreme_topN_cos_sim_list[:self.topN_max])/len(extreme_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(extreme_topN_cos_sim_list)/len(extreme_topN_cos_sim_list)
-            #  strong_cos_score =  self.tuning_lambda * sum(strong_topN_cos_sim_list[:self.topN_max])/len(strong_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(strong_topN_cos_sim_list)/len(strong_topN_cos_sim_list)
-            #  moderate_cos_score =  self.tuning_lambda * sum(moderate_topN_cos_sim_list[:self.topN_max])/len(moderate_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_cos_sim_list)/len(moderate_topN_cos_sim_list)
 
             # generate cosine score
-            if self.flag == 3:
-                cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
-            if self.flag == 1:
-                cos_score = extreme_cos_score
+            cos_score = extreme_cos_score
+            #  cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
             print "positive cosine score:", cos_score
 
             positive_cosine_topN.append({"query": query,
                 "extreme_positive_topN_cosine_similarity": extreme_word_dict_list,
                 "strong_positive_topN_cosine_similarity": strong_word_dict_list,
                 "moderate_positive_topN_cosine_similarity": moderate_word_dict_list,
-                "cos_score": cos_score})
+                "cos_score": cos_score,
+                })
 
-        if self.verbose:
-            print "-"*70
-            print "Calculating Cosine Similarity between queries and every negative word"
+        print "-"*70
+        print "Calculating Cosine Similarity between queries and every negative word"
 
         negative_cosine_topN = []
         for query in self.queries:
@@ -293,25 +352,19 @@ class Distance:
                     moderate_word_dict = {"word": self.moderate_negative[index], "cos_sim": moderate_cos_sim_list[index]}
                     moderate_word_dict_list.append(moderate_word_dict)
 
+            # cutting threshold
             extreme_topN_cos_sim_list = [float(extreme_word_dict["cos_sim"]) for extreme_word_dict in extreme_word_dict_list if float(extreme_word_dict["cos_sim"]) >= self.threshold]
             strong_topN_cos_sim_list = [float(strong_word_dict["cos_sim"]) for strong_word_dict in strong_word_dict_list if float(strong_word_dict["cos_sim"]) >= self.threshold]
             moderate_topN_cos_sim_list = [float(moderate_word_dict["cos_sim"]) for moderate_word_dict in moderate_word_dict_list if float(moderate_word_dict["cos_sim"]) >= self.threshold]
 
             # calculate the score out of topN cosine similarity
-
-            #cos_score =  self.tuning_lambda * max(topN_cos_sim_list) + (1-self.tuning_lambda) * sum(topN_cos_sim_list) / len(topN_cos_sim_list)
             extreme_cos_score = sum(extreme_topN_cos_sim_list)
             strong_cos_score = sum(strong_topN_cos_sim_list)
             moderate_cos_score = sum(moderate_topN_cos_sim_list)
-            # extreme_cos_score =  self.tuning_lambda * sum(extreme_topN_cos_sim_list[:self.topN_max])/len(extreme_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(extreme_topN_cos_sim_list)/len(extreme_topN_cos_sim_list)
-            # strong_cos_score =  self.tuning_lambda * sum(strong_topN_cos_sim_list[:self.topN_max])/len(strong_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(strong_topN_cos_sim_list)/len(strong_topN_cos_sim_list)
-            # moderate_cos_score =  self.tuning_lambda * sum(moderate_topN_cos_sim_list[:self.topN_max])/len(moderate_topN_cos_sim_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_cos_sim_list)/len(moderate_topN_cos_sim_list)
 
             # generate cosine score
-            if self.flag == 3:
-                cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
-            if self.flag == 1:
-                cos_score = extreme_cos_score
+            cos_score = extreme_cos_score
+            #  cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
             print "negative cosine score:", cos_score
 
             negative_cosine_topN.append({"query": query,
@@ -325,163 +378,124 @@ class Distance:
 
         return positive_cosine_topN, negative_cosine_topN
 
-    def get_dot_topN(self):
-        """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
-        """ dot_prod stands for dot_product """
-
-        if self.verbose:
-            print "Calculating Dot Product between queries and every positive word"
-
-        positive_dot_topN = []
-        for query in self.queries:
-            extreme_dot_prod_list, strong_dot_prod_list, moderate_dot_prod_list = [], [],[]
-            # dot_similarity ranges from -1 ~ 1
-            for index in xrange(len(self.extreme_positive)):
-                extreme_dot_prod_list.append(np.dot(self.vectors200[self.unique_words[query]], self.extreme_positive_vectors200[index]))
-            for index in xrange(len(self.strong_positive)):
-                strong_dot_prod_list.append(np.dot(self.vectors200[self.unique_words[query]], self.strong_positive_vectors200[index]))
-            for index in xrange(len(self.moderate_positive)):
-                moderate_dot_prod_list.append(np.dot(self.vectors200[self.unique_words[query]], self.moderate_positive_vectors200[index]))
-
-            if self.verbose:
-                print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
-            extreme_sorted_index = sorted(range(len(extreme_dot_prod_list)), key=lambda k: extreme_dot_prod_list[k], reverse=True)
-            strong_sorted_index = sorted(range(len(strong_dot_prod_list)), key=lambda k: strong_dot_prod_list[k], reverse=True)
-            moderate_sorted_index = sorted(range(len(moderate_dot_prod_list)), key=lambda k: moderate_dot_prod_list[k], reverse=True)
-
-            extreme_word_dict_list = []
-            for i, index in enumerate(extreme_sorted_index):
-                if i < self.topN:
-                    extreme_word_dict = {"word": self.extreme_positive[index], "dot_prod": extreme_dot_prod_list[index]}
-                    extreme_word_dict_list.append(extreme_word_dict)
-
-            strong_word_dict_list = []
-            for i, index in enumerate(strong_sorted_index):
-                if i < self.topN:
-                    strong_word_dict = {"word": self.strong_positive[index], "dot_prod": strong_dot_prod_list[index]}
-                    strong_word_dict_list.append(strong_word_dict)
-
-            moderate_word_dict_list = []
-            for i, index in enumerate(moderate_sorted_index):
-                if i < self.topN:
-                    moderate_word_dict = {"word": self.moderate_positive[index], "dot_prod": moderate_dot_prod_list[index]}
-                    moderate_word_dict_list.append(moderate_word_dict)
-
-            extreme_topN_dot_prod_list = [float(extreme_word_dict["dot_prod"]) for extreme_word_dict in extreme_word_dict_list]
-            strong_topN_dot_prod_list = [float(strong_word_dict["dot_prod"]) for strong_word_dict in strong_word_dict_list]
-            moderate_topN_dot_prod_list = [float(moderate_word_dict["dot_prod"]) for moderate_word_dict in moderate_word_dict_list]
-
-            # calculate the score out of topN dot similarity
-            #dot_prod =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
-            extreme_dot_prod =  self.tuning_lambda * sum(extreme_topN_dot_prod_list[:self.topN_max])/len(extreme_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(extreme_topN_dot_prod_list)/len(extreme_topN_dot_prod_list)
-            strong_dot_prod =  self.tuning_lambda * sum(strong_topN_dot_prod_list[:self.topN_max])/len(strong_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(strong_topN_dot_prod_list)/len(strong_topN_dot_prod_list)
-            moderate_dot_prod =  self.tuning_lambda * sum(moderate_topN_dot_prod_list[:self.topN_max])/len(moderate_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_dot_prod_list)/len(moderate_topN_dot_prod_list)
-
-            # generate dot score
-            if self.flag == 3:
-                dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
-            if self.flag == 1:
-                dot_score = extreme_dot_prod
-            print "positive dot score:", dot_score
-
-            positive_dot_topN.append({"query": query,
-                "extreme_positive_topN_dot_product": extreme_word_dict_list,
-                "strong_positive_topN_dot_product": strong_word_dict_list,
-                "moderate_positive_topN_dot_product": moderate_word_dict_list,
-                "dot_score": dot_score})
-
-        if self.verbose:
-            print "-"*70
-            print "Calculating Dot Product between queries and every negative word"
-
-        negative_dot_topN = []
-        for query in self.queries:
-            extreme_dot_prod_list, strong_dot_prod_list, moderate_dot_prod_list = [], [],[]
-            # dot_similarity ranges from -1 ~ 1
-            for index in xrange(len(self.extreme_negative)):
-                extreme_dot_prod_list.append(np.dot(self.vectors200[self.unique_words[query]], self.extreme_negative_vectors200[index]))
-            for index in xrange(len(self.strong_negative)):
-                strong_dot_prod_list.append(np.dot(self.vectors200[self.unique_words[query]], self.strong_negative_vectors200[index]))
-            for index in xrange(len(self.moderate_negative)):
-                moderate_dot_prod_list.append(np.dot(self.vectors200[self.unique_words[query]], self.moderate_negative_vectors200[index]))
-
-            if self.verbose:
-                print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
-            extreme_sorted_index = sorted(range(len(extreme_dot_prod_list)), key=lambda k: extreme_dot_prod_list[k], reverse=True)
-            strong_sorted_index = sorted(range(len(strong_dot_prod_list)), key=lambda k: strong_dot_prod_list[k], reverse=True)
-            moderate_sorted_index = sorted(range(len(moderate_dot_prod_list)), key=lambda k: moderate_dot_prod_list[k], reverse=True)
-
-            extreme_word_dict_list = []
-            for i, index in enumerate(extreme_sorted_index):
-                if i < self.topN:
-                    extreme_word_dict = {"word": self.extreme_negative[index], "dot_prod": extreme_dot_prod_list[index]}
-                    extreme_word_dict_list.append(extreme_word_dict)
-
-            strong_word_dict_list = []
-            for i, index in enumerate(strong_sorted_index):
-                if i < self.topN:
-                    strong_word_dict = {"word": self.strong_negative[index], "dot_prod": strong_dot_prod_list[index]}
-                    strong_word_dict_list.append(strong_word_dict)
-
-            moderate_word_dict_list = []
-            for i, index in enumerate(moderate_sorted_index):
-                if i < self.topN:
-                    moderate_word_dict = {"word": self.moderate_negative[index], "dot_prod": moderate_dot_prod_list[index]}
-                    moderate_word_dict_list.append(moderate_word_dict)
-
-            extreme_topN_dot_prod_list = [float(extreme_word_dict["dot_prod"]) for extreme_word_dict in extreme_word_dict_list]
-            strong_topN_dot_prod_list = [float(strong_word_dict["dot_prod"]) for strong_word_dict in strong_word_dict_list]
-            moderate_topN_dot_prod_list = [float(moderate_word_dict["dot_prod"]) for moderate_word_dict in moderate_word_dict_list]
-
-            # calculate the score out of topN dot similarity
-            #dot_prod =  self.tuning_lambda * max(topN_dot_prod_list) + (1-self.tuning_lambda) * sum(topN_dot_prod_list) / len(topN_dot_prod_list)
-            extreme_dot_prod =  self.tuning_lambda * sum(extreme_topN_dot_prod_list[:self.topN_max])/len(extreme_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(extreme_topN_dot_prod_list)/len(extreme_topN_dot_prod_list)
-            strong_dot_prod =  self.tuning_lambda * sum(strong_topN_dot_prod_list[:self.topN_max])/len(strong_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(strong_topN_dot_prod_list)/len(strong_topN_dot_prod_list)
-            moderate_dot_prod =  self.tuning_lambda * sum(moderate_topN_dot_prod_list[:self.topN_max])/len(moderate_topN_dot_prod_list[:self.topN_max]) + (1-self.tuning_lambda) * sum(moderate_topN_dot_prod_list)/len(moderate_topN_dot_prod_list)
-
-            # generate dot score
-            if self.flag == 3:
-                dot_score = extreme_dot_prod * 1 + strong_dot_prod * 0.5 + moderate_dot_prod * 0.3
-            if self.flag == 1:
-                dot_score = extreme_dot_prod
-            print "Negative dot score:", dot_score
-
-            negative_dot_topN.append({"query": query,
-                "extreme_negative_topN_dot_product": extreme_word_dict_list,
-                "strong_negative_topN_dot_product": strong_word_dict_list,
-                "moderate_negative_topN_dot_product": moderate_word_dict_list,
-                "dot_score": dot_score})
-
-        if self.verbose:
-            print "-"*70
-        return positive_dot_topN, negative_dot_topN
-
     def create_dirs(self):
         """ create the directory if not exist"""
-        dir1 = os.path.dirname(self.dst_dc)
-        #dir2 = os.path.dirname(self.dst_dd)
-        dir3 = os.path.dirname(self.dst_rc)
-        #dir4 = os.path.dirname(self.dst_rd)
+        dir1 = os.path.dirname(self.dst_distance)
+        dir2 = os.path.dirname(self.dst_ranking)
+        dir3 = os.path.dirname(self.dst_distance_baseline)
+        dir4 = os.path.dirname(self.dst_ranking_baseline)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
             os.makedirs(dir1)
-        #  if not os.path.exists(dir2):
-        #      print "Creating directory: " + dir2
-        #      os.makedirs(dir2)
+        if not os.path.exists(dir2):
+            print "Creating directory: " + dir2
+            os.makedirs(dir2)
         if not os.path.exists(dir3):
             print "Creating directory: " + dir3
             os.makedirs(dir3)
-        #  if not os.path.exists(dir4):
-        #      print "Creating directory: " + dir4
-        #      os.makedirs(dir4)
+        if not os.path.exists(dir4):
+            print "Creating directory: " + dir4
+            os.makedirs(dir4)
+
+    def render_baseline(self):
+        if self.cosine_flag:
+            baseline_positive_cosine_topN = self.get_baseline_cosine_topN()
+
+            print "Putting Cosine word dicts in order"
+            query_ordered_dict_list = []
+
+            cnt = 0
+            length = len(baseline_positive_cosine_topN)
+            for baseline_cos_word_dict in baseline_positive_cosine_topN:
+                cnt += 1
+                query_ordered_dict = OrderedDict()
+                query_ordered_dict["type"] = "baseline"
+                query_ordered_dict["query"] = baseline_cos_word_dict["query"]
+                query_ordered_dict["cosine_threshold"] = self.threshold
+
+                # (1) baseline cosine
+                baseline_positive_cosine_word_dict_list = []
+                index = 0
+                for cosine_word_dict in baseline_cos_word_dict["baseline_positive_topN_cosine_similarity"]:
+                    index += 1
+                    ordered_dict = OrderedDict()
+                    ordered_dict["index"] = index
+                    ordered_dict["cosine_similarity"] = cosine_word_dict["cos_sim"]
+                    ordered_dict["count"] = cosine_word_dict["word"]["count"]
+                    ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
+                    ordered_dict["word"] = cosine_word_dict["word"]["word"]
+                    baseline_positive_cosine_word_dict_list.append(NoIndent(ordered_dict))
+
+                query_ordered_dict["baseline_positive_topN_cosine_similarity"] = baseline_positive_cosine_word_dict_list
+
+                # append one query after another
+                query_ordered_dict_list.append(query_ordered_dict)
+
+                if self.verbose:
+                    sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+                    sys.stdout.flush()
+            print ""
+        else:
+            # passing cosine
+            pass
+
+        if self.cosine_flag:
+            if self.verbose:
+                # Writing to data/distance/location_threshold0.25-baseline.json
+                print "Writing data to " + "\033[1m" + str(self.dst_distance_baseline) + "\033[0m"
+
+            f = open(self.dst_distance_baseline, "w")
+            f.write(json.dumps(query_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
+
+            if self.verbose:
+                print "-"*80
+
+        """"""""""""""""""""""""
+        """  Ranking   Here  """
+        """"""""""""""""""""""""
+        # (1) cos_ranking
+        if self.cosine_flag:
+            location_ordered_dict = OrderedDict()
+            location_ordered_dict['type'] = "baseline"
+            location_ordered_dict['threshold'] = self.threshold
+            location_ordered_dict['topN'] = len(self.baseline_positive)
+
+            print "Ranking queries according to baseline cosine score"
+            score_list = []
+            for baseline_cos_word_dict in baseline_positive_cosine_topN:
+                #if self.positive_minus_negative_flag:
+                #    score = p_cos_word_dict["baseline_cos_score"] - n_cos_word_dict["baseline_positive_cos_score"]
+                #else:
+                score = baseline_cos_word_dict["baseline_positive_cos_score"]
+                score_list.append({"attraction_name": baseline_cos_word_dict["query"], "score": score})
+
+            # derive ranking_list from the unsorted score_list
+            ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
+
+            processed_ranking_list = []
+            ranking = 0
+            for rank_dict in ranking_list:
+                ranking += 1
+                rank_ordered_dict = OrderedDict()
+                rank_ordered_dict['attraction_name'] = rank_dict['attraction_name']
+                rank_ordered_dict['computed_ranking'] = str(ranking)
+                rank_ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
+                rank_ordered_dict['original_ranking'] = self.attractions2[rank_dict['attraction_name']]
+                rank_ordered_dict['score'] = rank_dict['score']
+                processed_ranking_list.append(rank_ordered_dict)
+            location_ordered_dict['cosine_ranking'] = processed_ranking_list
+
+            # Writing to data/ranking/location/Amsterdam_threshold0.25-baseline
+            print "Writing to " + "\033[1m" + str(self.dst_ranking_baseline) + "\033[0m"
+            print "-"*70
+            f = open(self.dst_ranking_baseline, "w")
+            f.write(json.dumps(location_ordered_dict, indent = 4, cls=NoIndentEncoder))
+        else:
+            pass
 
     def render(self):
-        """ save every cosine_list for top1~5 as json file"""
-        self.get_source()
-        self.get_lexicon()
-        self.queries = self.get_attractions().keys()
-        self.create_dirs()
+        """ save to data/distance/ & data/ranking/ """
 
         if self.cosine_flag:
             positive_cosine_topN, negative_cosine_topN = self.get_cosine_topN()
@@ -495,8 +509,8 @@ class Distance:
             for p_cos_word_dict, n_cos_word_dict in zip(positive_cosine_topN, negative_cosine_topN):
                 cnt += 1
                 query_ordered_dict = OrderedDict()
+                query_ordered_dict['type'] = "refined"
                 query_ordered_dict["query"] = p_cos_word_dict["query"]
-                #query_ordered_dict["lambda"] = self.tuning_lambda
                 query_ordered_dict["cosine_threshold"] = self.threshold
 
                 # (1) extreme positive cosine
@@ -543,7 +557,6 @@ class Distance:
                     moderate_positive_cosine_word_dict_list.append(NoIndent(ordered_dict))
 
                 query_ordered_dict["moderate_positive_topN_cosine_similarity"] = moderate_positive_cosine_word_dict_list
-
 
                 # (4) negative cosine
                 extreme_negative_cosine_word_dict_list = []
@@ -602,145 +615,13 @@ class Distance:
         if self.cosine_flag:
             if self.verbose:
                 # Writing to data/distance/cosine/location_lambda05.json
-                print "Writing data to " + "\033[1m" + str(self.dst_dc) + "\033[0m"
+                print "Writing data to " + "\033[1m" + str(self.dst_distance) + "\033[0m"
 
-            f = open(self.dst_dc, "w")
+            f = open(self.dst_distance, "w")
             f.write(json.dumps(query_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
 
             if self.verbose:
                 print "-"*80
-
-        # dot
-        if self.dot_flag:
-            positive_dot_topN, negative_dot_topN = self.get_dot_topN()
-            query_ordered_dict_list = []
-
-            cnt = 0
-            length = len(positive_dot_topN)
-            for p_dot_word_dict, n_dot_word_dict in zip(positive_dot_topN, negative_dot_topN):
-                cnt += 1
-                query_ordered_dict = OrderedDict()
-                query_ordered_dict["query"] = p_dot_word_dict["query"]
-                query_ordered_dict["lambda"] = self.tuning_lambda
-
-                # (1) extreme positive dot
-                extreme_positive_dot_word_dict_list = []
-                index = 0
-                for dot_word_dict in p_dot_word_dict["extreme_positive_topN_dot_product"]:
-
-                    index += 1
-                    ordered_dict = OrderedDict()
-                    ordered_dict["index"] = index
-                    ordered_dict["dot_product"] = dot_word_dict["dot_prod"]
-                    ordered_dict["count"] = dot_word_dict["word"]["count"]
-                    ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
-                    ordered_dict["word"] = dot_word_dict["word"]["word"]
-                    extreme_positive_dot_word_dict_list.append(NoIndent(ordered_dict))
-
-                query_ordered_dict["extreme_positive_topN_dot_product"] = extreme_positive_dot_word_dict_list
-
-                # (2) strong positive dot
-                strong_positive_dot_word_dict_list = []
-                index = 0
-                for dot_word_dict in p_dot_word_dict["strong_positive_topN_dot_product"]:
-
-                    index += 1
-                    ordered_dict = OrderedDict()
-                    ordered_dict["index"] = index
-                    ordered_dict["dot_product"] = dot_word_dict["dot_prod"]
-                    ordered_dict["count"] = dot_word_dict["word"]["count"]
-                    ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
-                    ordered_dict["word"] = dot_word_dict["word"]["word"]
-                    strong_positive_dot_word_dict_list.append(NoIndent(ordered_dict))
-
-                query_ordered_dict["strong_positive_topN_dot_product"] = strong_positive_dot_word_dict_list
-
-                # (3) moderate positive dot
-                moderate_positive_dot_word_dict_list = []
-                index = 0
-                for dot_word_dict in p_dot_word_dict["moderate_positive_topN_dot_product"]:
-
-                    index += 1
-                    ordered_dict = OrderedDict()
-                    ordered_dict["index"] = index
-                    ordered_dict["dot_product"] = dot_word_dict["dot_prod"]
-                    ordered_dict["count"] = dot_word_dict["word"]["count"]
-                    ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
-                    ordered_dict["word"] = dot_word_dict["word"]["word"]
-                    moderate_positive_dot_word_dict_list.append(NoIndent(ordered_dict))
-
-                query_ordered_dict["moderate_positive_topN_dot_product"] = moderate_positive_dot_word_dict_list
-
-                # (4) extreme negative dot
-                extreme_negative_dot_word_dict_list = []
-                index = 0
-                for dot_word_dict in n_dot_word_dict["extreme_negative_topN_dot_product"]:
-
-                    index += 1
-                    ordered_dict = OrderedDict()
-                    ordered_dict["index"] = index
-                    ordered_dict["dot_product"] = dot_word_dict["dot_prod"]
-                    ordered_dict["count"] = dot_word_dict["word"]["count"]
-                    ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
-                    ordered_dict["word"] = dot_word_dict["word"]["word"]
-                    extreme_negative_dot_word_dict_list.append(NoIndent(ordered_dict))
-
-                query_ordered_dict["extreme_negative_topN_dot_product"] = extreme_negative_dot_word_dict_list
-
-                # (5) strong negative dot
-                strong_negative_dot_word_dict_list = []
-                index = 0
-                for dot_word_dict in n_dot_word_dict["strong_negative_topN_dot_product"]:
-
-                    index += 1
-                    ordered_dict = OrderedDict()
-                    ordered_dict["index"] = index
-                    ordered_dict["dot_product"] = dot_word_dict["dot_prod"]
-                    ordered_dict["count"] = dot_word_dict["word"]["count"]
-                    ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
-                    ordered_dict["word"] = dot_word_dict["word"]["word"]
-                    strong_negative_dot_word_dict_list.append(NoIndent(ordered_dict))
-
-                query_ordered_dict["strong_negative_topN_dot_product"] = strong_negative_dot_word_dict_list
-
-                # (6) moderate negative dot
-                moderate_negative_dot_word_dict_list = []
-                index = 0
-                for dot_word_dict in n_dot_word_dict["moderate_negative_topN_dot_product"]:
-
-                    index += 1
-                    ordered_dict = OrderedDict()
-                    ordered_dict["index"] = index
-                    ordered_dict["dot_product"] = dot_word_dict["dot_prod"]
-                    ordered_dict["count"] = dot_word_dict["word"]["count"]
-                    ordered_dict["stemmed_word"] = dot_word_dict["word"]["stemmed_word"]
-                    ordered_dict["word"] = dot_word_dict["word"]["word"]
-                    moderate_negative_dot_word_dict_list.append(NoIndent(ordered_dict))
-
-                query_ordered_dict["moderate_negative_topN_dot_product"] = moderate_negative_dot_word_dict_list
-
-                # append one query after another
-                query_ordered_dict_list.append(query_ordered_dict)
-
-                if self.verbose:
-                    sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
-                    sys.stdout.flush()
-            print ""
-        else:
-            # passing dot
-            pass
-
-        if self.dot_flag:
-            if self.verbose:
-                # Writing to data/distance/dot/location_lambda05.json
-                print "Writing to " + "\033[1m" + str(self.dst_dd) + "\033[0m"
-
-            f = open(self.dst_dd, "w")
-            f.write(json.dumps(query_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
-
-            if self.verbose:
-                print "-"*80
-
 
         """"""""""""""""""""""""
         """  Ranking   Here  """
@@ -748,10 +629,10 @@ class Distance:
         # (1) cos_ranking
         if self.cosine_flag:
             location_ordered_dict = OrderedDict()
-            #location_ordered_dict['lambda'] = self.tuning_lambda
+            location_ordered_dict['type'] = "refined"
             location_ordered_dict['threshold'] = self.threshold
             location_ordered_dict['topN'] = self.topN
-            #location_ordered_dict['topN_max'] = self.topN_max
+
             if self.verbose:
                 print "Ranking queries according to cosine score"
             score_list = []
@@ -778,59 +659,23 @@ class Distance:
                 processed_ranking_list.append(rank_ordered_dict)
             location_ordered_dict['cosine_ranking'] = processed_ranking_list
 
-            # Writing to data/ranking/cosine/location/Amsterdam_lambda04
+            # Writing to data/ranking/location/Amsterdam_threshold0.25
             if self.verbose:
-                print "Writing to " + "\033[1m" + str(self.dst_rc) + "\033[0m"
-            f = open(self.dst_rc, "w")
+                print "Writing to " + "\033[1m" + str(self.dst_ranking) + "\033[0m"
+            f = open(self.dst_ranking, "w")
             f.write(json.dumps(location_ordered_dict, indent = 4, cls=NoIndentEncoder))
         else:
             pass
 
-        # (2) dot_ranking
-        if self.dot_flag:
-            location_ordered_dict = OrderedDict()
-            location_ordered_dict['lambda'] = self.tuning_lambda
-            location_ordered_dict['topN'] = self.topN
-            location_ordered_dict['topN_max'] = self.topN_max
-
-            if self.verbose:
-                print "Ranking queries according to dot score"
-            score_list = []
-            for p_dot_word_dict, n_dot_word_dict in zip(positive_dot_topN, negative_dot_topN):
-                if self.positive_minus_negative_flag:
-                    score = p_cos_word_dict["cos_score"] - n_cos_word_dict["cos_score"]
-                else:
-                    score = p_cos_word_dict["cos_score"]
-                score_list.append({"attraction_name": p_dot_word_dict["query"], "score": score})
-
-            # derive ranking_list from a the unsorted score_list
-            ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
-
-            processed_ranking_list = []
-            ranking = 0
-            for rank_dict in ranking_list:
-                ranking += 1
-                rank_ordered_dict = OrderedDict()
-                rank_ordered_dict['attraction_name'] = rank_dict['attraction_name']
-                rank_ordered_dict['computed_ranking'] = str(ranking)
-                rank_ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
-                rank_ordered_dict['original_ranking'] = self.attractions2[rank_dict['attraction_name']]
-                rank_ordered_dict['score'] = rank_dict['score']
-                processed_ranking_list.append(rank_ordered_dict)
-            location_ordered_dict['dot_ranking'] = processed_ranking_list
-
-            # Writing to data/ranking/cosine/location/Amsterdam_lambda04
-            if self.verbose:
-                print "Writing to " + "\033[1m" + str(self.dst_rd) + "\033[0m"
-            f = open(self.dst_rd, "w")
-            f.write(json.dumps(location_ordered_dict, indent = 4, cls=NoIndentEncoder))
-
-        else:
-            pass
-
-        print "-"*80
-        if self.verbose:
-            print "Done"
+    def run(self):
+        """ run the entire program """
+        self.get_source()
+        self.get_sentiment_statistics()
+        self.get_lexicon()
+        self.queries = self.get_attractions().keys()
+        self.create_dirs()
+        self.render_baseline()
+        self.render()
 
 class NoIndent(object):
     def __init__(self, value):
@@ -859,5 +704,5 @@ class NoIndentEncoder(json.JSONEncoder):
 
 if __name__ == '__main__':
     distance = Distance(sys.argv[1], sys.argv[2])
-    distance.render()
+    distance.run()
 
