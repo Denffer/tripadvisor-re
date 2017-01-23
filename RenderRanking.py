@@ -201,7 +201,8 @@ class RenderRanking:
 
     def create_dirs(self, dst, location, flag):
         """ create the directory if not exist"""
-        dir1 = os.path.dirname(dst + location + "/" + flag + "/")
+        dir1 = os.path.dirname(dst + location + "/")
+        #dir1 = os.path.dirname(dst + location + "/" + flag + "/")
 
         if not os.path.exists(dir1):
             print "Creating directory:", dir1
@@ -255,7 +256,7 @@ class RenderRanking:
         ordered_ranking_dict_list = []
         for ranking_dict, spearmanr1, spearmanr2, kendalltau1, kendalltau2, ndcg1, ndcg2 in zip(ranking_dict_list, cvrs_list, cvos_list, cvrk_list, cvok_list, cvrn_list, cvon_list):
             ordered_dict = OrderedDict()
-            #  ordered_dict["lambda"] = ranking_dict["lambda"]
+            ordered_dict["type"] = ranking_dict["type"]
             ordered_dict["threshold"] = ranking_dict["threshold"]
             ordered_dict["topN"] = ranking_dict["topN"]
             #ordered_dict["topN_max"] = ranking_dict["topN_max"]

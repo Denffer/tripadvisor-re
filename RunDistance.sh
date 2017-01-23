@@ -1,7 +1,7 @@
 #!/bin/zsh
-for i in data/line/vectors200/New_York_City.txt 
+for i in data/line/norm_vectors200/London.txt 
 do
-    for j in $(seq 0.0 0.1 1)
+    for j in $(seq -0.5 0.25 0.5)
     do 
         python Distance.py $i $j
         #ts -n -f sh -c "python Distance.py $i $j" &
