@@ -22,6 +22,7 @@ class ReviewProcess:
         self.attraction = {}
         self.attraction_name, self.attraction_regexr, self.attraction_al, self.attraction_marked = "", "", "", ""
         self.total_words_count = 0
+        self.total_attraction_name_mentioned_count = 0
         self.avg_positive_sentiment_count, self.avg_negative_sentiment_count, self.avg_nearest_sentiment_distance = 0.0, 0.0, 0.0
 
         self.lexicon, self.positive, self.negative, self.ratings = [], [], [], []
@@ -242,6 +243,7 @@ class ReviewProcess:
             review = ' '.join(words_stemmed).encode('utf-8').strip()
             self.backend_reviews.append(review)
 
+            self.total_attraction_name_mentioned_count += review.count(self.attraction_al.lower())
             self.total_words_count += len(review.split(" "))
 
             if self.verbose:
@@ -483,6 +485,7 @@ class ReviewProcess:
         frontend_orderedDict["rating_stats"] = NoIndent(rating_stats_dict)
 
         frontend_orderedDict["review_with_attraction_mentioned_count"] = len(self.frontend_reviews)
+        frontend_orderedDict["total_attraction_name_mentioned_count"] = self.total_attraction_name_mentioned_count
         frontend_orderedDict["avg_sentiment_counts"] = self.avg_positive_sentiment_count + self.avg_negative_sentiment_count
         frontend_orderedDict["avg_word_counts"] = float(self.total_words_count) / float(len(self.backend_reviews))
         frontend_orderedDict["avg_nearest_sentiment_distance"] = self.avg_nearest_sentiment_distance
@@ -524,21 +527,21 @@ class ReviewProcess:
             print self.filename, "'s backend_stars is complete"
 
         """ (4) save location_*.json in ./hybrid_reviews/location/ """
-        hybrid_json_file = open(self.dst_hybrid +"/"+ self.attraction["location"].replace("-","_") +"/"+ self.filename + ".json", "w+")
-
-        cnt = 0
-        hybrid_ordered_dict_list = []
-        for review_dict in self.hybrid_reviews:
-            cnt += 1
-            hybrid_orderedDict = OrderedDict()
-            hybrid_orderedDict["index"] = cnt
-            hybrid_orderedDict["title"] = review_dict["title"].encode("utf-8")
-            hybrid_orderedDict["processed_review"] = review_dict["review"].encode("utf-8")
-            hybrid_orderedDict["clean_review"] = review_dict["clean_review"].encode("utf-8")
-            hybrid_ordered_dict_list.append(hybrid_orderedDict)
-
-        hybrid_json_file.write(json.dumps(hybrid_ordered_dict_list, indent = 4))
-        hybrid_json_file.close()
+        #  hybrid_json_file = open(self.dst_hybrid +"/"+ self.attraction["location"].replace("-","_") +"/"+ self.filename + ".json", "w+")
+        #
+        #  cnt = 0
+        #  hybrid_ordered_dict_list = []
+        #  for review_dict in self.hybrid_reviews:
+        #      cnt += 1
+        #      hybrid_orderedDict = OrderedDict()
+        #      hybrid_orderedDict["index"] = cnt
+        #      hybrid_orderedDict["title"] = review_dict["title"].encode("utf-8")
+        #      hybrid_orderedDict["processed_review"] = review_dict["review"].encode("utf-8")
+        #      hybrid_orderedDict["clean_review"] = review_dict["clean_review"].encode("utf-8")
+        #      hybrid_ordered_dict_list.append(hybrid_orderedDict)
+        #
+        #  hybrid_json_file.write(json.dumps(hybrid_ordered_dict_list, indent = 4))
+        #  hybrid_json_file.close()
 
         if self.verbose:
             print self.filename, "'s hybrid is complete"
@@ -607,7 +610,7 @@ if  __name__ == '__main__':
     process.get_backend_reviews()
     process.get_backend_stars_reviews()
     process.get_avg_nearest_sentiment_distance()
-    process.get_hybrid_reviews()
+    #  process.get_hybrid_reviews()
     process.get_sentiment_statistics()
     process.render()
 
