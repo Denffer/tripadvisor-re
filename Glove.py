@@ -144,7 +144,8 @@ def build_cooccur(vocab, corpus, window_size=5, min_count=None):
                 distance = contexts_len - left_i
 
                 # Weight by inverse of distance between words
-                increment = 1.0 / float(distance)
+                #increment = 1.0 / float(distance)
+                increment = 1.0
 
                 # Build co-occurrence matrix symmetrically (pretend we
                 # are calculating right contexts as well)

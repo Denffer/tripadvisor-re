@@ -20,7 +20,7 @@ class DistanceStars:
 
         self.dst_d = "data/distance/" + self.filename + "/"
 
-        self.topN = 300
+        self.topN = 500
         self.queries = {"star_1":1, "star_2":2, "star_3":3, "star_4":4, "star_5":5}
         self.positive_statistics = []
         self.negative_statistics = []
