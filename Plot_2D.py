@@ -1,27 +1,26 @@
-import matplotlib, json, os, sys, linecache
+import matplotlib, json, os, sys, linecache, re
 import matplotlib.pyplot as plt
 import numpy as np
 
 class Plot:
     """ This program take vectors2 as input and draw them by matplotlib """
     def __init__(self):
-        self.input = "bangkok.json"
+        self.src = sys.argv[1]
+        self.src_rankings = sys.argv[2]
         self.dst_o = "data/graphic_output/"
-
-        self.src_v2 = "data/vectors2/"
-        self.src_ss = "data/line/enhanced_lexicon.json"
-        self.src_fr = "data/frontend_reviews/"
+        self.src_ss = "data/lexicon/enhanced_lexicon.json"
+        self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.json", self.src).group(1)
 
         self.json_data = []
         self.unique_words = []
         self.vectors2 = []
-        self.sentiment_statistics = []
-        self.attraction_name_list = []
+        self.positive = []
+        self.attractions = []
 
     def get_json_data(self):
         """ get json """
-        print self.src_v2 + "\033[1m" + self.input + "\033[0m"
-        with open(self.src_v2+self.input) as f:
+        print "Loading vectors2 from " + "\033[1m" + self.src + "\033[0m"
+        with open(self.src) as f:
             self.json_data = json.load(f)
 
     def get_unique_words(self):
@@ -39,45 +38,27 @@ class Plot:
             vectos2 = [float(f) for f in vector2]
         #print self.vectors2
 
-    def get_sentiment_statistics(self):
+    def get_lexicon(self):
         """ Get sentiment_statistics """
         with open(self.src_ss) as f:
-            self.sentiment_statistics = json.load(f)
+            lexicon = json.load(f)
 
-        self.sentiment_statistics = self.sentiment_statistics[:150]
-        #print self.sentiment_statistics
+        self.positive = lexicon["positive"]["extreme_positive"]
 
-    def get_attraction_names(self):
-        """ load all reviews in data/frontend_reviews/ and store attraction_name to a list """
-        attractions = []
-        for dirpath, dir_list, file_list in os.walk(self.src_fr):
+    def get_rankings(self):
+        """ load attraction_name from data/ranking/ and store it to a list """
+        self.attractions = []
 
-            file_cnt = 0
-            length = len(file_list)
-            for f in file_list:
-                file_cnt += 1
-                #print "Merging " + str(dirpath) + str(f) + " into attractions"
-                with open(dirpath+f) as file:
-                    attractions.append(file.read())
+        with open(self.src_rankings) as f:
+            rankings = json.load(f)
 
-                sys.stdout.write("\rStatus: %s / %s"%(file_cnt, length))
-                sys.stdout.flush()
-
-        print "\nExtracting attraction_names"
-        length = len(attractions)
-        attraction_cnt = 0
-        for attraction in attractions:
-            attraction = eval(attraction)
-            attraction_cnt += 1
-            attraction_name = attraction["attraction_name"] + "_" + attraction["location"]
-            attraction_name = attraction_name.lower()
-            self.attraction_name_list.append(attraction_name)
-
-            sys.stdout.write("\rStatus: %s / %s"%(attraction_cnt, length))
-            sys.stdout.flush()
-
-        print ""
-        #print attraction_name
+        for ranking_dict in rankings["cosine_ranking"]:
+            self.attractions.append({
+                "attraction_name": ranking_dict["attraction_name"],
+                "c": str(ranking_dict["computed_ranking"]),
+                "r": str(ranking_dict["reranked_ranking"]),
+                "o": str(ranking_dict["original_ranking"])
+                    })
 
     def create_dirs(self):
         """ create the directory if not exist"""
@@ -93,8 +74,8 @@ class Plot:
         self.get_json_data()
         self.get_unique_words()
         self.get_vectors2()
-        self.get_sentiment_statistics()
-        self.get_attraction_names()
+        self.get_lexicon()
+        self.get_rankings()
 
         self.create_dirs()
 
@@ -103,28 +84,32 @@ class Plot:
         #ax.set_xlim( -2.0, 1.1)
         #ax.set_ylim( -1.5, 1.5)
         ss_cnt = 0
-        ss_length = len(self.sentiment_statistics)
+        ss_length = len(self.positive)
 
         print "Matching and drawing"
 
         uw_length = len(self.unique_words)
         for i in xrange(len(self.unique_words)):
-            for j in xrange(len(self.sentiment_statistics)):
+            for j in xrange(len(self.positive)):
 
-                if self.unique_words[i] == self.sentiment_statistics[j]["stemmed_word"]:
+                if self.unique_words[i] == self.positive[j]["stemmed_word"]:
                     try:
                         ax.plot( self.vectors2[i][0], self.vectors2[i][1], 'bo')
                         # instead of printing stemmed word, print unstemmed word
-                        plt.text( (self.vectors2[i][0])+0.002, (self.vectors2[i][1])+0.002, self.sentiment_statistics[j]["word"][0], fontsize=8)
+                        plt.text( (self.vectors2[i][0])+0.002, (self.vectors2[i][1])+0.002, self.positive[j]["word"][0], fontsize=8)
                     except:
                         print 'Error word:', word_dict["stemmed_word"]
                         self.PrintException()
 
-            for k in xrange(len(self.attraction_name_list)):
-                if self.unique_words[i] == self.attraction_name_list[k]:
+            for k in xrange(len(self.attractions)):
+                if self.unique_words[i] == self.attractions[k]["attraction_name"]:
                     try:
-                        ax.plot( self.vectors2[i][0], self.vectors2[i][1], 'go')
-                        plt.text( self.vectors2[i][0]+0.002, self.vectors2[i][1]+0.002, self.unique_words[i], fontsize=8)
+                        ax.plot( self.vectors2[i][0], self.vectors2[i][1], 'go', markersize=20)
+                        plt.text( self.vectors2[i][0]+0.002, self.vectors2[i][1]+0.002,
+                                "c:" + self.attractions[k]["c"] + " "
+                                "r:" + self.attractions[k]["r"] + " "
+                                "o:" + self.attractions[k]["o"] + " "
+                                + self.unique_words[i], fontsize=8)
                     except:
                         print 'Error word:', self.unique_words[i]
                         self.PrintException()
@@ -132,9 +117,9 @@ class Plot:
                 sys.stdout.write("\rStatus: %s / %s"%(i+1, uw_length))
                 sys.stdout.flush()
 
-        ax.set_title('2D Distribution on: ' + self.input[:-4])
+        ax.set_title('2D Distribution on: ' + self.filename)
         print "\n" + "-"*80
-        filename = self.input[:-5] + ".png"
+        filename = self.filename + ".png"
         print "Writing", "\033[1m" + filename + "\033[0m", "to", self.dst_o
         plt.savefig(self.dst_o + filename)
         plt.show()
