@@ -38,7 +38,7 @@ class Distance:
         self.topN = 500
         self.topN_max = 5
         self.queries = []
-        self.baseline_positive = []
+        self.baseline_positive_words = []
         self.extreme_positive, self.strong_positive, self.moderate_positive = [], [], []
         self.extreme_negative, self.strong_negative, self.moderate_negative = [], [], []
         self.vocab_size = 0
@@ -131,7 +131,7 @@ class Distance:
             sentiment_statistics = json.load(f_ss)
 
         positive = sentiment_statistics["positive_statistics"]
-        negative = sentiment_statistics["negative_statistics"]
+        baseline_positive_dicts = []
 
         print "Processing Baseline Lexicon"
         cnt = 0
@@ -140,11 +140,20 @@ class Distance:
             cnt += 1
             for word_dict in positive:
                 if word_dict["stemmed_word"] == key.decode("utf-8"):
-                    self.baseline_positive.append(word_dict)
-                    self.baseline_positive_vectors200.append(self.vectors200[value])
+                    baseline_positive_dicts.append({"word_dict": word_dict, "vector200": self.vectors200[value]})
 
             sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
             sys.stdout.flush()
+
+        # siphon top500 frequency
+        top_frequency_baseline_positive_dicts = sorted(baseline_positive_dicts, key=lambda k: k["word_dict"]['count'], reverse = True)[:500]
+
+        #print baseline_positive_dicts
+        """ index will exceed 500 because some of the words did not appear in this corpus"""
+        for x_dict in top_frequency_baseline_positive_dicts:
+            self.baseline_positive_words.append(x_dict["word_dict"])
+            #print x_dict["word_dict"]
+            self.baseline_positive_vectors200.append(x_dict["vector200"])
 
         print "\n" + "-"*70
 
@@ -222,7 +231,7 @@ class Distance:
         for query in self.queries:
             baseline_cos_sim_list = []
 
-            for index in xrange(len(self.baseline_positive)):
+            for index in xrange(len(self.baseline_positive_words)):
                 baseline_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.baseline_positive_vectors200[index]))
 
             print "Generating all baseline sentiment words with " + "\033[1m" + query + "\033[0m"
@@ -231,7 +240,7 @@ class Distance:
             baseline_word_dict_list = []
             for i, index in enumerate(baseline_sorted_index):
                 # no threshold on topN
-                baseline_word_dict = {"word": self.baseline_positive[index], "cos_sim": baseline_cos_sim_list[index]}
+                baseline_word_dict = {"word": self.baseline_positive_words[index], "cos_sim": baseline_cos_sim_list[index]}
                 baseline_word_dict_list.append(baseline_word_dict)
 
             # cutting threshold
@@ -459,7 +468,7 @@ class Distance:
             location_ordered_dict = OrderedDict()
             location_ordered_dict['type'] = "baseline"
             location_ordered_dict['threshold'] = self.threshold
-            location_ordered_dict['topN'] = len(self.baseline_positive)
+            location_ordered_dict['topN'] = len(self.baseline_positive_words)
 
             print "Ranking queries according to baseline cosine score"
             score_list = []
