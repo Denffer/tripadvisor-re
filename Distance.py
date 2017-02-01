@@ -683,7 +683,7 @@ class Distance:
         self.get_lexicon()
         self.queries = self.get_attractions().keys()
         self.create_dirs()
-        self.render_baseline()
+        #self.render_baseline()
         self.render()
 
 class NoIndent(object):
