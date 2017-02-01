@@ -3,8 +3,8 @@ for i in data/line/norm_vectors200/London.txt
 do
     for j in $(seq -0.5 0.25 0.5)
     do 
-        python Distance.py $i $j
-        #ts -n -f sh -c "python Distance.py $i $j" &
+        python Methodology.py $i $j
+        #ts -n -f sh -c "python Methodology.py $i $j" &
     done
 done
 #ts -S 10
