@@ -10,6 +10,7 @@ class LowerDimension:
     def __init__(self):
         self.src_f = sys.argv[1]
         self.dst = "data/vectors2/"
+        self.pca_dimension = 100
 
         self.unique_words = []
 
@@ -33,23 +34,23 @@ class LowerDimension:
         #print vectors200
         return vectors200
 
-    def get_vectors50(self):
-        """ (1) get vectors200 (2) perform reduction to 50 dimension by pca """
+    def get_vectorsN(self):
+        """ (1) get vectors200 (2) perform reduction to N dimension by pca """
         vectors200 = self.get_vectors200()
 
-        print "Reducing vectors200 to vectors50 by pca"
-        pca = decomposition.PCA(n_components=50)
+        print "Reducing vectors200 to vectors" + self.pca_dimension + " by PCA"
+        pca = decomposition.PCA(n_components = self.pca_dimension)
         pca.fit(vectors200)
-        vectors50 = pca.transform(vectors200)
+        vectorsN = pca.transform(vectors200)
 
-        return vectors50
+        return vectorsN
 
     def get_vectors2(self):
-        """ (1) get vectors50 (2) perform reduction to 2 dimension by tsne """
-        vectors50 = self.get_vectors50()
+        """ (1) get vectorsN (2) perform reduction to 2 dimension by tsne """
+        vectorsN = self.get_vectorsN()
 
-        print "Reducing vectors50 to vectors2 by tSNE"
-        X = np.array(vectors50)
+        print "Reducing vectors" + self.pca_dimension +" to vectors2 by tSNE"
+        X = np.array(vectorsN)
         model = TSNE(n_components=2, random_state=0)
         np.set_printoptions(suppress=True)
         vectors2 = model.fit_transform(X).tolist()
