@@ -19,8 +19,8 @@ class Methodology:
     def __init__(self, argv1, argv2):
         self.src = argv1
         self.threshold = float(argv2)
-        self.src_lexicon = "data/lexicon/enhanced_lexicon.json"
-        self.src_sentiment_statistics = "data/lexicon/sentiment_statistics.json"
+        self.src_enhanced_lexicon = "data/lexicon/enhanced_lexicon.json"
+        self.src_lexicon = "data/lexicon/sentiment_statistics.json"
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src_fr = "data/frontend_reviews/" + self.filename + "/"
 
@@ -31,8 +31,11 @@ class Methodology:
 
         self.topN = 500
         self.queries = []
+        self.positive = []
+        self.positive_vectors200 = []
         self.extreme_positive, self.strong_positive, self.moderate_positive = [], [], []
         self.extreme_negative, self.strong_negative, self.moderate_negative = [], [], []
+        self.positive_cosine_topN, self.negative_cosine_topN = [], []
 
         self.attractions, self.attractions2 = {}, {}
 	self.unique_words = {}
@@ -111,14 +114,83 @@ class Methodology:
         return self.attractions
 
     def get_lexicon(self):
-	""" open data/lexicon/enhanced_lexicon.json and load extreme_positive & strong_positive & moderate_positive """
+	""" open data/lexicon/sentiment_statistics.json and load extreme_positive & strong_positive & moderate_positive """
 
         if self.verbose:
             print "Loading data from " + "\033[1m" + self.src_lexicon + "\033[0m"
-        with open(self.src_lexicon, 'r') as f_ss:
-            sentiment_statistics = json.load(f_ss)
+        with open(self.src_lexicon, 'r') as f:
+            lexicon = json.load(f)
 
-        positive = sentiment_statistics["positive"]
+        positive = lexicon["positive_statistics"]
+        print "Processing positive"
+        cnt = 0
+        length = len(self.unique_words.keys())
+        for key, value in self.unique_words.iteritems():
+            cnt += 1
+            for word_dict in positive:
+                if word_dict["stemmed_word"] == key.decode("utf-8"):
+                    self.positive.append(word_dict)
+                    self.positive_vectors200.append(self.vectors200[value])
+
+            if self.verbose:
+                sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+                sys.stdout.flush()
+
+        if self.verbose:
+            print "\n" + "-"*70
+
+    def get_positive_cosine_topN(self):
+        """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
+        """ cos_sim stands for cosine_similarity """
+
+        if self.verbose:
+            print "Calculating Cosine Similarity between queries and every positive word"
+
+        for query in self.queries:
+            positive_cos_sim_list = []
+
+            # cosine_similarity ranges from -1 ~ 1
+            for index in xrange(len(self.positive)):
+                try:
+                    positive_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.positive_vectors200[index]))
+                except:
+                    print "No match"
+
+            print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
+            # sorting index
+            positive_sorted_index = sorted(range(len(positive_cos_sim_list)), key=lambda k: positive_cos_sim_list[k], reverse=True)
+
+            positive_word_dict_list = []
+            for i, index in enumerate(positive_sorted_index):
+                positive_word_dict = {"word": self.positive[index], "cos_sim": positive_cos_sim_list[index]}
+                positive_word_dict_list.append(positive_word_dict)
+
+            # cutting threshold
+            positive_topN_cos_sim_list = [float(positive_word_dict["cos_sim"]) for positive_word_dict in positive_word_dict_list if float(positive_word_dict["cos_sim"]) >= self.threshold]
+
+            # calculate the score out of topN cosine similarity
+            positive_cos_score = sum(positive_topN_cos_sim_list)
+
+            # generate cosine score
+            cos_score = positive_cos_score
+            print "positive cosine score:", cos_score
+
+            self.positive_cosine_topN.append({"query": query,
+                "positive_topN_cosine_similarity": positive_word_dict_list,
+                "cos_score": cos_score,
+                })
+
+        print "-"*70
+
+    def get_enhanced_lexicon(self):
+	""" open data/lexicon/enhanced_lexicon.json and load extreme_positive & strong_positive & moderate_positive """
+
+        if self.verbose:
+            print "Loading data from " + "\033[1m" + self.src_enhanced_lexicon + "\033[0m"
+        with open(self.src_enhanced_lexicon, 'r') as f:
+            enhanced_lexicon = json.load(f)
+
+        positive = enhanced_lexicon["positive"]
 
         print "Processing positive"
         cnt = 0
@@ -141,10 +213,11 @@ class Methodology:
                     self.moderate_positive.append(word_dict)
                     self.moderate_positive_vectors200.append(self.vectors200[value])
 
-            sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
-            sys.stdout.flush()
+            if self.verbose:
+                sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+                sys.stdout.flush()
 
-        negative = sentiment_statistics["negative"]
+        negative = enhanced_lexicon["negative"]
 
         print "\nProcessing negative"
         cnt = 0
@@ -181,7 +254,6 @@ class Methodology:
         if self.verbose:
             print "Calculating Cosine Similarity between queries and every positive word"
 
-        self.positive_cosine_topN = []
         for query in self.queries:
             extreme_cos_sim_list, strong_cos_sim_list, moderate_cos_sim_list = [], [],[]
 
@@ -229,7 +301,7 @@ class Methodology:
 
             # generate cosine score
             cos_score = extreme_cos_score
-            #  cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
+            #cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
             print "positive cosine score:", cos_score
 
             self.positive_cosine_topN.append({"query": query,
@@ -289,7 +361,7 @@ class Methodology:
 
             # generate cosine score
             cos_score = extreme_cos_score
-            #  cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
+            #cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
             print "negative cosine score:", cos_score
 
             self.negative_cosine_topN.append({"query": query,
@@ -300,8 +372,6 @@ class Methodology:
 
         if self.verbose:
             print "-"*70
-
-        return self.positive_cosine_topN, self.negative_cosine_topN
 
     def create_dirs(self):
         """ create the directory if not exist"""
@@ -376,7 +446,7 @@ class Methodology:
 
             query_ordered_dict["moderate_positive_topN_cosine_similarity"] = moderate_positive_cosine_word_dict_list
 
-            # (4) negative cosine
+            # (4) extreme negative cosine
             extreme_negative_cosine_word_dict_list = []
             index = 0
             for cosine_word_dict in n_cos_word_dict["extreme_negative_topN_cosine_similarity"]:
@@ -391,6 +461,7 @@ class Methodology:
 
             query_ordered_dict["extreme_negative_topN_cosine_similarity"] = extreme_negative_cosine_word_dict_list
 
+            # (5) strong negative cosine
             strong_negative_cosine_word_dict_list = []
             index = 0
             for cosine_word_dict in n_cos_word_dict["strong_negative_topN_cosine_similarity"]:
@@ -405,6 +476,7 @@ class Methodology:
 
             query_ordered_dict["strong_negative_topN_cosine_similarity"] = strong_negative_cosine_word_dict_list
 
+            # (6) moderate negative cosine
             moderate_negative_cosine_word_dict_list = []
             index = 0
             for cosine_word_dict in n_cos_word_dict["moderate_negative_topN_cosine_similarity"]:
@@ -453,18 +525,19 @@ class Methodology:
          # derive ranking_list from a the unsorted score_list
         ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
 
-        processed_ranking_list = []
+        ordered_dicts = []
         ranking = 0
         for rank_dict in ranking_list:
             ranking += 1
-            rank_ordered_dict = OrderedDict()
-            rank_ordered_dict['attraction_name'] = rank_dict['attraction_name']
-            rank_ordered_dict['computed_ranking'] = str(ranking)
-            rank_ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
-            rank_ordered_dict['original_ranking'] = self.attractions2[rank_dict['attraction_name']]
-            rank_ordered_dict['score'] = rank_dict['score']
-            processed_ranking_list.append(rank_ordered_dict)
-        location_ordered_dict['cosine_ranking'] = processed_ranking_list
+            ordered_dict = OrderedDict()
+            ordered_dict['attraction_name'] = rank_dict['attraction_name']
+            ordered_dict['computed_ranking'] = ranking
+            ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
+            ordered_dict['original_ranking'] = int(self.attractions2[rank_dict['attraction_name']])
+            ordered_dict['score'] = rank_dict['score']
+            ordered_dicts.append(ordered_dict)
+
+        location_ordered_dict['cosine_threshold_ranking'] = ordered_dicts
 
         # Writing to data/ranking/New_York_City/New_York_City_Threshold0.25
         if self.verbose:
@@ -472,17 +545,107 @@ class Methodology:
         f = open(self.dst_ranking + self.filename + "-Threshold" + str(self.threshold) + ".json", "w")
         f.write(json.dumps(location_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
+
+    def renderPositiveDistance(self):
+        """ save to data/distance/ """
+
+        if self.verbose:
+            print "Putting Cosine word dicts in order"
+        query_ordered_dict_list = []
+
+        cnt = 0
+        length = len(self.positive_cosine_topN)
+        for p_cos_word_dict in self.positive_cosine_topN:
+            cnt += 1
+            query_ordered_dict = OrderedDict()
+            query_ordered_dict['method'] = "CosineThreshold"
+            query_ordered_dict["query"] = p_cos_word_dict["query"]
+            query_ordered_dict["cosine_threshold"] = self.threshold
+
+            # (1) positive cosine (from sentiment_statistics)
+            positive_cosine_word_dict_list = []
+            index = 0
+            for cosine_word_dict in p_cos_word_dict["positive_topN_cosine_similarity"]:
+                index += 1
+                ordered_dict = OrderedDict()
+                ordered_dict["index"] = index
+                ordered_dict["cosine_similarity"] = cosine_word_dict["cos_sim"]
+                ordered_dict["count"] = cosine_word_dict["word"]["count"]
+                ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
+                ordered_dict["word"] = cosine_word_dict["word"]["word"]
+                positive_cosine_word_dict_list.append(NoIndent(ordered_dict))
+
+            query_ordered_dict["positive_topN_cosine_similarity"] = positive_cosine_word_dict_list
+
+            # append one query after another
+            query_ordered_dict_list.append(query_ordered_dict)
+
+        if self.verbose:
+            # Writing to data/distance/New_York_City_Threshold.json
+            print "Writing data to " + "\033[1m" + str(self.dst_distance) + self.filename + "-Threshold" + str(self.threshold) + ".json""\033[0m"
+
+        f = open(self.dst_distance + self.filename + "-Threshold" + str(self.threshold) + ".json", "w")
+        f.write(json.dumps(query_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
+
+        if self.verbose:
+            print "-"*80
+
+    def renderPositiveRanking(self):
+        """ save to data/ranking/ """
+
+        location_ordered_dict = OrderedDict()
+        location_ordered_dict['method'] = "CosineThreshold"
+        location_ordered_dict['threshold'] = self.threshold
+
+        if self.verbose:
+            print "Ranking queries according to cosine score"
+        score_list = []
+        for p_cos_word_dict in self.positive_cosine_topN:
+
+            score = p_cos_word_dict["cos_score"]
+            score_list.append({"attraction_name": p_cos_word_dict["query"], "score": score})
+
+         # derive ranking_list from a the unsorted score_list
+        ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
+        #ranking_list = sorted(score_list, key=lambda k: k['score'])
+
+        ordered_dicts = []
+        ranking = 0
+        for rank_dict in ranking_list:
+            ranking += 1
+            ordered_dict = OrderedDict()
+            ordered_dict['attraction_name'] = rank_dict['attraction_name']
+            ordered_dict['computed_ranking'] = ranking
+            ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
+            ordered_dict['original_ranking'] = int(self.attractions2[rank_dict['attraction_name']])
+            ordered_dict['score'] = rank_dict['score']
+            print ordered_dict
+            ordered_dicts.append(ordered_dict)
+
+        location_ordered_dict['cosine_threshold_ranking'] = ordered_dicts
+
+        # Writing to data/ranking/New_York_City/New_York_City_Threshold0.25
+        if self.verbose:
+            print "Writing to " + "\033[1m" + str(self.dst_ranking) + self.filename + "-Threshold" + str(self.threshold) + ".json""\033[0m"
+        f = open(self.dst_ranking + self.filename + "-Threshold" + str(self.threshold) + ".json", "w")
+        f.write(json.dumps(location_ordered_dict, indent = 4, cls=NoIndentEncoder))
+
+
+
     def run(self):
         """ run the entire program """
         self.get_source()
+        #self.get_enhanced_lexicon()
         self.get_lexicon()
         self.queries = self.get_attractions().keys()
         self.create_dirs()
 
-        self.positive_cosine_topN, self.negative_cosine_topN = self.get_cosine_topN()
-
-        self.renderDistance()
-        self.renderRanking()
+        #self.get_cosine_topN()
+        self.get_positive_cosine_topN()
+        #self.renderDistance()
+        self.renderPositiveDistance()
+        #self.renderRanking()
+        self.renderPositiveRanking()
 
 class NoIndent(object):
     def __init__(self, value):
