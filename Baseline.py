@@ -88,8 +88,8 @@ class Baseline:
                             attraction_name = attraction["attraction_name"].lower() + "_" + attraction["location"].lower()
                             attraction_mentioned_count = attraction["total_attraction_name_mentioned_count"]
                             #  original_ranking = int(attraction["original_ranking"])
-                            original_ranking = int(attraction["reranked_ranking"])
-                            self.attractions.append({"attraction_name": attraction_name, "attraction_mentioned_count": attraction_mentioned_count, "reranked_ranking": original_ranking})
+                            reranked_ranking = int(attraction["reranked_ranking"])
+                            self.attractions.append({"attraction_name": attraction_name, "attraction_mentioned_count": attraction_mentioned_count, "reranked_ranking": reranked_ranking})
             else:
                 print "No file is found"
                 print "-"*80
@@ -130,13 +130,17 @@ class Baseline:
                 pass
 
         for attraction_dict in self.attractions:
-            # look for the index of attraction_al in unique_words
-            attraction_index = self.unique_words[attraction_dict["attraction_name"]]
-            cooccur_sum = 0
-            for sentiment_index in sentiment_indices:
-                cooccur_sum += self.cooccur_matrix[attraction_index][sentiment_index]
+            try:
+                # look for the index of attraction_al in unique_words
+                attraction_index = self.unique_words[attraction_dict["attraction_name"]]
+                cooccur_sum = 0
 
-            attraction_dict.update({"cooccur_sum":cooccur_sum})
+                for sentiment_index in sentiment_indices:
+                    cooccur_sum += self.cooccur_matrix[attraction_index][sentiment_index]
+
+                attraction_dict.update({"cooccur_sum":cooccur_sum})
+            except:
+                attraction_dict.update({"cooccur_sum":0})
 
         self.attractions = sorted(self.attractions, key=lambda k: k['cooccur_sum'], reverse = True)
         rank = 0
@@ -159,14 +163,18 @@ class Baseline:
                 pass
 
         for attraction_dict in self.attractions:
-            # look for the index of attraction_al in unique_words
-            attraction_index = self.unique_words[attraction_dict["attraction_name"]]
-            attraction_matrix_row = self.cooccur_matrix[attraction_index]
-            cosine_sum = 0
-            for sentiment_matrix_row in sentiment_matrix_rows:
-                cosine_sum += 1-spatial.distance.cosine(attraction_matrix_row, sentiment_matrix_row)
+            try:
+                # look for the index of attraction_al in unique_words
+                attraction_index = self.unique_words[attraction_dict["attraction_name"]]
+                attraction_matrix_row = self.cooccur_matrix[attraction_index]
+                cosine_sum = 0
+                for sentiment_matrix_row in sentiment_matrix_rows:
+                    cosine_sum += 1-spatial.distance.cosine(attraction_matrix_row, sentiment_matrix_row)
 
-            attraction_dict.update({"cosine_sum":cosine_sum})
+                attraction_dict.update({"cosine_sum":cosine_sum})
+            except:
+                attraction_dict.update({"cosine_sum":0})
+
 
         self.attractions = sorted(self.attractions, key=lambda k: k['cosine_sum'], reverse = True)
         rank = 0
@@ -197,6 +205,8 @@ class Baseline:
         self.create_dirs()
 
         # reorder self.attractions by original_ranking
+        #self.attractions = sorted(self.attractions, key=lambda k: k['original_ranking'])
+        # reorder self.attractions by reranked_ranking
         self.attractions = sorted(self.attractions, key=lambda k: k['reranked_ranking'])
 
         baseline_ordered_dict = OrderedDict()
@@ -205,7 +215,6 @@ class Baseline:
         ordered_attractions = []
         for attraction_dict in self.attractions:
             ordered_dict = OrderedDict()
-            ordered_dict['method'] = "Baseline"
             ordered_dict['attraction_name'] = attraction_dict['attraction_name']
             #ordered_dict['original_ranking'] = attraction_dict['original_ranking']
             ordered_dict['reranked_ranking'] = attraction_dict['reranked_ranking']
