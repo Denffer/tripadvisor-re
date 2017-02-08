@@ -550,7 +550,7 @@ class ReviewProcess:
         statistics_orderedDict = OrderedDict()
         statistics_orderedDict["location"] = self.attraction["location"]
         statistics_orderedDict["attraction_name"] = self.attraction["attraction_name"]
-        statistics_orderedDict["attraction_al"] = self.attraction["attraction_name"].lower() + "_" + self.attraction["location"].lower()
+        #statistics_orderedDict["attraction_al"] = self.attraction["attraction_name"].lower() + "_" + self.attraction["location"].lower()
         statistics_orderedDict["avg_positive_sentiment_counts"] = self.avg_positive_sentiment_count
         statistics_orderedDict["avg_negative_sentiment_counts"] = self.avg_negative_sentiment_count
         statistics_orderedDict["positive_statistics"] = self.sentiment_statistics["positive_statistics"]
