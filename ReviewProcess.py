@@ -85,10 +85,10 @@ class ReviewProcess:
             for i in xrange(len(attraction_regexr)-2):
                 attraction_regexr[i] += "|"
 
-            attraction_regexr[len(attraction_regexr)-2] = attraction_regexr[len(attraction_regexr)-2] + ")*"
+            attraction_regexr[len(attraction_regexr)-2] = attraction_regexr[len(attraction_regexr)-2] + ")+"
             if attraction_regexr[-1][-1] == "s":
-                attraction_regexr[-1] = attraction_regexr[-1][:-1] + "(s)?\\s"# temples -> temple(s)
-            attraction_regexr[-1] = "(" + attraction_regexr[-1] + "|place)\\s"
+                attraction_regexr[-1] = attraction_regexr[-1][:-1] + "(s)?"# temples -> temple(s)
+            attraction_regexr[-1] = "(" + attraction_regexr[-1] + "|place)"
             self.attraction_regexr = "".join(attraction_regexr)
 
         if self.verbose:
@@ -169,7 +169,7 @@ class ReviewProcess:
             text = re.sub(r"'ll", " will", text)
 
             text = text.replace("\'","")
-            # Search for negation and merge them | E.g. not bad -> not-bad
+            ## Search for negation and merge them | E.g. not bad -> not-bad
             text = re.sub("(\s)+", r" ", text)
 
             #  print text
@@ -527,21 +527,21 @@ class ReviewProcess:
             print self.filename, "'s backend_stars is complete"
 
         """ (4) save location_*.json in ./hybrid_reviews/location/ """
-        #  hybrid_json_file = open(self.dst_hybrid +"/"+ self.attraction["location"].replace("-","_") +"/"+ self.filename + ".json", "w+")
-        #
-        #  cnt = 0
-        #  hybrid_ordered_dict_list = []
-        #  for review_dict in self.hybrid_reviews:
-        #      cnt += 1
-        #      hybrid_orderedDict = OrderedDict()
-        #      hybrid_orderedDict["index"] = cnt
-        #      hybrid_orderedDict["title"] = review_dict["title"].encode("utf-8")
-        #      hybrid_orderedDict["processed_review"] = review_dict["review"].encode("utf-8")
-        #      hybrid_orderedDict["clean_review"] = review_dict["clean_review"].encode("utf-8")
-        #      hybrid_ordered_dict_list.append(hybrid_orderedDict)
-        #
-        #  hybrid_json_file.write(json.dumps(hybrid_ordered_dict_list, indent = 4))
-        #  hybrid_json_file.close()
+        hybrid_json_file = open(self.dst_hybrid +"/"+ self.attraction["location"].replace("-","_") +"/"+ self.filename + ".json", "w+")
+
+        cnt = 0
+        hybrid_ordered_dict_list = []
+        for review_dict in self.hybrid_reviews:
+            cnt += 1
+            hybrid_orderedDict = OrderedDict()
+            hybrid_orderedDict["index"] = cnt
+            hybrid_orderedDict["title"] = review_dict["title"].encode("utf-8")
+            hybrid_orderedDict["processed_review"] = review_dict["review"].encode("utf-8")
+            hybrid_orderedDict["clean_review"] = review_dict["clean_review"].encode("utf-8")
+            hybrid_ordered_dict_list.append(hybrid_orderedDict)
+
+        hybrid_json_file.write(json.dumps(hybrid_ordered_dict_list, indent = 4))
+        hybrid_json_file.close()
 
         if self.verbose:
             print self.filename, "'s hybrid is complete"
@@ -613,7 +613,7 @@ if  __name__ == '__main__':
     process.get_backend_reviews()
     process.get_backend_stars_reviews()
     process.get_avg_nearest_sentiment_distance()
-    #  process.get_hybrid_reviews()
+    process.get_hybrid_reviews()
     process.get_sentiment_statistics()
     process.render()
 
