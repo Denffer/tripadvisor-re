@@ -89,7 +89,10 @@ class Baseline:
                             attraction_mentioned_count = attraction["total_attraction_name_mentioned_count"]
                             #  original_ranking = int(attraction["original_ranking"])
                             reranked_ranking = int(attraction["reranked_ranking"])
-                            self.attractions.append({"attraction_name": attraction_name, "attraction_mentioned_count": attraction_mentioned_count, "reranked_ranking": reranked_ranking})
+                            original_ranking = int(attraction["original_ranking"])
+                            self.attractions.append({
+                                "attraction_name": attraction_name, "attraction_mentioned_count": attraction_mentioned_count,
+                                "reranked_ranking": reranked_ranking, "original_ranking": original_ranking})
             else:
                 print "No file is found"
                 print "-"*80
@@ -201,12 +204,12 @@ class Baseline:
         self.get_sentiment_words()
         self.get_baseline1()
         self.get_baseline2()
-        self.get_baseline3()
+        # self.get_baseline3()
         self.create_dirs()
 
         # reorder self.attractions by original_ranking
-        #self.attractions = sorted(self.attractions, key=lambda k: k['original_ranking'])
         # reorder self.attractions by reranked_ranking
+        #self.attractions = sorted(self.attractions, key=lambda k: k['original_ranking'])
         self.attractions = sorted(self.attractions, key=lambda k: k['reranked_ranking'])
 
         baseline_ordered_dict = OrderedDict()
@@ -216,17 +219,17 @@ class Baseline:
         for attraction_dict in self.attractions:
             ordered_dict = OrderedDict()
             ordered_dict['attraction_name'] = attraction_dict['attraction_name']
-            #ordered_dict['original_ranking'] = attraction_dict['original_ranking']
             ordered_dict['reranked_ranking'] = attraction_dict['reranked_ranking']
+            ordered_dict['original_ranking'] = attraction_dict['original_ranking']
             ordered_dict['attraction_mentioned_count'] = attraction_dict['attraction_mentioned_count']
             ordered_dict['ranking_by_mentioned_count'] = attraction_dict['ranking_by_mentioned_count']
             ordered_dict['cooccur_sum'] = attraction_dict['cooccur_sum']
             ordered_dict['ranking_by_cooccur_sum'] = attraction_dict['ranking_by_cooccur_sum']
-            ordered_dict['cosine_sum'] = attraction_dict['cosine_sum']
-            ordered_dict['ranking_by_cosine_sum'] = attraction_dict['ranking_by_cosine_sum']
+            #  ordered_dict['cosine_sum'] = attraction_dict['cosine_sum']
+            #  ordered_dict['ranking_by_cosine_sum'] = attraction_dict['ranking_by_cosine_sum']
             ordered_attractions.append(ordered_dict)
 
-        baseline_ordered_dict["baseline_ranking"] = ordered_attractions
+        baseline_ordered_dict["Baseline_Ranking"] = ordered_attractions
 
         # Writing to data/ranking/Amsterdam_baseline
         print "Writing to " + "\033[1m" + str(self.dst) + self.filename + "_Baseline.json" + "\033[0m"
