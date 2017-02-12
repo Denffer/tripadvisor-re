@@ -23,6 +23,7 @@ class Merge:
         self.dst_as = "data/corpora/All_Stars/"
         self.dst_a = "data/corpora/All/"
         self.dst_ss = "data/lexicon/sentiment_statistics.json"
+        self.dst_lss = "data/location_sentiment_statistics/"
         self.dst_log = "data/log.txt"
 
     def get_corpora(self):
@@ -159,7 +160,6 @@ class Merge:
         #print sentiment_statistics
         return sentiment_statistics
 
-
     def get_merged_sentiment_statistics(self):
         """ accumulate the count for every sentiment word
         E.g. list[0] = {"good":1, "great":2}, list[1] = {"good":3, "great":4} -> sentiment_statistics = {"good":4, "great":6}
@@ -282,6 +282,152 @@ class Merge:
         f_ss.write( json.dumps( ss_ordered_dict, indent = 4, cls=NoIndentEncoder))
         print "Done"
 
+    def get_location_sentiment_statistics(self):
+        """ open and append *.json in data/sentiment_statistics into location_sentiment_statistics/location.json """
+
+        for dirpath, dir_list, file_list in os.walk(self.src_ss):
+            print "Walking into:", dirpath
+
+            location_sentiment_statistics = []
+            if len(file_list) > 0:
+                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+                for f in file_list:
+                    if f == ".DS_Store":
+                        print "Removing " + dirpath + str(f)
+                        os.remove(dirpath + f)
+                        break
+                    else:
+                        # print "Appending " + str(dirpath) + "/" + str(f) + " into sentiment_statistics"
+                        location_sentiment_statistics.append(json.load(open(dirpath+"/"+f)))
+                self.merge_location_sentiment_statistics(location_sentiment_statistics)
+            else:
+                print "No file is found"
+
+            print "-"*80
+        #print location_sentiment_statistics
+
+    def merge_location_sentiment_statistics(self, sentiment_statistics):
+        """ accumulate the count for every sentiment word in every location
+        E.g. list[0] = {"good":1, "great":2}, list[1] = {"good":3, "great":4} -> sentiment_statistics = {"good":4, "great":6}
+        """
+        #print sentiment_statistics
+        print "Merging location_sentiment_statistics' positive counts"
+
+        location = sentiment_statistics[0]["location"].replace("-","_")
+        count_list = np.zeros(len(sentiment_statistics[0]["positive_statistics"]))
+        ss_cnt = 0
+        ss_length = len(sentiment_statistics)
+        for statistics in sentiment_statistics:
+
+            positive_word_list = []
+            stemmed_positive_word_list = []
+            ss_cnt += 1
+            for i in xrange(len(statistics["positive_statistics"])):
+                positive_word_list.append(statistics["positive_statistics"][i]['word'])
+                stemmed_positive_word_list.append(statistics["positive_statistics"][i]['stemmed_word'])
+                count_list[i] += (np.asarray(statistics["positive_statistics"][i]['count']))
+
+            sys.stdout.write("\rStatus: %s / %s"%(ss_cnt, ss_length))
+            sys.stdout.flush()
+
+        """ Putting them back to dictionary """
+        print "\nPutting positive_statistics back to dictionary"
+        positive_word_dict_list = []
+        pwl_cnt = 0
+        pwl_length = len(positive_word_list)
+        for i in xrange(len(positive_word_list)):
+
+            pwl_cnt += 1
+            positive_word_dict = {"stemmed_word": stemmed_positive_word_list[i], "word": positive_word_list[i], "count": int(count_list[i])}
+            positive_word_dict_list.append(positive_word_dict)
+
+            sys.stdout.write("\rStatus: %s / %s"%(pwl_cnt, pwl_length))
+            sys.stdout.flush()
+
+        #Sorting by count
+        positive_statistics = sorted(positive_word_dict_list, key=itemgetter('count'), reverse = True)
+
+        print "\n" + "-"*80
+        print "Merging location_sentiment_statistics' negative counts"
+        count_list = np.zeros(len(sentiment_statistics[0]["negative_statistics"]))
+        ss_cnt = 0
+        ss_length = len(sentiment_statistics)
+        for statistics in sentiment_statistics:
+
+            negative_word_list = []
+            stemmed_negative_word_list = []
+            ss_cnt += 1
+            for i in xrange(len(statistics["negative_statistics"])):
+                negative_word_list.append(statistics["negative_statistics"][i]['word'])
+                stemmed_negative_word_list.append(statistics["negative_statistics"][i]['stemmed_word'])
+                count_list[i] += (np.asarray(statistics["negative_statistics"][i]['count']))
+
+            sys.stdout.write("\rStatus: %s / %s"%(ss_cnt, ss_length))
+            sys.stdout.flush()
+
+        """ Putting them back to dictionary """
+        print "\nPutting negative_statistics back to dictionary"
+        negative_word_dict_list = []
+        nwl_cnt = 0
+        nwl_length = len(negative_word_list)
+        for i in xrange(len(negative_word_list)):
+
+            nwl_cnt += 1
+            negative_word_dict = {"stemmed_word": stemmed_negative_word_list[i], "word": negative_word_list[i], "count": int(count_list[i])}
+            negative_word_dict_list.append(negative_word_dict)
+
+            sys.stdout.write("\rStatus: %s / %s"%(nwl_cnt, nwl_length))
+            sys.stdout.flush()
+
+        print "\n" + "-"*80
+        #Sorting by count
+        negative_statistics = sorted(negative_word_dict_list, key=itemgetter('count'), reverse = True)
+
+	positive_statistics[:] = [dictionary for dictionary in positive_statistics if dictionary.get('count') > 20]
+	negative_statistics[:] = [dictionary for dictionary in negative_statistics if dictionary.get('count') > 20]
+
+        self.save_location_sentiment_statistics(location, positive_statistics, negative_statistics)
+        #return positive_statistics, negative_statistics
+
+    def save_location_sentiment_statistics(self, location, positive_statistics, negative_statistics):
+        """ put keys in order and render json file """
+        reload(sys)
+        sys.setdefaultencoding("utf-8")
+
+        print "Saving data to:", "\033[1m" + self.dst_lss + location + "\033[0m"
+
+        ps_cnt = 0
+        ps_length = len(positive_statistics)
+        positive_ordered_dict_list = []
+        for word_dict in positive_statistics:
+            ps_cnt += 1
+            ordered_dict = OrderedDict()
+            ordered_dict["index"] = ps_cnt
+            ordered_dict["count"] = word_dict["count"]
+            ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
+            ordered_dict["word"] = word_dict["word"]
+            positive_ordered_dict_list.append(NoIndent(ordered_dict))
+
+        ns_cnt = 0
+        ns_length = len(negative_statistics)
+        negative_ordered_dict_list = []
+        for word_dict in negative_statistics:
+            ns_cnt += 1
+            ordered_dict = OrderedDict()
+            ordered_dict["index"] = ns_cnt
+            ordered_dict["count"] = word_dict["count"]
+            ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
+            ordered_dict["word"] = word_dict["word"]
+            negative_ordered_dict_list.append(NoIndent(ordered_dict))
+
+        ss_ordered_dict = OrderedDict()
+        ss_ordered_dict["positive_statistics"] = positive_ordered_dict_list
+        ss_ordered_dict["negative_statistics"] = negative_ordered_dict_list
+
+        f_ss = open(self.dst_lss + location + ".json", 'w+')
+        f_ss.write( json.dumps( ss_ordered_dict, indent = 4, cls=NoIndentEncoder))
+        print "Done"
+
     def get_frontend_reviews(self):
         """ Get avg_sentiment_counts and avg_word_counts from frontend reviews """
 
@@ -330,6 +476,7 @@ class Merge:
         dir3 = os.path.dirname(self.dst_as)
         dir4 = os.path.dirname(self.dst_a)
         dir5 = os.path.dirname(self.dst_log)
+        dir6 = os.path.dirname(self.dst_lss)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
@@ -346,6 +493,9 @@ class Merge:
         if not os.path.exists(dir5):
             print "Creating directory: " + dir5
             os.makedirs(dir5)
+        if not os.path.exists(dir6):
+            print "Creating directory: " + dir6
+            os.makedirs(dir6)
 
         print "-"*80
 
@@ -377,11 +527,12 @@ class NoIndentEncoder(json.JSONEncoder):
 if __name__ == '__main__':
     merge = Merge()
     merge.create_dirs()
-    merge.get_corpora()
-    merge.get_backend_stars_reviews()
-    merge.render_all_stars()
-    merge.render_all()
-    merge.get_frontend_reviews()
-    merge.render_log()
-    merge.save_sentiment_statistics()
+    #merge.get_corpora()
+    #merge.get_backend_stars_reviews()
+    #merge.render_all_stars()
+    #merge.render_all()
+    #merge.get_frontend_reviews()
+    #merge.render_log()
+    #merge.save_sentiment_statistics()
+    merge.get_location_sentiment_statistics()
 
