@@ -16,6 +16,7 @@ class ToWebsite:
         self.src_computed_rankings = "data/ranking/"
 
         self.dst_fr = "website/data/frontend_reviews/"
+        self.dst_rfr = "website/data/refined_frontend_reviews/"
         self.dst_lexicon = "website/data/lexicon/"
         self.dst_location = "website/data/locations.json"
         #self.locations = []
@@ -133,7 +134,7 @@ class ToWebsite:
         json_data = json.load(open(self.src_computed_rankings + location + "/" + location + "-Threshold0.0.json"))
 
         computed_rankings = {}
-        for attraction_dict in json_data["cosine_threshold_ranking"]:
+        for attraction_dict in json_data["CosineThreshold_Ranking"]:
             computed_rankings[attraction_dict["attraction_name"]] = attraction_dict["computed_ranking"]
 
         #print computed_rankings
@@ -219,6 +220,7 @@ class ToWebsite:
         f = open(self.dst_lexicon + location + ".json", 'w+')
         f.write( json.dumps( positive_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
         #print "Done"
+
     def render_locations(self):
         """ generate a list containing all location names """
 
@@ -255,9 +257,153 @@ class ToWebsite:
         f.write(json.dumps( locations, indent = 4))
         f.close()
 
+    def split_frontend(self):
+        """ load data in website/data/frontend_reviews/location/ -> sort -> save """
+        print "Starting to load: " + self.dst_fr
+        for dirpath, dir_list, file_list in os.walk(self.dst_fr):
+            print "Walking into directory: " + str(dirpath)
+
+            # in case there is a goddamn .DS_Store file
+            if len(file_list) > 0:
+                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+
+                attractions = []
+                file_cnt = 0
+                length = len(file_list)
+                for f in file_list:
+                    if str(f) == ".DS_Store":
+                        print "Removing " + dirpath + "/"+ str(f)
+                        os.remove(dirpath + "/" + f)
+                    else:
+                        file_cnt += 1
+                        print "Loading data from " + str(dirpath) + "/" + str(f)
+                        with open(dirpath + "/" + f) as file:
+                            try:
+                                attractions.append(json.load(file))
+                            except:
+                                pass
+                                print "Error occurs on attraction. No Render"
+
+                print "-"*80
+                #  attractions1 = attractions[:]
+                #  attractions1 = sorted(attractions1, key=lambda k: k['computed_ranking'])[:5]
+                #  self.split_attraction(attractions1, "computed")
+                #  attractions2 = attractions[:]
+                #  attractions2 = sorted(attractions2, key=lambda k: k['reranked_ranking'])[:5]
+                #  self.split_attraction(attractions2, "reranked")
+                #  attractions3 = attractions[:]
+                #  attractions3 = sorted(attractions3, key=lambda k: k['original_ranking'])[:5]
+                #  self.split_attraction(attractions3, "original")
+                attractions4 = attractions[:]
+                attractions4 = sorted(attractions4, key=lambda k: k['review_with_attraction_mentioned_count'], reverse = True)[:5]
+                self.split_attraction(attractions4, "frequency")
+
+
+    def split_attraction(self, attractions, ranking_type):
+        """ take input attractions | split reviews | pass on to render """
+
+        print "Processing " + "\033[1m" + ranking_type + "\033[0m"
+        rank = 0
+        for attraction in attractions:
+            rank += 1
+            review_counts = len(attraction["reviews"])
+
+            #print type(attraction["reviews"])
+            # split reviews into 10
+            reviews = attraction["reviews"]
+            attraction["reviews"] = [reviews[i:i+len(reviews)/10] for i in range(0, len(reviews), len(reviews)/10)]
+            attraction["reviews"][-2] = attraction["reviews"][-2] + attraction["reviews"][-1]
+
+            if len(attraction["reviews"]) == 11:
+                attraction["reviews"] = attraction["reviews"][:-1]
+            elif len(attraction["reviews"]) == 10:
+                attraction["reviews"] = attraction["reviews"][:]
+            else:
+                print "Error"
+
+            for index in xrange(1,11):
+                #print attraction
+                self.render_split(rank, index, ranking_type, attraction)
+
+        print "-"*80
+
+
+
+    def render_split(self, rank, index, ranking_type, attraction):
+
+        location = attraction["location"].replace("-", "_")
+        self.create_refined_frontend_dir(location, ranking_type)
+
+        if index < 10:
+          print "Saving files to " + self.dst_rfr + location + "/" + ranking_type + "/" + location + "_0" + str(rank) + "_0" + str(index)+ ".json"
+        else:
+          print "Saving files to " + self.dst_rfr + location + "/" + ranking_type + "/" + location + "_0" + str(rank) + "_" + str(index)+ ".json"
+
+        """ (1) save location_(01~05)_(01~10).json in ./website/refined_frontend_reviews/ """
+        split_orderedDict = OrderedDict()
+        split_orderedDict["location"] = attraction["location"]
+        split_orderedDict["attraction_name"] = attraction["attraction_name"]
+        split_orderedDict["vector2"] = NoIndent(attraction["vector2"])
+        split_orderedDict["ranking_score"] = attraction["ranking_score"]
+        split_orderedDict["computed_ranking"] = attraction["computed_ranking"]
+        split_orderedDict["original_ranking"] = int(attraction["original_ranking"])
+        split_orderedDict["reranked_ranking"] = attraction["reranked_ranking"]
+        split_orderedDict["frequency"] = attraction["review_with_attraction_mentioned_count"]
+        split_orderedDict["avg_rating"] = float(attraction["avg_rating"])
+
+        rating_stats_dict = OrderedDict()
+        rating_stats_dict["excellent"] = attraction["rating_stats"]["excellent"]
+        rating_stats_dict["very good"] = attraction["rating_stats"]["very good"]
+        rating_stats_dict["average"] = attraction["rating_stats"]["average"]
+        rating_stats_dict["poor"] = attraction["rating_stats"]["poor"]
+        rating_stats_dict["terrible"] = attraction["rating_stats"]["terrible"]
+        split_orderedDict["rating_stats"] = NoIndent(rating_stats_dict)
+
+        split_orderedDict["review_with_attraction_mentioned_count"] =  attraction["review_with_attraction_mentioned_count"]
+        split_orderedDict["avg_sentiment_counts"] = attraction["avg_sentiment_counts"]
+        split_orderedDict["avg_word_counts"] = attraction["avg_word_counts"]
+        split_orderedDict["avg_nearest_sentiment_distance"] = attraction["avg_nearest_sentiment_distance"]
+
+        review_ordered_dict_list = []
+        #print "reviews_length", len(attraction["reviews"])
+        for review_dict in attraction["reviews"][int(index)-1]:
+            try:
+                review_ordered_dict = OrderedDict()
+                review_ordered_dict['index'] = review_dict["index"]
+                review_ordered_dict['review'] = review_dict["review"]
+                review_ordered_dict_list.append(review_ordered_dict)
+                #print len(review_dict)
+                #print "dict_type", type(review_dict)
+            except:
+                split_json = open("data/test.json", "w")
+                split_json.write(json.dumps( attraction["reviews"][index-1], indent = 4, cls=NoIndentEncoder))
+                split_json.close()
+                #print len(review_dict)
+                #print "dict_type", type(review_dict)
+                raise
+
+        split_orderedDict["reviews"] = review_ordered_dict_list
+
+        if index < 10:
+            dst = self.dst_rfr + location + "/" + ranking_type + "/" + location + "_0" + str(rank) + "_0" + str(index)+ ".json"
+        else:
+            dst = self.dst_rfr + location + "/" + ranking_type + "/" + location + "_0" + str(rank) + "_" + str(index)+ ".json"
+
+        split_json = open(dst, "w")
+        split_json.write(json.dumps( split_orderedDict, indent = 4, cls=NoIndentEncoder))
+        split_json.close()
+
     def create_frontend_dir(self, location):
         """ create the directory if not exist"""
         dir1 = os.path.dirname(self.dst_fr + location + "/")
+
+        if not os.path.exists(dir1):
+            print "Creating directory: " + dir1
+            os.makedirs(dir1)
+
+    def create_refined_frontend_dir(self, location, ranking_type):
+        """ create the directory if not exist"""
+        dir1 = os.path.dirname(self.dst_rfr + location + "/" + ranking_type + "/")
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
@@ -273,9 +419,10 @@ class ToWebsite:
 
     def run(self):
         """ run the entire process """
-        self.get_lexicon()
-        self.get_frontend_reviews()
-        self.render_locations()
+        # self.get_lexicon()
+        # self.get_frontend_reviews()
+        # self.render_locations()
+        self.split_frontend()
 
 class NoIndent(object):
     def __init__(self, value):
