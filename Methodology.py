@@ -23,6 +23,8 @@ class Methodology:
         self.src_lexicon = "data/lexicon/sentiment_statistics.json"
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
         self.src_fr = "data/frontend_reviews/" + self.filename + "/"
+        self.src_ss = "data/sentiment_statistics/"
+        self.src_lss = "data/location_sentiment_statistics/"
 
         self.dst_distance = "data/distance/" + self.filename + "/"
         self.dst_ranking = "data/ranking/" + self.filename + "/"
@@ -139,6 +141,7 @@ class Methodology:
         if self.verbose:
             print "\n" + "-"*70
 
+
     def get_positive_cosine_topN(self):
         """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
         """ cos_sim stands for cosine_similarity """
@@ -154,33 +157,100 @@ class Methodology:
                 try:
                     positive_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.positive_vectors200[index]))
                 except:
+                    pass
                     print "No match"
 
             print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
             # sorting index
             positive_sorted_index = sorted(range(len(positive_cos_sim_list)), key=lambda k: positive_cos_sim_list[k], reverse=True)
 
-            positive_word_dict_list = []
+            sentiment_statistics = self.get_location_sentiment_statistics(query)
+            #print sentiment_statistics
+
+            word_dict_list = []
             for i, index in enumerate(positive_sorted_index):
-                positive_word_dict = {"word": self.positive[index], "cos_sim": positive_cos_sim_list[index]}
-                positive_word_dict_list.append(positive_word_dict)
+                try:
+                    positive_word_dict = {
+                            "stemmed_word": self.positive[index]["stemmed_word"],
+                            "word": self.positive[index]["word"],
+                            "location_count": sentiment_statistics[self.positive[index]["stemmed_word"]],
+                            "total_count": self.positive[index]["count"],
+                            "cos_sim": positive_cos_sim_list[index],
+                            "cosineXfrequency_score": positive_cos_sim_list[index] * sentiment_statistics[self.positive[index]["stemmed_word"]]
+                            }
+                    word_dict_list.append(positive_word_dict)
+                except:
+                    pass
+                #print word_dict
 
+            cosine_score_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list]
+            max_cosine_score = max(cosine_score_list)
+            avg_cosine_score = sum(cosine_score_list)/len(cosine_score_list)
+            sum_cosine_score = sum([float(word_dict["cos_sim"]) for word_dict in word_dict_list if float(word_dict["cos_sim"]) >= self.threshold])
+
+            # remove count = 0
+            refined_word_dict_list = [word_dict for word_dict in word_dict_list if float(word_dict["location_count"]) >= 0]
             # cutting threshold
-            positive_topN_cos_sim_list = [float(positive_word_dict["cos_sim"]) for positive_word_dict in positive_word_dict_list if float(positive_word_dict["cos_sim"]) >= self.threshold]
-
+            refined_word_dict_list = [word_dict for word_dict in word_dict_list if float(word_dict["cos_sim"]) >= self.threshold]
+            # methodology score
+            sum_cosineXfrequency_score = sum([float(word_dict["cosineXfrequency_score"]) for word_dict in refined_word_dict_list])
             # calculate the score out of topN cosine similarity
-            positive_cos_score = sum(positive_topN_cos_sim_list)
 
             # generate cosine score
-            cos_score = positive_cos_score
-            print "positive cosine score:", cos_score
+            print "max_cosine_score :", max_cosine_score
+            print "avg_cosine_score :", avg_cosine_score
+            print "sum_cosine_score :", sum_cosine_score
+            print "cosine_similarity * location_count = score :", sum_cosineXfrequency_score
 
             self.positive_cosine_topN.append({"query": query,
-                "positive_topN_cosine_similarity": positive_word_dict_list,
-                "cos_score": cos_score,
+                "positive_topN_cosine_similarity": refined_word_dict_list,
+                "max_cosine_score": max_cosine_score,
+                "avg_cosine_score": avg_cosine_score,
+                "sum_cosine_score": sum_cosine_score,
+                "sum_cosineXfrequency_score": sum_cosineXfrequency_score
                 })
 
-        print "-"*70
+            print "-"*70
+
+    def get_location_sentiment_statistics(self, query):
+        """ get sentiment_statistic for a particular location | return frequencies of sentiment words """
+
+        location = re.search("_([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)", query).group(1)
+        location = location.replace("-","_").title()
+        print "Searching for: " + "\033[1m" + location + ".json" + "\033[0m" + " in " + self.src_lss
+
+        sentiment_statistics = []
+        for dirpath, dir_list, file_list in os.walk(self.src_lss):
+            print "Walking into directory: " + str(dirpath)
+
+            # in case there is a goddamn .DS_Store file
+            if len(file_list) > 0:
+                # print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+
+                file_cnt = 0
+                length = len(file_list)
+                for f in file_list:
+                    if str(f) == ".DS_Store":
+                        print "Removing " + dirpath + str(f)
+                        os.remove(dirpath + f)
+                        break
+                    else:
+                        if location in f:
+                            print "Loading location_sentiment_sentiment_statistics from " + dirpath + str(f)
+                            with open(dirpath + "/" + f) as file:
+                                json_data = json.load(file)
+                            sentiment_statistics = json_data["positive_statistics"]
+                        else:
+                            #print "No match"
+                            pass
+            else:
+                print "No file is found"
+
+        sentiment_dict = {}
+        for word_dict in sentiment_statistics:
+            sentiment_dict[word_dict["stemmed_word"]] = word_dict["count"]
+
+        return sentiment_dict
 
     def get_enhanced_lexicon(self):
 	""" open data/lexicon/enhanced_lexicon.json and load extreme_positive & strong_positive & moderate_positive """
@@ -532,9 +602,12 @@ class Methodology:
             ordered_dict = OrderedDict()
             ordered_dict['attraction_name'] = rank_dict['attraction_name']
             ordered_dict['computed_ranking'] = ranking
+            ordered_dict['cosineXfrequency_score'] = rank_dict['cosineXfrequency_score']
+            ordered_dict['max_score'] = rank_dict['max_score']
+            ordered_dict['avg_score'] = rank_dict['avg_score']
+            ordered_dict['sum_score'] = rank_dict['sum_score']
             ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
             ordered_dict['original_ranking'] = int(self.attractions2[rank_dict['attraction_name']])
-            ordered_dict['score'] = rank_dict['score']
             ordered_dicts.append(ordered_dict)
 
         location_ordered_dict['cosine_threshold_ranking'] = ordered_dicts
@@ -545,7 +618,6 @@ class Methodology:
         f = open(self.dst_ranking + self.filename + "-Threshold" + str(self.threshold) + ".json", "w")
         f.write(json.dumps(location_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
-
     def renderPositiveDistance(self):
         """ save to data/distance/ """
 
@@ -553,11 +625,13 @@ class Methodology:
             print "Putting Cosine word dicts in order"
         query_ordered_dict_list = []
 
-        cnt = 0
-        length = len(self.positive_cosine_topN)
-        for p_cos_word_dict in self.positive_cosine_topN:
-            cnt += 1
+        sorted_positive_cosine_topN = sorted(self.positive_cosine_topN, key=lambda k: k['sum_cosineXfrequency_score'], reverse = True)
+        ranking = 0
+        length = len(sorted_positive_cosine_topN)
+        for p_cos_word_dict in sorted_positive_cosine_topN:
+            ranking += 1
             query_ordered_dict = OrderedDict()
+            query_ordered_dict['ranking'] = ranking
             query_ordered_dict['method'] = "CosineThreshold"
             query_ordered_dict["query"] = p_cos_word_dict["query"]
             query_ordered_dict["cosine_threshold"] = self.threshold
@@ -570,9 +644,10 @@ class Methodology:
                 ordered_dict = OrderedDict()
                 ordered_dict["index"] = index
                 ordered_dict["cosine_similarity"] = cosine_word_dict["cos_sim"]
-                ordered_dict["count"] = cosine_word_dict["word"]["count"]
-                ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
-                ordered_dict["word"] = cosine_word_dict["word"]["word"]
+                ordered_dict["location_count"] = cosine_word_dict["location_count"]
+                ordered_dict["stemmed_word"] = cosine_word_dict["stemmed_word"]
+                ordered_dict["word"] = cosine_word_dict["word"]
+                ordered_dict["total_count"] = cosine_word_dict["total_count"]
                 positive_cosine_word_dict_list.append(NoIndent(ordered_dict))
 
             query_ordered_dict["positive_topN_cosine_similarity"] = positive_cosine_word_dict_list
@@ -599,37 +674,67 @@ class Methodology:
 
         if self.verbose:
             print "Ranking queries according to cosine score"
-        score_list = []
-        for p_cos_word_dict in self.positive_cosine_topN:
+        ranking_dict_list = []
+        for ranking_dict in self.positive_cosine_topN:
 
-            score = p_cos_word_dict["cos_score"]
-            score_list.append({"attraction_name": p_cos_word_dict["query"], "score": score})
+            ranking_dict_list.append({
+                "attraction_name": ranking_dict["query"],
+                "sum_cosineXfrequency_score": ranking_dict["sum_cosineXfrequency_score"],
+                "sum_cosine_score": ranking_dict["sum_cosine_score"],
+                "max_cosine_score": ranking_dict["max_cosine_score"],
+                "avg_cosine_score": ranking_dict["avg_cosine_score"]
+                })
 
-         # derive ranking_list from a the unsorted score_list
-        ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
-        #ranking_list = sorted(score_list, key=lambda k: k['score'])
+        # (1) By sort by sum_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["sum_cosine_score_ranking"] = rank
+        # (2) By sort by max_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['max_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["max_cosine_score_ranking"] = rank
+        # (3) By sort by avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['avg_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["avg_cosine_score_ranking"] = rank
+        # (4) By sort by sum_cosineXfrequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_cosineXfrequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["sum_cosineXfrequency_score_ranking"] = rank
 
         ordered_dicts = []
-        ranking = 0
-        for rank_dict in ranking_list:
-            ranking += 1
+        for rank_dict in ranking_dict_list:
             ordered_dict = OrderedDict()
             ordered_dict['attraction_name'] = rank_dict['attraction_name']
-            ordered_dict['computed_ranking'] = ranking
             ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
             ordered_dict['original_ranking'] = int(self.attractions2[rank_dict['attraction_name']])
-            ordered_dict['score'] = rank_dict['score']
-            print ordered_dict
+            ordered_dict['computed_ranking'] = rank_dict["sum_cosineXfrequency_score_ranking"]
+            ordered_dict['sum_cosineXfrequency_score'] = rank_dict['sum_cosineXfrequency_score']
+            ordered_dict['sum_cosine_score_ranking'] = rank_dict["sum_cosine_score_ranking"]
+            ordered_dict['sum_cosine_score'] = rank_dict['sum_cosine_score']
+            ordered_dict['max_cosine_score_ranking'] = rank_dict["max_cosine_score_ranking"]
+            ordered_dict['max_cosine_score'] = rank_dict['max_cosine_score']
+            ordered_dict['avg_cosine_score_ranking'] = rank_dict["avg_cosine_score_ranking"]
+            ordered_dict['avg_cosine_score'] = rank_dict['avg_cosine_score']
+            #print ordered_dict
             ordered_dicts.append(ordered_dict)
 
-        location_ordered_dict['cosine_threshold_ranking'] = ordered_dicts
+
+        location_ordered_dict['CosineThreshold_Ranking'] = ordered_dicts
 
         # Writing to data/ranking/New_York_City/New_York_City_Threshold0.25
         if self.verbose:
             print "Writing to " + "\033[1m" + str(self.dst_ranking) + self.filename + "-Threshold" + str(self.threshold) + ".json""\033[0m"
         f = open(self.dst_ranking + self.filename + "-Threshold" + str(self.threshold) + ".json", "w")
         f.write(json.dumps(location_ordered_dict, indent = 4, cls=NoIndentEncoder))
-
 
 
     def run(self):
