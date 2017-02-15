@@ -184,6 +184,7 @@ class Methodology:
                 #print word_dict
 
             cosine_score_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list]
+            #print cosine_score_list
             max_cosine_score = max(cosine_score_list)
             avg_cosine_score = sum(cosine_score_list)/len(cosine_score_list)
             sum_cosine_score = sum([float(word_dict["cos_sim"]) for word_dict in word_dict_list if float(word_dict["cos_sim"]) >= self.threshold])
@@ -216,7 +217,7 @@ class Methodology:
         """ get sentiment_statistic for a particular location | return frequencies of sentiment words """
 
         location = re.search("_([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)", query).group(1)
-        location = location.replace("-","_").title()
+        location = location.replace("-","_")
         print "Searching for: " + "\033[1m" + location + ".json" + "\033[0m" + " in " + self.src_lss
 
         sentiment_statistics = []
@@ -235,7 +236,7 @@ class Methodology:
                         os.remove(dirpath + f)
                         break
                     else:
-                        if location in f:
+                        if location in f.lower():
                             print "Loading location_sentiment_sentiment_statistics from " + dirpath + str(f)
                             with open(dirpath + "/" + f) as file:
                                 json_data = json.load(file)
