@@ -273,7 +273,10 @@ class Evaluate:
                 g.append(0)
 
         print "G:", g
-        ndcg = map(div, self.get_dcg(g), self.get_dcg(sorted(g, reverse=True)))
+        try:
+            ndcg = map(div, self.get_dcg(g), self.get_dcg(sorted(g, reverse=True)))
+        except:
+            ndcg = [0]*20
         print "NDCG:", ndcg
 
         return ndcg
@@ -283,7 +286,7 @@ class Evaluate:
 
     def create_dirs(self, dst, location):
         """ create the directory if not exist """
-        dir1 = os.path.dirname(dst + location + "/")
+        dir1 = os.path.dirname(dst + "/")
 
         if not os.path.exists(dir1):
             print "Creating directory:", dir1
