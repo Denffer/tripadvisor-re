@@ -218,17 +218,18 @@ class ReviewProcess:
 
         review_cnt = 0
         review_length = len(self.clean_reviews)
-        for review, review_dict in zip(self.clean_reviews, self.attraction["reviews"]):
+        #for review, review_dict in zip(self.clean_reviews, self.attraction["reviews"]):
+        for review in self.clean_reviews:
             review_cnt += 1
             # lower review to ensure words like 'good' and 'Good' are counted as the same
-            review = review.lower()
+            #review = review.lower()
             # remove all punctuations
-            review = re.sub("(\W|\_)",r" ", review)
-            # remove extra spaces
-            review = re.sub("(\s)+", r" ", review)
+            review = re.sub("\s(\W|\_)",r" ", review)
+            ## remove extra spaces
+            #review = re.sub("(\s)+", r" ", review)
 
             """ Replacement | E.g. I love happy temple. -> I love "title" Happy-Temple_Bangkok "title" . """
-            title = review_dict["title"]
+            #title = review_dict["title"]
             review = re.sub(self.attraction_regexr, self.attraction_al, review, flags = re.IGNORECASE)
             # remove accent again for title
 
