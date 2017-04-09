@@ -6,8 +6,8 @@ from os import walk
 
 class PreProcess:
     """ This program walk into all directories under ./raw_data and
-        (1) Merge sub-tours into one single tour
-        and json files in ./raw_data and filter out top 2000 restaurants with the most reviews. """
+        (1) Render attractions
+        (2) Merge and render sub-tours into one single tour """
 
     def __init__(self):
         """ initialze the paths """
