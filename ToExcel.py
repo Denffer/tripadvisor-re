@@ -10,7 +10,7 @@ class ToExcel:
 
     def __init__(self):
         self.src = sys.argv[1]
-        self.dst_name = "Original_NDCG_Results.xlsx"
+        self.dst_name = "Reranked_NDCG_Results.xlsx"
         #self.topN = int(sys.argv[2])
         self.dst_dir = "data/excel/"
         self.locations = []
@@ -61,54 +61,54 @@ class ToExcel:
         """ proces input json data dict->list """
 
         ndcg5_list = [
-                json_data["sum_cXf_ndcg@5"],
-                json_data["sum_cXnf_ndcg@5"],
-                json_data["sum_zXnf_ndcg@5"],
-                json_data["top5_ndcg@5"],
-                json_data["top50_ndcg@5"],
-                json_data["top100_ndcg@5"],
-                json_data["sum_ndcg@5"],
-                json_data["max_ndcg@5"],
-                json_data["avg_ndcg@5"],
+                #json_data["sum_cXf_ndcg@5"],
+                json_data["top_all_sum_cXnf_ndcg@5"],
+                json_data["top_all_sum_zXnf_ndcg@5"],
+                #json_data["top5_ndcg@5"],
+                #json_data["top50_ndcg@5"],
+                #json_data["top100_ndcg@5"],
+                #json_data["sum_ndcg@5"],
+                #json_data["max_ndcg@5"],
+                json_data["top_all_avg_ndcg@5"],
                 json_data["b1_ndcg@5"],
                 json_data["b2_ndcg@5"]]
 
         ndcg10_list = [
-                json_data["sum_cXf_ndcg@10"],
-                json_data["sum_cXnf_ndcg@10"],
-                json_data["sum_zXnf_ndcg@10"],
-                json_data["top5_ndcg@10"],
-                json_data["top50_ndcg@10"],
-                json_data["top100_ndcg@10"],
-                json_data["sum_ndcg@10"],
-                json_data["max_ndcg@10"],
-                json_data["avg_ndcg@10"],
+                #json_data["top_all_sum_cXf_ndcg@10"],
+                json_data["top_all_sum_cXnf_ndcg@10"],
+                json_data["top_all_sum_zXnf_ndcg@10"],
+                #  json_data["top5_ndcg@10"],
+                #  json_data["top50_ndcg@10"],
+                #  json_data["top100_ndcg@10"],
+                #  json_data["sum_ndcg@10"],
+                #  json_data["max_ndcg@10"],
+                json_data["top_all_avg_ndcg@10"],
                 json_data["b1_ndcg@10"],
                 json_data["b2_ndcg@10"]]
 
         ndcg20_list = [
-                json_data["sum_cXf_ndcg@20"],
-                json_data["sum_cXnf_ndcg@20"],
-                json_data["sum_zXnf_ndcg@20"],
-                json_data["top5_ndcg@20"],
-                json_data["top50_ndcg@20"],
-                json_data["top100_ndcg@20"],
-                json_data["sum_ndcg@20"],
-                json_data["max_ndcg@20"],
-                json_data["avg_ndcg@20"],
+                #json_data["sum_cXf_ndcg@20"],
+                json_data["top_all_sum_cXnf_ndcg@20"],
+                json_data["top_all_sum_zXnf_ndcg@20"],
+                #  json_data["top5_ndcg@20"],
+                #  json_data["top50_ndcg@20"],
+                #  json_data["top100_ndcg@20"],
+                #  json_data["sum_ndcg@20"],
+                #  json_data["max_ndcg@20"],
+                json_data["top_all_avg_ndcg@20"],
                 json_data["b1_ndcg@20"],
                 json_data["b2_ndcg@20"]]
 
         kendalltau_list = [
-                json_data["sum_cXf_kendalltau"],
-                json_data["sum_cXnf_kendalltau"],
-                json_data["sum_zXnf_kendalltau"],
-                json_data["top5_kendalltau"],
-                json_data["top50_kendalltau"],
-                json_data["top100_kendalltau"],
-                json_data["sum_kendalltau"],
-                json_data["max_kendalltau"],
-                json_data["avg_kendalltau"],
+                #json_data["sum_cXf_kendalltau"],
+                json_data["top_all_sum_cXnf_kendalltau"],
+                json_data["top_all_sum_zXnf_kendalltau"],
+                #  json_data["top5_kendalltau"],
+                #  json_data["top50_kendalltau"],
+                #  json_data["top100_kendalltau"],
+                #  json_data["sum_kendalltau"],
+                #  json_data["max_kendalltau"],
+                json_data["top_all_avg_kendalltau"],
                 json_data["b1_kendalltau"],
                 json_data["b2_kendalltau"]]
 
@@ -142,45 +142,45 @@ class ToExcel:
         print "Writing " + "\033[1m" + self.worksheet1.name + "\033[0m" + " & " + "\033[1m" + self.worksheet2.name + "\033[0m" + " & " + "\033[1m" + self.worksheet3.name + "\033[0m"
          # Write data headers.
         self.worksheet1.write('A1', 'NDCG@5', self.title_format)
-        self.worksheet1.write('B1', 'Sum_cXf_Cosine', self.title_format)
-        self.worksheet1.write('C1', 'Sum_cXnf_Cosine', self.title_format)
-        self.worksheet1.write('D1', 'Sum_zXnf_Cosine', self.title_format)
-        self.worksheet1.write('E1', 'Top5_zScore', self.title_format)
-        self.worksheet1.write('F1', 'Top50_zScore', self.title_format)
-        self.worksheet1.write('G1', 'Top100_zScore', self.title_format)
-        self.worksheet1.write('H1', 'Sum_Cosine', self.title_format)
-        self.worksheet1.write('I1', 'Max_Cosine', self.title_format)
-        self.worksheet1.write('J1', 'Avg_Cosine', self.title_format)
-        self.worksheet1.write('K1', 'Baseline1', self.title_format)
-        self.worksheet1.write('L1', 'Baseline2', self.title_format)
+        #  self.worksheet1.write('B1', 'Sum_cXf_Cosine', self.title_format)
+        self.worksheet1.write('B1', 'Sum_cXnf_Cosine', self.title_format)
+        self.worksheet1.write('C1', 'Sum_zXnf_Cosine', self.title_format)
+        #  self.worksheet1.write('E1', 'Top5_zScore', self.title_format)
+        #  self.worksheet1.write('F1', 'Top50_zScore', self.title_format)
+        #  self.worksheet1.write('G1', 'Top100_zScore', self.title_format)
+        #  self.worksheet1.write('H1', 'Sum_Cosine', self.title_format)
+        #  self.worksheet1.write('I1', 'Max_Cosine', self.title_format)
+        self.worksheet1.write('D1', 'Avg_Cosine', self.title_format)
+        self.worksheet1.write('E1', 'Baseline1', self.title_format)
+        self.worksheet1.write('F1', 'Baseline2', self.title_format)
 
          # Write data headers.
         self.worksheet2.write('A1', 'NDCG@10', self.title_format)
-        self.worksheet2.write('B1', 'Sum_cXf_Cosine', self.title_format)
-        self.worksheet2.write('C1', 'Sum_cXnf_Cosine', self.title_format)
-        self.worksheet2.write('D1', 'Sum_zXnf_Cosine', self.title_format)
-        self.worksheet2.write('E1', 'Top5_zScore', self.title_format)
-        self.worksheet2.write('F1', 'Top50_zScore', self.title_format)
-        self.worksheet2.write('G1', 'Top100_zScore', self.title_format)
-        self.worksheet2.write('H1', 'Sum_Cosine', self.title_format)
-        self.worksheet2.write('I1', 'Max_Cosine', self.title_format)
-        self.worksheet2.write('J1', 'Avg_Cosine', self.title_format)
-        self.worksheet2.write('K1', 'Baseline1', self.title_format)
-        self.worksheet2.write('L1', 'Baseline2', self.title_format)
+        #self.worksheet2.write('B1', 'Sum_cXf_Cosine', self.title_format)
+        self.worksheet2.write('B1', 'Sum_cXnf_Cosine', self.title_format)
+        self.worksheet2.write('C1', 'Sum_zXnf_Cosine', self.title_format)
+        #self.worksheet2.write('E1', 'Top5_zScore', self.title_format)
+        #  self.worksheet2.write('F1', 'Top50_zScore', self.title_format)
+        #  self.worksheet2.write('G1', 'Top100_zScore', self.title_format)
+        #  self.worksheet2.write('H1', 'Sum_Cosine', self.title_format)
+        #  self.worksheet2.write('I1', 'Max_Cosine', self.title_format)
+        self.worksheet2.write('D1', 'Avg_Cosine', self.title_format)
+        self.worksheet2.write('E1', 'Baseline1', self.title_format)
+        self.worksheet2.write('F1', 'Baseline2', self.title_format)
 
          # Write data headers.
         self.worksheet3.write('A1', 'NDCG@20', self.title_format)
-        self.worksheet3.write('B1', 'Sum_cXf_Cosine', self.title_format)
-        self.worksheet3.write('C1', 'Sum_cXnf_Cosine', self.title_format)
-        self.worksheet3.write('D1', 'Sum_zXnf_Cosine', self.title_format)
-        self.worksheet3.write('E1', 'Top5_zScore', self.title_format)
-        self.worksheet3.write('F1', 'Top50_zScore', self.title_format)
-        self.worksheet3.write('G1', 'Top100_zScore', self.title_format)
-        self.worksheet3.write('H1', 'Sum_Cosine', self.title_format)
-        self.worksheet3.write('I1', 'Max_Cosine', self.title_format)
-        self.worksheet3.write('J1', 'Avg_Cosine', self.title_format)
-        self.worksheet3.write('K1', 'Baseline1', self.title_format)
-        self.worksheet3.write('L1', 'Baseline2', self.title_format)
+        #self.worksheet3.write('B1', 'Sum_cXf_Cosine', self.title_format)
+        self.worksheet3.write('B1', 'Sum_cXnf_Cosine', self.title_format)
+        self.worksheet3.write('C1', 'Sum_zXnf_Cosine', self.title_format)
+        #self.worksheet3.write('E1', 'Top5_zScore', self.title_format)
+        #self.worksheet3.write('F1', 'Top50_zScore', self.title_format)
+        #self.worksheet3.write('G1', 'Top100_zScore', self.title_format)
+        #self.worksheet3.write('H1', 'Sum_Cosine', self.title_format)
+        #self.worksheet3.write('I1', 'Max_Cosine', self.title_format)
+        self.worksheet3.write('D1', 'Avg_Cosine', self.title_format)
+        self.worksheet3.write('E1', 'Baseline1', self.title_format)
+        self.worksheet3.write('F1', 'Baseline2', self.title_format)
 
         # Put data into the worksheet.
         row = 0
@@ -213,12 +213,12 @@ class ToExcel:
         self.worksheet1.write(row+1, 3, '=AVERAGE(D2:D'+ str(len(self.locations)+1) +')', self.avg_num_format)
         self.worksheet1.write(row+1, 4, '=AVERAGE(E2:E'+ str(len(self.locations)+1) +')', self.avg_num_format)
         self.worksheet1.write(row+1, 5, '=AVERAGE(F2:F'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 6, '=AVERAGE(G2:G'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 7, '=AVERAGE(H2:H'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 8, '=AVERAGE(I2:I'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet1.write(row+1, 6, '=AVERAGE(G2:G'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet1.write(row+1, 7, '=AVERAGE(H2:H'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet1.write(row+1, 8, '=AVERAGE(I2:I'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet1.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet1.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet1.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
 
         self.worksheet2.write(row+1, 0, "Average", self.title_format)
         self.worksheet2.write(row+1, 1, '=AVERAGE(B2:B'+ str(len(self.locations)+1) +')', self.avg_num_format)
@@ -226,12 +226,12 @@ class ToExcel:
         self.worksheet2.write(row+1, 3, '=AVERAGE(D2:D'+ str(len(self.locations)+1) +')', self.avg_num_format)
         self.worksheet2.write(row+1, 4, '=AVERAGE(E2:E'+ str(len(self.locations)+1) +')', self.avg_num_format)
         self.worksheet2.write(row+1, 5, '=AVERAGE(F2:F'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 6, '=AVERAGE(G2:G'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 7, '=AVERAGE(H2:H'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 8, '=AVERAGE(I2:I'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet2.write(row+1, 6, '=AVERAGE(G2:G'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet2.write(row+1, 7, '=AVERAGE(H2:H'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet2.write(row+1, 8, '=AVERAGE(I2:I'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet2.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet2.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet2.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
 
         self.worksheet3.write(row+1, 0, "Average", self.title_format)
         self.worksheet3.write(row+1, 1, '=AVERAGE(B2:B'+ str(len(self.locations)+1) +')', self.avg_num_format)
@@ -239,13 +239,13 @@ class ToExcel:
         self.worksheet3.write(row+1, 3, '=AVERAGE(D2:D'+ str(len(self.locations)+1) +')', self.avg_num_format)
         self.worksheet3.write(row+1, 4, '=AVERAGE(E2:E'+ str(len(self.locations)+1) +')', self.avg_num_format)
         self.worksheet3.write(row+1, 5, '=AVERAGE(F2:F'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 6, '=AVERAGE(G2:G'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 7, '=AVERAGE(H2:H'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 8, '=AVERAGE(I2:I'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
-
+        #  self.worksheet3.write(row+1, 6, '=AVERAGE(G2:G'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet3.write(row+1, 7, '=AVERAGE(H2:H'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet3.write(row+1, 8, '=AVERAGE(I2:I'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet3.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet3.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #  self.worksheet3.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        #
         print "-"*80 + "\nSaving " + "\033[1m" + str(self.dst_name) + "\033[0m" + " in " + str(self.dst_dir)
         self.workbook.close()
 

@@ -2,6 +2,7 @@ import os, json, re, sys, matplotlib
 import numpy as np
 from collections import OrderedDict
 import matplotlib.pyplot as plt
+import xlsxwriter
 
 class DistanceAnalysis:
     """ This program aims to
@@ -14,7 +15,18 @@ class DistanceAnalysis:
         self.src = sys.argv[1]
         self.topN = sys.argv[2]
         self.dst = "data/distance_analysis/"
+
+        self.dst_name = ""
+        self.workbook = xlsxwriter.Workbook("data/Excel/Frequency&Stars.xlsx")
+        self.worksheet1 = self.workbook.add_worksheet('25 Cities')
         self.locations = []
+
+        self.title_format = self.workbook.add_format({'bold': True, 'align': 'center'})
+        self.attraction_format = self.workbook.add_format({'align': 'center'})
+        self.num1_format = self.workbook.add_format({'align': 'center'})
+        self.num2_format = self.workbook.add_format({'num_format': '0.000', 'align': 'center'})
+        self.avg_num_format = self.workbook.add_format({'num_format': '0.0000', 'align': 'center', 'bg_color': 'C0C0C0'})
+
 
     def walk_into_source(self):
         """ load data from data/distance/ """
@@ -60,6 +72,22 @@ class DistanceAnalysis:
                 print "No file is found"
                 print "-"*65
 
+   # def customize_column_width(self):
+   #      """ adjust column width according to the longest word """
+
+   #      print "Customizing width of columns ..."
+   #      location_names = []
+   #      for location in self.locations:
+   #          location_names.append(location['location'])
+
+   #      location_name_length_list = []
+   #      for location_name in location_names:
+   #          location_name_length_list.append(len(location_name))
+
+   #      # first column list out all the location
+   #      self.worksheet1.set_column(0, 0, max(location_name_length_list))
+   #      # second parameter depends on how many methodology to compare
+   #      self.worksheet1.set_column(1, self.methodology_length, 14)
 
     def process_json_data(self, json_data):
         """ proces input json data dict->list """
@@ -73,7 +101,7 @@ class DistanceAnalysis:
             except:
                 print attraction_dict["query"]
             reranked_score_list.append(attraction_dict['reranked_score'])
-            attraction_name_list.append(attraction_dict['query'])
+            attraction_name_list.append(attraction_dict['attraction_name'])
             attraction_distances_list.append(attraction_dict['positive_topN_cosine_similarity'])
             location_list.append(attraction_dict['location'])
 
@@ -97,7 +125,7 @@ class DistanceAnalysis:
         total_frequency_list = []
         for attraction_distance_dict in attraction_distances_list:
             cosine_similarity_list = [x['cosine_similarity'] for x in attraction_distance_dict]
-            frequency_list = [x['location_count'] for x in attraction_distance_dict]
+            frequency_list = [x['locational_frequency'] for x in attraction_distance_dict]
             if self.topN == "all":
                 cosine_similarity_list = cosine_similarity_list[:]
                 frequency_list = frequency_list[:]
@@ -153,6 +181,29 @@ class DistanceAnalysis:
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1 + "/"
             os.makedirs(dir1)
+
+    def write_excel(self):
+
+        print "Writing Excel ..."
+
+        row = 0
+        column = 0
+        for attractions in self.locations:
+            #self.worksheet1.set_column(row, column, 14)
+            self.worksheet1.set_column(row, column, 10)
+            self.worksheet1.set_column(row, column+1, 10)
+            #self.worksheet1.write(row, column, attractions[0]['location'], self.title_format)
+            self.worksheet1.write(row, column, 'Total_Frequency', self.attraction_format)
+            self.worksheet1.write(row, column+1, 'Avg_Stars', self.attraction_format)
+
+            for attraction_dict in attractions:
+                row += 1
+                #self.worksheet1.write(row, column, attraction_dict["attraction_name"], self.title_format)
+                self.worksheet1.write(row, column, attraction_dict["total_frequency"], self.num1_format)
+                self.worksheet1.write(row, column+1, attraction_dict["reranked_score"], self.num2_format)
+
+            row = 0
+            column += 2
 
     def plot(self, location_name, attractions):
         """ Draw | score as x-axis | var as y-axis """
@@ -294,6 +345,7 @@ class DistanceAnalysis:
         """ run the entire program """
 
         self.walk_into_source()
+        self.write_excel()
         self.plot_all()
 
 if __name__ == '__main__':

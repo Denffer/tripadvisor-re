@@ -53,7 +53,7 @@ class ToWebsite:
                         break
                     else:
                         file_cnt += 1
-                        print "Loading data from " + str(dirpath) + "/" + str(f)
+                        #print "Loading data from " + str(dirpath) + "/" + str(f)
                         with open(dirpath +"/"+ f) as file:
                             try:
                                 attraction = json.load(file)
@@ -61,9 +61,11 @@ class ToWebsite:
                                 # self.locations.append(attraction["attraction_name"])
                                 # look for attraction_name
                                 attraction_al = attraction["attraction_name"].lower() + "_" + attraction["location"].lower()
+                                #print attraction_al
                                 attraction_index = unique_words[attraction_al]
                                 attraction_vector2 = vectors2[attraction_index]
                                 attraction_computed_ranking = computed_rankings[attraction_al]
+                                #print attraction_computed_ranking
                                 self.render_frontend(attraction, attraction_vector2, attraction_computed_ranking)
                             except:
                                 print "Error occurs on attraction. No Render"
@@ -135,8 +137,8 @@ class ToWebsite:
 
         computed_rankings = {}
         for attraction_dict in json_data["CosineThreshold_Ranking"]:
-            computed_rankings[attraction_dict["attraction_name"]] = attraction_dict["computed_ranking"]
-
+            #computed_rankings[attraction_dict["attraction_name"]] = attraction_dict["computed_ranking"]
+            computed_rankings[attraction_dict["attraction_name"]] = attraction_dict["top_all_sum_cosineXnorm_frequency_score_ranking"]
         #print computed_rankings
         return computed_rankings
 
@@ -291,12 +293,12 @@ class ToWebsite:
                 #  attractions2 = attractions[:]
                 #  attractions2 = sorted(attractions2, key=lambda k: k['reranked_ranking'])[:5]
                 #  self.split_attraction(attractions2, "reranked")
-                #  attractions3 = attractions[:]
-                #  attractions3 = sorted(attractions3, key=lambda k: k['original_ranking'])[:5]
-                #  self.split_attraction(attractions3, "original")
-                attractions4 = attractions[:]
-                attractions4 = sorted(attractions4, key=lambda k: k['review_with_attraction_mentioned_count'], reverse = True)[:5]
-                self.split_attraction(attractions4, "frequency")
+                attractions3 = attractions[:]
+                attractions3 = sorted(attractions3, key=lambda k: k['original_ranking'])[:5]
+                self.split_attraction(attractions3, "original")
+                #  attractions4 = attractions[:]
+                #  attractions4 = sorted(attractions4, key=lambda k: k['review_with_attraction_mentioned_count'], reverse = True)[:5]
+                #  self.split_attraction(attractions4, "frequency")
 
 
     def split_attraction(self, attractions, ranking_type):
@@ -419,9 +421,9 @@ class ToWebsite:
 
     def run(self):
         """ run the entire process """
-        # self.get_lexicon()
-        # self.get_frontend_reviews()
-        # self.render_locations()
+        #self.get_lexicon()
+        #self.get_frontend_reviews()
+        #self.render_locations()
         self.split_frontend()
 
 class NoIndent(object):
