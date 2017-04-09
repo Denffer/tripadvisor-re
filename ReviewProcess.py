@@ -7,7 +7,7 @@ from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import stopwords
 
 class ReviewProcess:
-    """ This program aims to transform all json files in data/reranked_reviews/ into
+    """ This program aims to transform all data in json files in data/reranked_reviews/ into
         (1) backend_reviews.txt in 'data/backend_reviews/'
         (2) location_*.json in 'data/frontend_reviews/'
         (3) sentiment_statistics_location_*.json in the 'data/statistics/'
@@ -20,20 +20,21 @@ class ReviewProcess:
         self.verbose = 1
 
         self.attraction = {}
+        self.sentiment_words = []
         self.attraction_name, self.attraction_regexr, self.attraction_al, self.attraction_marked = "", "", "", ""
         self.total_words_count = 0
         self.total_attraction_name_mentioned_count = 0
-        self.avg_positive_sentiment_count, self.avg_negative_sentiment_count, self.avg_nearest_sentiment_distance = 0.0, 0.0, 0.0
+        self.avg_sentiment_count, self.avg_negative_sentiment_count, self.avg_nearest_sentiment_distance = 0.0, 0.0, 0.0
 
         self.lexicon, self.positive, self.negative, self.ratings = [], [], [], []
         self.clean_reviews, self.frontend_reviews, self.backend_reviews, self.backend_stars_reviews, self.hybrid_reviews, self.sentiment_statistics = [], [], [], [], [], []
 
+        self.src_sentiments = "data/sentiment_statistics2/statistics.json"
         self.dst_frontend = "data/frontend_reviews/"
         self.dst_backend = "data/backend_reviews/"
         self.dst_stars = "data/backend_stars_reviews/"
         self.dst_hybrid = "data/hybrid_reviews/"
         self.dst_sentiment_statistics = "data/sentiment_statistics/"
-        self.dst_lexicon = "data/lexicon/lexicon.json"
 
         self.stopwords = set(stopwords.words('english'))
         self.stemmer = SnowballStemmer("english")
@@ -120,19 +121,24 @@ class ReviewProcess:
         if self.verbose:
             print self.attraction_marked
 
-    def get_lexicon(self):
+    def get_sentiment_words(self):
         """ return lexicon, a dictionary of positive_lexicon(list) and negative_lexicon(list) """
         if self.verbose:
             print "-"*80
-            print "Loading lexicon from " + "\033[1m" + self.dst_lexicon + "\033[0m"
+            print "Loading sentiment words from " + "\033[1m" + self.src_sentiments + "\033[0m"
 
-        with open(self.dst_lexicon) as f:
-            self.lexicon = json.load(f)
+        with open(self.src_sentiments) as f:
+            json_data = json.load(f)
 
-        for word_dict in self.lexicon["positive"]:
-            self.positive.append(word_dict["stemmed_word"])
-        for word_dict in self.lexicon["negative"]:
-            self.negative.append(word_dict["stemmed_word"])
+        json_data = json_data[:2000]
+        for word_dict in json_data:
+            if int(word_dict["frequency"]) > 2000:
+                stemmed_sentiment_word = self.stemmer.stem(word_dict["sentiment_word"])
+                self.sentiment_words.append(stemmed_sentiment_word)
+        #  for word_dict in self.lexicon["positive"]:
+        #      self.positive.append(word_dict["stemmed_word"])
+        #  for word_dict in self.lexicon["negative"]:
+        #      self.negative.append(word_dict["stemmed_word"])
         #print lexicon
 
     def get_clean_reviews(self):
@@ -308,11 +314,11 @@ class ReviewProcess:
 
         if self.verbose:
             print "\n" + "-"*80 + "\nCalculating average nearest sentiment distance"
-        sentiment_words = []
-        for p in self.lexicon["positive"]:
-            sentiment_words.append(p["stemmed_word"])
-        for n in self.lexicon["negative"]:
-            sentiment_words.append(n["stemmed_word"])
+        #  sentiment_words = []
+        #  for p in self.lexicon["positive"]:
+        #      sentiment_words.append(p["stemmed_word"])
+        #  for n in self.lexicon["negative"]:
+        #      sentiment_words.append(n["stemmed_word"])
 
         review_cnt = 0
         review_length = len(self.backend_stars_reviews)
@@ -336,7 +342,7 @@ class ReviewProcess:
                     cnt += 1
                     #forward search
                     try:
-                        for s in sentiment_words:
+                        for s in self.sentiment_words:
                             #print "Matching for", s
                             if index+cnt < num_of_words:
                                 #print "Forward +", cnt, ":", words[index+cnt]
@@ -363,8 +369,6 @@ class ReviewProcess:
                 sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
                 sys.stdout.flush()
 
-
-
         #  nearest_sentiment_distance_list
         n = nearest_sentiment_distance_list
         self.avg_nearest_sentiment_distance = float(sum(n)/float(len(n)))
@@ -372,68 +376,67 @@ class ReviewProcess:
     def get_sentiment_statistics(self):
         """ count the sentiment words in reviews """
         if self.verbose:
-            print "\n" + "-"*80 + "\nProcessing positive sentiment_statistics"
+            print "\n" + "-"*80 + "\nProcessing sentiment_statistics"
 
         # (1) positive
-        positive = self.lexicon["positive"]
-        total_positive_sentiment_count = 0
+        #positive = self.lexicon["positive"]
+        total_sentiment_count = 0
 
-        positive_statistics = []
         sentiment_index = 0
-        sentiment_length = len(positive)
-        for word_dict in positive:
+        sentiment_length = len(self.sentiment_words)
+        for sentiment_word in self.sentiment_words:
             sentiment_index += 1
             sentiment_count = 0
             for review in self.backend_reviews:
-                sentiment_count += review.count(" " + word_dict["stemmed_word"].encode("utf-8") + " ")
+                sentiment_count += review.count(" " + sentiment_word + " ")
 
-            total_positive_sentiment_count += sentiment_count
+            total_sentiment_count += sentiment_count
 
             orderedDict = OrderedDict()
             orderedDict["index"] = sentiment_index
             orderedDict["count"] = sentiment_count
-            orderedDict["stemmed_word"] = word_dict["stemmed_word"]
-            orderedDict["word"] = word_dict["word"]
-            positive_statistics.append(NoIndent(orderedDict))
+            orderedDict["stemmed_sentiment_word"] = sentiment_word
+            #orderedDict["word"] = word_dict["word"]
+            self.sentiment_statistics.append(NoIndent(orderedDict))
 
             if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(sentiment_index, sentiment_length))
                 sys.stdout.flush()
 
-        self.avg_positive_sentiment_count = float("{0:.3f}".format(float(total_positive_sentiment_count) / float(len(self.backend_reviews))))
+        self.avg_sentiment_count = float("{0:.3f}".format(float(total_sentiment_count) / float(len(self.backend_reviews))))
 
-        if self.verbose:
-            print "\n" + "-"*80 + "\nProcessing negative sentiment_statistics"
-
-        # (2) negative
-        negative = self.lexicon["negative"]
-        total_negative_sentiment_count = 0
-
-        negative_statistics = []
-        sentiment_index = 0
-        sentiment_length = len(negative)
-        for word_dict in negative:
-            sentiment_index += 1
-            sentiment_count = 0
-            for review in self.backend_reviews:
-                sentiment_count += review.count(" " + word_dict["stemmed_word"].encode("utf-8") + " ")
-
-            total_negative_sentiment_count += sentiment_count
-
-            orderedDict = OrderedDict()
-            orderedDict["index"] = sentiment_index
-            orderedDict["count"] = sentiment_count
-            orderedDict["stemmed_word"] = word_dict["stemmed_word"]
-            orderedDict["word"] = word_dict["word"]
-            negative_statistics.append(NoIndent(orderedDict))
-
-            if self.verbose:
-                sys.stdout.write("\rStatus: %s / %s"%(sentiment_index, sentiment_length))
-                sys.stdout.flush()
-
-        self.avg_negative_sentiment_count = float("{0:.3f}".format(float(total_negative_sentiment_count) / float(len(self.backend_reviews))))
-
-        self.sentiment_statistics = {"positive_statistics": positive_statistics, "negative_statistics": negative_statistics}
+        #  if self.verbose:
+        #      print "\n" + "-"*80 + "\nProcessing negative sentiment_statistics"
+        #
+        #  # (2) negative
+        #  negative = self.lexicon["negative"]
+        #  total_negative_sentiment_count = 0
+        #
+        #  negative_statistics = []
+        #  sentiment_index = 0
+        #  sentiment_length = len(negative)
+        #  for word_dict in negative:
+        #      sentiment_index += 1
+        #      sentiment_count = 0
+        #      for review in self.backend_reviews:
+        #          sentiment_count += review.count(" " + word_dict["stemmed_word"].encode("utf-8") + " ")
+        #
+        #      total_negative_sentiment_count += sentiment_count
+        #
+        #      orderedDict = OrderedDict()
+        #      orderedDict["index"] = sentiment_index
+        #      orderedDict["count"] = sentiment_count
+        #      orderedDict["stemmed_word"] = word_dict["stemmed_word"]
+        #      orderedDict["word"] = word_dict["word"]
+        #      negative_statistics.append(NoIndent(orderedDict))
+        #
+        #      if self.verbose:
+        #          sys.stdout.write("\rStatus: %s / %s"%(sentiment_index, sentiment_length))
+        #          sys.stdout.flush()
+        #
+        #  self.avg_negative_sentiment_count = float("{0:.3f}".format(float(total_negative_sentiment_count) / float(len(self.backend_reviews))))
+        #
+        #self.sentiment_statistics = {"positive_statistics": positive_statistics, "negative_statistics": negative_statistics}
 
     def create_dirs(self, location):
         """ create directory under data/backend_revies/ """
@@ -487,7 +490,8 @@ class ReviewProcess:
 
         frontend_orderedDict["review_with_attraction_mentioned_count"] = len(self.frontend_reviews)
         frontend_orderedDict["total_attraction_name_mentioned_count"] = self.total_attraction_name_mentioned_count
-        frontend_orderedDict["avg_sentiment_counts"] = self.avg_positive_sentiment_count + self.avg_negative_sentiment_count
+        #frontend_orderedDict["avg_sentiment_counts"] = self.avg_positive_sentiment_count + self.avg_negative_sentiment_count
+        frontend_orderedDict["avg_sentiment_counts"] = self.avg_sentiment_count
         frontend_orderedDict["avg_word_counts"] = float(self.total_words_count) / float(len(self.backend_reviews))
         frontend_orderedDict["avg_nearest_sentiment_distance"] = self.avg_nearest_sentiment_distance
 
@@ -552,10 +556,10 @@ class ReviewProcess:
         statistics_orderedDict["location"] = self.attraction["location"]
         statistics_orderedDict["attraction_name"] = self.attraction["attraction_name"]
         statistics_orderedDict["attraction_al"] = self.attraction["attraction_name"].lower() + "_" + self.attraction["location"].lower()
-        statistics_orderedDict["avg_positive_sentiment_counts"] = self.avg_positive_sentiment_count
-        statistics_orderedDict["avg_negative_sentiment_counts"] = self.avg_negative_sentiment_count
-        statistics_orderedDict["positive_statistics"] = self.sentiment_statistics["positive_statistics"]
-        statistics_orderedDict["negative_statistics"] = self.sentiment_statistics["negative_statistics"]
+        statistics_orderedDict["avg_sentiment_counts"] = self.avg_sentiment_count
+        #statistics_orderedDict["avg_negative_sentiment_counts"] = self.avg_negative_sentiment_count
+        statistics_orderedDict["sentiment_statistics"] = self.sentiment_statistics
+        #statistics_orderedDict["negative_statistics"] = self.sentiment_statistics["negative_statistics"]
 
         sentiment_statistics_json = open(self.dst_sentiment_statistics + "/" + self.attraction["location"].replace("-","_") + "/" + self.filename + ".json", "w+")
         sentiment_statistics_json.write(json.dumps(statistics_orderedDict, indent = 4, cls=NoIndentEncoder))
@@ -608,13 +612,13 @@ if  __name__ == '__main__':
     process.get_attraction_regexr()
     process.get_attraction_al()
     process.get_attraction_marked()
-    process.get_lexicon()
+    process.get_sentiment_words()
     process.get_clean_reviews()
     process.get_frontend_reviews()
     process.get_backend_reviews()
     process.get_backend_stars_reviews()
     process.get_avg_nearest_sentiment_distance()
-    process.get_hybrid_reviews()
+    #process.get_hybrid_reviews()
     process.get_sentiment_statistics()
     process.render()
 
