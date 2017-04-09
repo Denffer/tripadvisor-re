@@ -310,7 +310,7 @@ class Merge:
         """ accumulate the count for every sentiment word in every location
         E.g., list[0] = {"good":1, "great":2}, list[1] = {"good":3, "great":4} -> sentiment_statistics = {"good":4, "great":6}
         """
-        #print sentiment_statistics
+        #print sentiment_statistics #test
         print "Merging location_sentiment_statistics' positive counts"
 
         location = sentiment_statistics[0]["location"].replace("-","_")
