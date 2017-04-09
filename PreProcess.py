@@ -5,7 +5,9 @@ from os import walk
 # import pprint
 
 class PreProcess:
-    """ This program takes all json files in ./raw_data and filter out top 2000 restaurants with the most reviews. """
+    """ This program walk into all directories under ./raw_data and
+        (1) Merge sub-tours into one single tour
+        and json files in ./raw_data and filter out top 2000 restaurants with the most reviews. """
 
     def __init__(self):
         """ initialze the paths """
@@ -16,7 +18,7 @@ class PreProcess:
         self.dst_log = "data/log.txt"
 
     def walk(self):
-        """ recursively load data from ./data | search every file under any directory, if any """
+        """ recursively seach and load every json file under the directory ./data/raw_data/ """
 
         # the function os.walk will get the name of dirpath, dirs and files
         for dirpath, dir_list, file_list in os.walk(self.src):
@@ -51,12 +53,12 @@ class PreProcess:
             os.makedirs(dir1)
 
     def render(self, data):
-        """ Check data | if it is tour_dict_list, then merge | if it is attraction, then render """
+        """ Merge sub-tours if it is tour_dict_list and render | Render attraction if it is attraction """
 
         if isinstance(data, dict):
             attraction = data
 
-            # ensure 01 ~ 20
+            # naming json file from 01 to 20 for better listing effect
             if int(attraction["ranking"]) < 10:
                 file_name = attraction["location"] + "_0" + attraction["ranking"] + ".json"
             else:
@@ -64,36 +66,37 @@ class PreProcess:
 
             attraction_ordered_dict = OrderedDict()
 
-            """ Refine location | E.g. Hong_Kong, (Nickname). ->  Hong-Kong """ #FIXME on whether to lower()
-            location = attraction["location"].replace("_","-").replace("&","and").replace("\'","").replace(".","")
-            location = re.sub(r'\(.*?\)', r'', location)
-            attraction_ordered_dict["location"] = location
-            self.create_dir(location)
+            """ Remove noisy text in location_name | E.g. Hong_Kong, (Nickname). ->  Hong-Kong """
+            location_name = attraction["location"].replace("_","-").replace("&","and").replace("\'","").replace(".","")
+            location_name = re.sub(r'\(.*?\)', r'', location_name)
+            attraction_ordered_dict["location"] = location_name
 
-            """ Refine attraction_name | E.g. Happy'_Temple_(Nickname). -> Happy-Temple """
+            """ Remove noisy text in attraction_name | E.g. Happy'_Temple_(Nickname). -> Happy-Temple """
             attraction_name = attraction["attraction_name"].replace("_","-").replace("-"," ").replace("\'", "").replace(".","").replace(",","")
             attraction_name = re.sub(r'\s+', r' ', attraction_name)
             attraction_name = re.sub(r'\(.*?\)', r'', attraction_name)
             attraction_name = attraction_name.strip().replace(" ", "-")
             attraction_ordered_dict["attraction_name"] = attraction_name
 
+            # Rearrange data order
             attraction_ordered_dict["ranking"] = attraction["ranking"]
             attraction_ordered_dict["avg_rating"] = attraction["avg_rating"]
             attraction_ordered_dict["review_count"] = attraction["review_count"]
 
+            # Rating statistics
             rating_stats_dict = OrderedDict()
             rating_stats_dict["excellent"] = attraction["rating_stats"]["excellent"]
             rating_stats_dict["very good"] = attraction["rating_stats"]["very good"]
             rating_stats_dict["average"] = attraction["rating_stats"]["average"]
             rating_stats_dict["poor"] = attraction["rating_stats"]["poor"]
             rating_stats_dict["terrible"] = attraction["rating_stats"]["terrible"]
-
             attraction_ordered_dict["rating_stats"] = NoIndent(rating_stats_dict)
 
             x = attraction["rating_stats"]
             score = float(int(x["excellent"]) * 5 + int(x["very good"]) * 4 + int(x["average"]) *3 + int(x["poor"]) * 2 + int(x["terrible"])) / float(int(x["excellent"]) + int(x["very good"]) + int(x["average"]) + int(x["poor"]) + int(x["terrible"]))
             attraction_ordered_dict["ranking_score"] = score
 
+            # Reviews
             review_ordered_dict_list = []
             review_cnt = 0
             for review_dict in attraction["reviews"]:
@@ -109,9 +112,10 @@ class PreProcess:
 
             attraction_ordered_dict["reviews"] = review_ordered_dict_list
 
-            print "Saving json file: " + '\033[1m' + file_name + '\033[0m' +" into data/reviews/" + location + "/"
-            f = open(self.dst+'/'+location+'/'+file_name, 'w+')
-            f.write(json.dumps(attraction_ordered_dict, indent = 4, cls=NoIndentEncoder))
+            self.create_dir(location_name)
+            print "Saving json file: " + '\033[1m' + file_name + '\033[0m' +" into data/reviews/" + location_name + "/"
+            f = open(self.dst + '/' + location_name + '/' + file_name, 'w+')
+            f.write(json.dumps( attraction_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
         elif isinstance(data, list):
             tour_list = data
@@ -124,13 +128,12 @@ class PreProcess:
 
             attraction_ordered_dict = OrderedDict()
 
-            """ Refine location | E.g. Hong_Kong, (Nickname). ->  Hong-Kong """ #FIXME on whether to lower()
-            location = tour_list[0]["location"].replace("_","-").replace("&","and").replace("\'","").replace(".","")
-            location = re.sub(r'\(.*?\)', r'', location)
-            self.create_dir(location)
-            attraction_ordered_dict["location"] = location
+            """ Remove noisy text in location_name | E.g. Hong_Kong, (Nickname). ->  Hong-Kong """
+            location_name = tour_list[0]["location_name"].replace("_","-").replace("&","and").replace("\'","").replace(".","")
+            location_name = re.sub(r'\(.*?\)', r'', location_name)
+            attraction_ordered_dict["location_name"] = location_name
 
-            """ Refine attraction_name | E.g. Happy'_Temple, (Nickname). -> Happy-Temple """
+            """ Remove noisy text in attraction_name | E.g. Happy'_Temple, (Nickname). -> Happy-Temple """
             attraction_name = tour_list[0]["super_attraction_name"].replace("_"," ").replace("-"," ").replace("\'", "").replace(".","").replace(",","")
             attraction_name = re.sub(r'\s+', r' ', attraction_name)
             attraction_name = re.sub(r'\(.*?\)', r'', attraction_name)
@@ -152,7 +155,7 @@ class PreProcess:
                 poor_list.append(tour["rating_stats"]["poor"])
                 terrible_list.append(tour["rating_stats"]["terrible"])
 
-                """ Refine attraction_name | E.g. Happy'_Temple, (Nickname). -> Happy-Temple """
+                """ Remove noisy text in attraction_name | E.g. Happy'_Temple, (Nickname). -> Happy-Temple """
                 sub_attraction_name = tour["attraction_name"].replace("_","-").replace("&","and").replace("\'", "").replace(".","")
                 sub_attraction_name = re.sub(r'\(.*?\)', r'', sub_attraction_name)
                 sub_attraction_list.append(sub_attraction_name)
@@ -164,6 +167,7 @@ class PreProcess:
             review_count = sum([int(str(i).replace(",","")) for i in review_count_list])
             attraction_ordered_dict["review_count"] = review_count
 
+            # Rating Statistics
             rating_stats_dict = OrderedDict()
             excellent = sum([int(str(i).replace(",","")) for i in excellent_list])
             rating_stats_dict["excellent"] = excellent
@@ -182,6 +186,7 @@ class PreProcess:
             score = float(int(excellent)*5 + int(very_good)*4 + int(average)*3 + int(poor)*2 + int(terrible)) / float(int(excellent) + int(very_good) + int(average) + int(poor) + int(terrible))
             attraction_ordered_dict["ranking_score"] = score
 
+            # Reviews
             review_ordered_dict_list = []
             review_cnt = 0
             for review_dict in review_dict_list:
@@ -197,9 +202,10 @@ class PreProcess:
 
             attraction_ordered_dict["reviews"] = review_ordered_dict_list
 
-            print "Saving json file: " + '\033[1m' + file_name + '\033[0m' +" into data/reviews/" + location + "/"
-            f = open(self.dst+'/'+location+'/'+file_name, 'w+')
-            f.write(json.dumps(attraction_ordered_dict, indent = 4, cls=NoIndentEncoder))
+            self.create_dir(location_name)
+            print "Saving json file: " + '\033[1m' + file_name + '\033[0m' +" into data/reviews/" + location_name + "/"
+            f = open(self.dst + '/' + locatio_name + '/' + file_name, 'w+')
+            f.write(json.dumps( attraction_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
         else:
             self.PrintException()
