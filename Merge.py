@@ -308,88 +308,89 @@ class Merge:
 
     def merge_location_sentiment_statistics(self, sentiment_statistics):
         """ accumulate the count for every sentiment word in every location
-        E.g. list[0] = {"good":1, "great":2}, list[1] = {"good":3, "great":4} -> sentiment_statistics = {"good":4, "great":6}
+        E.g., list[0] = {"good":1, "great":2}, list[1] = {"good":3, "great":4} -> sentiment_statistics = {"good":4, "great":6}
         """
         #print sentiment_statistics
         print "Merging location_sentiment_statistics' positive counts"
 
         location = sentiment_statistics[0]["location"].replace("-","_")
-        count_list = np.zeros(len(sentiment_statistics[0]["positive_statistics"]))
+        count_list = np.zeros(len(sentiment_statistics[0]))
         ss_cnt = 0
         ss_length = len(sentiment_statistics)
         for statistics in sentiment_statistics:
 
-            positive_word_list = []
-            stemmed_positive_word_list = []
+            stemmed_sentiment_word_list = []
             ss_cnt += 1
-            for i in xrange(len(statistics["positive_statistics"])):
-                positive_word_list.append(statistics["positive_statistics"][i]['word'])
-                stemmed_positive_word_list.append(statistics["positive_statistics"][i]['stemmed_word'])
-                count_list[i] += (np.asarray(statistics["positive_statistics"][i]['count']))
+            for i in xrange(len(statistics["sentiment_statistics"])):
+                stemmed_sentiment_word_list.append(statistics["sentiment_statistics"][i]['stemmed_sentiment_word'])
+                #stemmed_positive_word_list.append(statistics["positive_statistics"][i]['stemmed_word'])
+                count_list[i] += (np.asarray(statistics["sentiment_statistics"][i]['count']))
 
             sys.stdout.write("\rStatus: %s / %s"%(ss_cnt, ss_length))
             sys.stdout.flush()
 
         """ Putting them back to dictionary """
         print "\nPutting positive_statistics back to dictionary"
-        positive_word_dict_list = []
+        word_dict_list = []
         pwl_cnt = 0
-        pwl_length = len(positive_word_list)
-        for i in xrange(len(positive_word_list)):
+        pwl_length = len(stemmed_sentiment_word_list)
+        for i in xrange(len(stemmed_sentiment_word_list)):
 
             pwl_cnt += 1
-            positive_word_dict = {"stemmed_word": stemmed_positive_word_list[i], "word": positive_word_list[i], "count": int(count_list[i])}
-            positive_word_dict_list.append(positive_word_dict)
+            word_dict = {"stemmed_word": stemmed_positive_word_list[i], "count": int(count_list[i])}
+            word_dict_list.append(word_dict)
 
             sys.stdout.write("\rStatus: %s / %s"%(pwl_cnt, pwl_length))
             sys.stdout.flush()
 
         #Sorting by count
-        positive_statistics = sorted(positive_word_dict_list, key=itemgetter('count'), reverse = True)
+        sentiment_statistics = sorted(word_dict_list, key=itemgetter('count'), reverse = True)
 
         print "\n" + "-"*80
-        print "Merging location_sentiment_statistics' negative counts"
-        count_list = np.zeros(len(sentiment_statistics[0]["negative_statistics"]))
-        ss_cnt = 0
-        ss_length = len(sentiment_statistics)
-        for statistics in sentiment_statistics:
+        #  print "Merging location_sentiment_statistics' negative counts"
+        #  count_list = np.zeros(len(sentiment_statistics[0]["negative_statistics"]))
+        #  ss_cnt = 0
+        #  ss_length = len(sentiment_statistics)
+        #  for statistics in sentiment_statistics:
+        #
+        #      negative_word_list = []
+        #      stemmed_negative_word_list = []
+        #      ss_cnt += 1
+        #      for i in xrange(len(statistics["negative_statistics"])):
+        #          negative_word_list.append(statistics["negative_statistics"][i]['word'])
+        #          stemmed_negative_word_list.append(statistics["negative_statistics"][i]['stemmed_word'])
+        #          count_list[i] += (np.asarray(statistics["negative_statistics"][i]['count']))
+        #
+        #      sys.stdout.write("\rStatus: %s / %s"%(ss_cnt, ss_length))
+        #      sys.stdout.flush()
+        #
+        #  """ Putting them back to dictionary """
+        #  print "\nPutting negative_statistics back to dictionary"
+        #  negative_word_dict_list = []
+        #  nwl_cnt = 0
+        #  nwl_length = len(negative_word_list)
+        #  for i in xrange(len(negative_word_list)):
+        #
+        #      nwl_cnt += 1
+        #      negative_word_dict = {"stemmed_word": stemmed_negative_word_list[i], "word": negative_word_list[i], "count": int(count_list[i])}
+        #      negative_word_dict_list.append(negative_word_dict)
+        #
+        #      sys.stdout.write("\rStatus: %s / %s"%(nwl_cnt, nwl_length))
+        #      sys.stdout.flush()
+        #
+        #  print "\n" + "-"*80
+        #  #Sorting by count
+        #  negative_statistics = sorted(negative_word_dict_list, key=itemgetter('count'), reverse = True)
+        #
+	#  positive_statistics[:] = [dictionary for dictionary in positive_statistics if dictionary.get('count') > 20]
+	#  negative_statistics[:] = [dictionary for dictionary in negative_statistics if dictionary.get('count') > 20]
 
-            negative_word_list = []
-            stemmed_negative_word_list = []
-            ss_cnt += 1
-            for i in xrange(len(statistics["negative_statistics"])):
-                negative_word_list.append(statistics["negative_statistics"][i]['word'])
-                stemmed_negative_word_list.append(statistics["negative_statistics"][i]['stemmed_word'])
-                count_list[i] += (np.asarray(statistics["negative_statistics"][i]['count']))
-
-            sys.stdout.write("\rStatus: %s / %s"%(ss_cnt, ss_length))
-            sys.stdout.flush()
-
-        """ Putting them back to dictionary """
-        print "\nPutting negative_statistics back to dictionary"
-        negative_word_dict_list = []
-        nwl_cnt = 0
-        nwl_length = len(negative_word_list)
-        for i in xrange(len(negative_word_list)):
-
-            nwl_cnt += 1
-            negative_word_dict = {"stemmed_word": stemmed_negative_word_list[i], "word": negative_word_list[i], "count": int(count_list[i])}
-            negative_word_dict_list.append(negative_word_dict)
-
-            sys.stdout.write("\rStatus: %s / %s"%(nwl_cnt, nwl_length))
-            sys.stdout.flush()
-
-        print "\n" + "-"*80
-        #Sorting by count
-        negative_statistics = sorted(negative_word_dict_list, key=itemgetter('count'), reverse = True)
-
-	positive_statistics[:] = [dictionary for dictionary in positive_statistics if dictionary.get('count') > 20]
-	negative_statistics[:] = [dictionary for dictionary in negative_statistics if dictionary.get('count') > 20]
-
-        self.save_location_sentiment_statistics(location, positive_statistics, negative_statistics)
+        sentiment_statistics[:] = [word_dict for word_dict in sentiment_statistics if word_dict.get('count') > 20]
+        #self.save_location_sentiment_statistics(location, positive_statistics, negative_statistics)
+        self.save_location_sentiment_statistics(location, sentiment_statistics)
         #return positive_statistics, negative_statistics
 
-    def save_location_sentiment_statistics(self, location, positive_statistics, negative_statistics):
+    def save_location_sentiment_statistics(self, location, sentiment_statistics):
         """ put keys in order and render json file """
         reload(sys)
         sys.setdefaultencoding("utf-8")
@@ -397,35 +398,35 @@ class Merge:
         print "Saving data to:", "\033[1m" + self.dst_lss + location + "\033[0m"
 
         ps_cnt = 0
-        ps_length = len(positive_statistics)
-        positive_ordered_dict_list = []
-        for word_dict in positive_statistics:
+        ps_length = len(sentiment_statistics)
+        ordered_dict_list = []
+        for word_dict in sentiment_statistics:
             ps_cnt += 1
             ordered_dict = OrderedDict()
             ordered_dict["index"] = ps_cnt
             ordered_dict["count"] = word_dict["count"]
-            ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
-            ordered_dict["word"] = word_dict["word"]
-            positive_ordered_dict_list.append(NoIndent(ordered_dict))
+            ordered_dict["stemmed_sentiment_word"] = word_dict["stemmed_sentiment_word"]
+            #ordered_dict["word"] = word_dict["word"]
+            ordered_dict_list.append(NoIndent(ordered_dict))
 
-        ns_cnt = 0
-        ns_length = len(negative_statistics)
-        negative_ordered_dict_list = []
-        for word_dict in negative_statistics:
-            ns_cnt += 1
-            ordered_dict = OrderedDict()
-            ordered_dict["index"] = ns_cnt
-            ordered_dict["count"] = word_dict["count"]
-            ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
-            ordered_dict["word"] = word_dict["word"]
-            negative_ordered_dict_list.append(NoIndent(ordered_dict))
-
-        ss_ordered_dict = OrderedDict()
-        ss_ordered_dict["positive_statistics"] = positive_ordered_dict_list
-        ss_ordered_dict["negative_statistics"] = negative_ordered_dict_list
-
+        #  ns_cnt = 0
+        #  ns_length = len(negative_statistics)
+        #  negative_ordered_dict_list = []
+        #  for word_dict in negative_statistics:
+        #      ns_cnt += 1
+        #      ordered_dict = OrderedDict()
+        #      ordered_dict["index"] = ns_cnt
+        #      ordered_dict["count"] = word_dict["count"]
+        #      ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
+        #      ordered_dict["word"] = word_dict["word"]
+        #      negative_ordered_dict_list.append(NoIndent(ordered_dict))
+        #
+        #  ss_ordered_dict = OrderedDict()
+        #  ss_ordered_dict["positive_statistics"] = positive_ordered_dict_list
+        #  ss_ordered_dict["negative_statistics"] = negative_ordered_dict_list
+        #
         f_ss = open(self.dst_lss + location + ".json", 'w+')
-        f_ss.write( json.dumps( ss_ordered_dict, indent = 4, cls=NoIndentEncoder))
+        f_ss.write( json.dumps( ordered_dict_list, indent = 4, cls=NoIndentEncoder))
         print "Done"
 
     def get_frontend_reviews(self):
@@ -533,6 +534,6 @@ if __name__ == '__main__':
     #merge.render_all()
     #merge.get_frontend_reviews()
     #merge.render_log()
-    #merge.save_sentiment_statistics()
+    merge.save_sentiment_statistics()
     merge.get_location_sentiment_statistics()
 
