@@ -193,7 +193,7 @@ class ReviewProcess:
                 """ Replacing | E.g. I love happy tour . -> I love <mark>happy tour</mark>. """
                 review_cnt += 1
                 # remove extra space in front of \W
-                review = re.sub(r"\s(\W|\_)", r"\1", review)
+                review = re.sub(r"[^\w\s]|\_", r"", review)
                 review = re.sub(self.attraction_regexr, self.attraction_marked, review, flags = re.IGNORECASE)
                 # remove - from attraction_location
                 review = review.replace("-"," ")

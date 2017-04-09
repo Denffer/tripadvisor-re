@@ -194,63 +194,177 @@ class Methodology:
 
             cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list if float(word_dict["cos_sim"]) >= self.threshold]
             #print cos_sim_list
-            max_cosine_score = max(cos_sim_list)
-            avg_cosine_score = sum(cos_sim_list)/len(cos_sim_list)
+            #max_cosine_score = max(cos_sim_list)
+            #avg_cosine_score = sum(cos_sim_list)/len(cos_sim_list)
             sum_cosine_score = sum(cos_sim_list)
+
+            # (1) top3 avg
+            top3_avg_cosine_score = max(cos_sim_list[:3])/len(cos_sim_list[:3])
+            # (2) top5 avg
+            top5_avg_cosine_score = max(cos_sim_list[:5])/len(cos_sim_list[:5])
+            # (3) top20 avg
+            top20_avg_cosine_score = max(cos_sim_list[:20])/len(cos_sim_list[:20])
+            # (4) top50 avg
+            top50_avg_cosine_score = max(cos_sim_list[:50])/len(cos_sim_list[:50])
+            # (5) top100 avg
+            top100_avg_cosine_score = max(cos_sim_list[:100])/len(cos_sim_list[:100])
+            # (6) top_all avg
+            top_all_avg_cosine_score = max(cos_sim_list[:])/len(cos_sim_list[:])
 
             # remove count = 0
             refined_word_dict_list = [word_dict for word_dict in word_dict_list if float(word_dict["locational_frequency"]) >= 0]
             # cutting threshold
             refined_word_dict_list = [word_dict for word_dict in word_dict_list if float(word_dict["cos_sim"]) >= self.threshold]
-            # trying different score
-            sum_cosineXfrequency_score = sum([float(word_dict["cosineXfrequency_score"]) for word_dict in refined_word_dict_list])
-            # trying different score
-            sum_cosineXnorm_frequency_score = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in refined_word_dict_list])
+            #  sum_cosineXfrequency_score = sum([float(word_dict["cosineXfrequency_score"]) for word_dict in refined_word_dict_list])
+            #  sum_cosineXnorm_frequency_score = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in refined_word_dict_list])
+
+            # top3 cosine X norm_frequency
+            top3 = refined_word_dict_list[:3]
+            top3_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top3])
+            top5 = refined_word_dict_list[:5]
+            top5_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top5])
+            top20 = refined_word_dict_list[:20]
+            top20_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top20])
+            top50 = refined_word_dict_list[:50]
+            top50_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top50])
+            top100 = refined_word_dict_list[:100]
+            top100_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top100])
+            top_all = refined_word_dict_list[:]
+            top_all_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top_all])
 
             # sum_z_scoreXnorm_frequency_score
             mean = np.mean([w["cos_sim"] for w in refined_word_dict_list])
             std = np.std([w["cos_sim"] for w in refined_word_dict_list])
-            sum_z_scoreXnorm_frequency_score = sum( [((w["cos_sim"]-mean)/std) * w["cos_sim"] * w["norm_locational_frequency"] for w in refined_word_dict_list] )
+            sum_z_scoreXnorm_frequency_score = sum( [((w["cos_sim"]-mean)/std) * w["cos_sim"] * w["cos_sim"] * w["norm_locational_frequency"] for w in refined_word_dict_list] )
+
+            #  # calculate the score out of topN cosine similarity
+            #  # (1) top3
+            #  top3 = word_dict_list[:3]
+            #  top3_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top3])
+            #  top3_std = np.std([float(word_dict["cos_sim"]) for word_dict in top3])
+            #  sum_z_score_top3 = sum([(((float(w["cos_sim"])-top3_mean)/top3_std) * float(w["cos_sim"])) for w in top3 if float(w["cos_sim"]) >= self.threshold])
+            #  # (2) top5
+            #  top5 = word_dict_list[:5]
+            #  top5_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top5])
+            #  top5_std = np.std([float(word_dict["cos_sim"]) for word_dict in top5])
+            #  sum_z_score_top5 = sum([(((float(w["cos_sim"])-top5_mean)/top5_std) * float(w["cos_sim"])) for w in top5 if float(w["cos_sim"]) >= self.threshold])
+            #  # (3) top20
+            #  top20 = word_dict_list[:20]
+            #  top20_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top20])
+            #  top20_std = np.std([float(word_dict["cos_sim"]) for word_dict in top20])
+            #  sum_z_score_top20 = sum([(((float(w["cos_sim"])-top20_mean)/top20_std) * float(w["cos_sim"])) for w in top20 if float(w["cos_sim"]) >= self.threshold])
+            #  # (4) top50
+            #  top50 = word_dict_list[:50]
+            #  top50_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top50])
+            #  top50_std = np.std([float(word_dict["cos_sim"]) for word_dict in top50])
+            #  sum_z_score_top50 = sum([(((float(w["cos_sim"])-top50_mean)/top50_std) * float(w["cos_sim"])) for w in top50 if float(w["cos_sim"]) >= self.threshold])
+            #  # (5) top100
+            #  top100 = word_dict_list[:100]
+            #  top100_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top100])
+            #  top100_std = np.std([float(word_dict["cos_sim"]) for word_dict in top100])
+            #  sum_z_score_top100 = sum([(((float(w["cos_sim"])-top100_mean)/top100_std) * float(w["cos_sim"])) for w in top100 if float(w["cos_sim"]) >= self.threshold])
+            #  # (6) top_all
+            #  top_all = word_dict_list[:]
+            #  top_all_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top_all])
+            #  top_all_std = np.std([float(word_dict["cos_sim"]) for word_dict in top_all])
+            #  sum_z_score_top_all = sum([(((float(w["cos_sim"])-top_all_mean)/top_all_std) * float(w["cos_sim"])) for w in top_all if float(w["cos_sim"]) >= self.threshold])
 
             # calculate the score out of topN cosine similarity
+            # (1) top3
+            top3 = word_dict_list[:3]
+            top3_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top3])
+            top3_std = np.std([float(word_dict["cos_sim"]) for word_dict in top3])
+            top3_sum_zXnf = sum([(((float(w["cos_sim"])-top3_mean)/top3_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top3 if float(w["cos_sim"]) >= self.threshold])
             # (2) top5
             top5 = word_dict_list[:5]
             top5_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top5])
             top5_std = np.std([float(word_dict["cos_sim"]) for word_dict in top5])
-            sum_z_score_top5 = sum([(((float(w["cos_sim"])-top5_mean)/top5_std) * float(w["cos_sim"])) for w in top5 if float(w["cos_sim"]) >= self.threshold])
+            top5_sum_zXnf = sum([(((float(w["cos_sim"])-top5_mean)/top5_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top5 if float(w["cos_sim"]) >= self.threshold])
+            # (3) top20
+            top20 = word_dict_list[:20]
+            top20_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top20])
+            top20_std = np.std([float(word_dict["cos_sim"]) for word_dict in top20])
+            top20_sum_zXnf = sum([(((float(w["cos_sim"])-top20_mean)/top20_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top20 if float(w["cos_sim"]) >= self.threshold])
             # (4) top50
             top50 = word_dict_list[:50]
             top50_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top50])
             top50_std = np.std([float(word_dict["cos_sim"]) for word_dict in top50])
-            sum_z_score_top50 = sum([(((float(w["cos_sim"])-top50_mean)/top50_std) * float(w["cos_sim"])) for w in top50 if float(w["cos_sim"]) >= self.threshold])
+            top50_sum_zXnf = sum([(((float(w["cos_sim"])-top50_mean)/top50_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top50 if float(w["cos_sim"]) >= self.threshold])
             # (5) top100
             top100 = word_dict_list[:100]
             top100_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top100])
             top100_std = np.std([float(word_dict["cos_sim"]) for word_dict in top100])
-            sum_z_score_top100 = sum([(((float(w["cos_sim"])-top100_mean)/top100_std) * float(w["cos_sim"])) for w in top100 if float(w["cos_sim"]) >= self.threshold])
+            top100_sum_zXnf = sum([(((float(w["cos_sim"])-top100_mean)/top100_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top100 if float(w["cos_sim"]) >= self.threshold])
+            # (6) top_all
+            top_all = word_dict_list[:]
+            top_all_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top_all])
+            top_all_std = np.std([float(word_dict["cos_sim"]) for word_dict in top_all])
+            top_all_sum_zXnf = sum([(((float(w["cos_sim"])-top_all_mean)/top_all_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top_all if float(w["cos_sim"]) >= self.threshold])
 
             # generate cosine score
-            print "max_cosine_score :", max_cosine_score
-            print "avg_cosine_score :", avg_cosine_score
-            print "sum_cosine_score :", sum_cosine_score
-            print "sum cosine_similarity * locational_frequency = score :", sum_cosineXfrequency_score
-            print "sum cosine_similarity * norm_locational_frequency = score :", sum_cosineXnorm_frequency_score
-            print "sum z_score * norm_locational_frequency = score :", sum_z_scoreXnorm_frequency_score
-            print "sum_z_score_top5: ", sum_z_score_top5
-            print "sum_z_score_top50: ", sum_z_score_top50
-            print "sum_z_score_top100: ", sum_z_score_top100
+            print "top3_avg_cosine_score :", top3_avg_cosine_score
+            print "top5_avg_cosine_score :", top5_avg_cosine_score
+            print "top20_avg_cosine_score :", top20_avg_cosine_score
+            print "top50_avg_cosine_score :", top50_avg_cosine_score
+            print "top100_avg_cosine_score :", top100_avg_cosine_score
+            print "top_all_avg_cosine_score :", top_all_avg_cosine_score
+            #print "avg_cosine_score :", avg_cosine_score
+            #  print "sum_cosine_score :", sum_cosine_score
+            #  print "sum cosine_similarity * locational_frequency = score :", sum_cosineXfrequency_score
+            print "top3 sum cosine_similarity * norm_locational_frequency = score :", top3_sum_cXnf
+            print "top5 sum cosine_similarity * norm_locational_frequency = score :", top5_sum_cXnf
+            print "top20 sum cosine_similarity * norm_locational_frequency = score :", top20_sum_cXnf
+            print "top50 sum cosine_similarity * norm_locational_frequency = score :", top50_sum_cXnf
+            print "top100 sum cosine_similarity * norm_locational_frequency = score :", top100_sum_cXnf
+            print "top_all sum cosine_similarity * norm_locational_frequency = score :", top_all_sum_cXnf
+            #  print "sum cosine_similarity * locational_frequency = score :", sum_cosineXfrequency_score
+            print "top3 sum z_score * norm_locational_frequency = score :", top3_sum_zXnf
+            print "top5 sum z_score * norm_locational_frequency = score :", top5_sum_zXnf
+            print "top20 sum z_score * norm_locational_frequency = score :", top20_sum_zXnf
+            print "top50 sum z_score * norm_locational_frequency = score :", top50_sum_zXnf
+            print "top100 sum z_score * norm_locational_frequency = score :", top100_sum_zXnf
+            print "top_all sum z_score * norm_locational_frequency = score :", top_all_sum_zXnf
+            #  print "sum z_score * norm_locational_frequency = score :", sum_z_scoreXnorm_frequency_score
+            #  print "sum_z_score_top3: ", sum_z_score_top3
+            #  print "sum_z_score_top5: ", sum_z_score_top5
+            #  print "sum_z_score_top20: ", sum_z_score_top20
+            #  print "sum_z_score_top50: ", sum_z_score_top50
+            #  print "sum_z_score_top100: ", sum_z_score_top100
+            #  print "sum_z_score_top_all: ", sum_z_score_top_all
 
             self.positive_cosine_topN.append({"query": query,
                 "positive_topN_cosine_similarity": refined_word_dict_list,
-                "max_cosine_score": max_cosine_score,
-                "avg_cosine_score": avg_cosine_score,
-                "sum_cosine_score": sum_cosine_score,
-                "sum_cosineXfrequency_score": sum_cosineXfrequency_score,
-                "sum_cosineXnorm_frequency_score": sum_cosineXnorm_frequency_score,
-                "sum_z_scoreXnorm_frequency_score": sum_z_scoreXnorm_frequency_score,
-                "sum_z_score_top5": sum_z_score_top5,
-                "sum_z_score_top50": sum_z_score_top50,
-                "sum_z_score_top100": sum_z_score_top100
+                #"avg_cosine_score": avg_cosine_score,
+                #"avg_cosine_score": avg_cosine_score,
+                "top3_avg_cosine_score": top3_avg_cosine_score,
+                "top5_avg_cosine_score": top5_avg_cosine_score,
+                "top20_avg_cosine_score": top20_avg_cosine_score,
+                "top50_avg_cosine_score": top50_avg_cosine_score,
+                "top100_avg_cosine_score": top100_avg_cosine_score,
+                "top_all_avg_cosine_score": top_all_avg_cosine_score,
+                #  "sum_cosine_score": sum_cosine_score,
+                #  "sum_cosineXfrequency_score": sum_cosineXfrequency_score,
+                "top3_sum_cosineXnorm_frequency_score": top3_sum_cXnf,
+                "top5_sum_cosineXnorm_frequency_score": top5_sum_cXnf,
+                "top20_sum_cosineXnorm_frequency_score": top20_sum_cXnf,
+                "top50_sum_cosineXnorm_frequency_score": top50_sum_cXnf,
+                "top100_sum_cosineXnorm_frequency_score": top100_sum_cXnf,
+                "top_all_sum_cosineXnorm_frequency_score": top_all_sum_cXnf,
+                #  "sum cosine_similarity * locational_frequency = score :", sum_cosineXfrequency_score
+                "top3_sum_z_scoreXnorm_frequency_score": top3_sum_zXnf,
+                "top5_sum_z_scoreXnorm_frequency_score": top5_sum_zXnf,
+                "top20_sum_z_scoreXnorm_frequency_score": top20_sum_zXnf,
+                "top50_sum_z_scoreXnorm_frequency_score": top50_sum_zXnf,
+                "top100_sum_z_scoreXnorm_frequency_score": top100_sum_zXnf,
+                "top_all_sum_z_scoreXnorm_frequency_score": top_all_sum_zXnf
+                #"sum_cosineXnorm_frequency_score": sum_cosineXnorm_frequency_score,
+                #"sum_z_scoreXnorm_frequency_score": sum_z_scoreXnorm_frequency_score,
+                #  "sum_z_score_top3": sum_z_score_top3,
+                #  "sum_z_score_top5": sum_z_score_top5,
+                #  "sum_z_score_top20": sum_z_score_top20,
+                #  "sum_z_score_top50": sum_z_score_top50,
+                #  "sum_z_score_top100": sum_z_score_top100,
+                #  "sum_z_score_top_all": sum_z_score_top_all
                 })
 
             print "-"*70
@@ -674,7 +788,8 @@ class Methodology:
             print "Putting Cosine word dicts in order"
         query_ordered_dict_list = []
 
-        sorted_positive_cosine_topN = sorted(self.positive_cosine_topN, key=lambda k: k['sum_cosineXfrequency_score'], reverse = True)
+        #sorted_positive_cosine_topN = sorted(self.positive_cosine_topN, key=lambda k: k['sum_cosineXfrequency_score'], reverse = True)
+        sorted_positive_cosine_topN = sorted(self.positive_cosine_topN, key=lambda k: k['top_all_sum_cosineXnorm_frequency_score'], reverse = True)
         ranking = 0
         length = len(sorted_positive_cosine_topN)
         for ranking_dict in sorted_positive_cosine_topN:
@@ -732,72 +847,210 @@ class Methodology:
 
             ranking_dict_list.append({
                 "attraction_name": ranking_dict["query"],
-                "sum_z_score_top5": ranking_dict["sum_z_score_top5"],
-                "sum_z_score_top50": ranking_dict["sum_z_score_top50"],
-                "sum_z_score_top100": ranking_dict["sum_z_score_top100"],
-                "sum_cosineXfrequency_score": ranking_dict["sum_cosineXfrequency_score"],
-                "sum_cosineXnorm_frequency_score": ranking_dict["sum_cosineXnorm_frequency_score"],
-                "sum_z_scoreXnorm_frequency_score": ranking_dict["sum_z_scoreXnorm_frequency_score"],
-                "sum_cosine_score": ranking_dict["sum_cosine_score"],
-                "max_cosine_score": ranking_dict["max_cosine_score"],
-                "avg_cosine_score": ranking_dict["avg_cosine_score"]
+                #  "sum_z_score_top3": ranking_dict["sum_z_score_top3"],
+                #  "sum_z_score_top5": ranking_dict["sum_z_score_top5"],
+                #  "sum_z_score_top20": ranking_dict["sum_z_score_top20"],
+                #  "sum_z_score_top50": ranking_dict["sum_z_score_top50"],
+                #  "sum_z_score_top100": ranking_dict["sum_z_score_top100"],
+                #  "sum_z_score_top_all": ranking_dict["sum_z_score_top_all"],
+                #  "sum_cosineXfrequency_score": ranking_dict["sum_cosineXfrequency_score"],
+                "top3_sum_cosineXnorm_frequency_score": ranking_dict["top3_sum_cosineXnorm_frequency_score"],
+                "top5_sum_cosineXnorm_frequency_score": ranking_dict["top5_sum_cosineXnorm_frequency_score"],
+                "top20_sum_cosineXnorm_frequency_score": ranking_dict["top20_sum_cosineXnorm_frequency_score"],
+                "top50_sum_cosineXnorm_frequency_score": ranking_dict["top50_sum_cosineXnorm_frequency_score"],
+                "top100_sum_cosineXnorm_frequency_score": ranking_dict["top100_sum_cosineXnorm_frequency_score"],
+                "top_all_sum_cosineXnorm_frequency_score": ranking_dict["top_all_sum_cosineXnorm_frequency_score"],
+
+                "top3_sum_z_scoreXnorm_frequency_score": ranking_dict["top3_sum_z_scoreXnorm_frequency_score"],
+                "top5_sum_z_scoreXnorm_frequency_score": ranking_dict["top5_sum_z_scoreXnorm_frequency_score"],
+                "top20_sum_z_scoreXnorm_frequency_score": ranking_dict["top20_sum_z_scoreXnorm_frequency_score"],
+                "top50_sum_z_scoreXnorm_frequency_score": ranking_dict["top50_sum_z_scoreXnorm_frequency_score"],
+                "top100_sum_z_scoreXnorm_frequency_score": ranking_dict["top100_sum_z_scoreXnorm_frequency_score"],
+                "top_all_sum_z_scoreXnorm_frequency_score": ranking_dict["top_all_sum_z_scoreXnorm_frequency_score"],
+                #  "sum_cosine_score": ranking_dict["sum_cosine_score"],
+
+                "top3_avg_cosine_score": ranking_dict["top3_avg_cosine_score"],
+                "top5_avg_cosine_score": ranking_dict["top5_avg_cosine_score"],
+                "top20_avg_cosine_score": ranking_dict["top20_avg_cosine_score"],
+                "top50_avg_cosine_score": ranking_dict["top50_avg_cosine_score"],
+                "top100_avg_cosine_score": ranking_dict["top100_avg_cosine_score"],
+                "top_all_avg_cosine_score": ranking_dict["top_all_avg_cosine_score"]
+                #"avg_cosine_score": ranking_dict["avg_cosine_score"]
                 })
 
-        # () By sort by sum_z_score_top5 # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top5'], reverse = True)
+        # (1) Sort by top3_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top3_avg_cosine_score'], reverse = True)
         rank = 0
         for rank_dict in ranking_dict_list:
             rank += 1
-            rank_dict["sum_z_score_top5_ranking"] = rank
-        # () By sort by sum_z_score_top50 # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top50'], reverse = True)
+            rank_dict["top3_avg_cosine_score_ranking"] = rank
+        # (2) Sort by top5_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top5_avg_cosine_score'], reverse = True)
         rank = 0
         for rank_dict in ranking_dict_list:
             rank += 1
-            rank_dict["sum_z_score_top50_ranking"] = rank
-        # () By sort by sum_z_score_top100 # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top100'], reverse = True)
+            rank_dict["top5_avg_cosine_score_ranking"] = rank
+        # (3) Sort by top20_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top20_avg_cosine_score'], reverse = True)
         rank = 0
         for rank_dict in ranking_dict_list:
             rank += 1
-            rank_dict["sum_z_score_top100_ranking"] = rank
+            rank_dict["top20_avg_cosine_score_ranking"] = rank
+        # (4) Sort by top50_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top50_avg_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top50_avg_cosine_score_ranking"] = rank
+        # (5) Sort by top100_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top100_avg_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top100_avg_cosine_score_ranking"] = rank
+        # (6) Sort by top_all_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top_all_avg_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top_all_avg_cosine_score_ranking"] = rank
 
-        # (1) By sort by sum_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_cosine_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["sum_cosine_score_ranking"] = rank
-        # (2) By sort by max_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['max_cosine_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["max_cosine_score_ranking"] = rank
-        # (3) By sort by avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['avg_cosine_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["avg_cosine_score_ranking"] = rank
+        #  # () By sort by sum_z_score_top3 # derive sorted_ranking_list from a the unsorted ranking_list
+        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top3'], reverse = True)
+        #  rank = 0
+        #  for rank_dict in ranking_dict_list:
+        #      rank += 1
+        #      rank_dict["sum_z_score_top3_ranking"] = rank
+        #  # () By sort by sum_z_score_top5 # derive sorted_ranking_list from a the unsorted ranking_list
+        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top5'], reverse = True)
+        #  rank = 0
+        #  for rank_dict in ranking_dict_list:
+        #      rank += 1
+        #      rank_dict["sum_z_score_top5_ranking"] = rank
+        #  # () By sort by sum_z_score_top20 # derive sorted_ranking_list from a the unsorted ranking_list
+        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top20'], reverse = True)
+        #  rank = 0
+        #  for rank_dict in ranking_dict_list:
+        #      rank += 1
+        #      rank_dict["sum_z_score_top20_ranking"] = rank
+        #  # () By sort by sum_z_score_top50 # derive sorted_ranking_list from a the unsorted ranking_list
+        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top50'], reverse = True)
+        #  rank = 0
+        #  for rank_dict in ranking_dict_list:
+        #      rank += 1
+        #      rank_dict["sum_z_score_top50_ranking"] = rank
+        #  # () By sort by sum_z_score_top100 # derive sorted_ranking_list from a the unsorted ranking_list
+        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top100'], reverse = True)
+        #  rank = 0
+        #  for rank_dict in ranking_dict_list:
+        #      rank += 1
+        #      rank_dict["sum_z_score_top100_ranking"] = rank
+        #  # () By sort by sum_z_score_top_all # derive sorted_ranking_list from a the unsorted ranking_list
+        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top_all'], reverse = True)
+        #  rank = 0
+        #  for rank_dict in ranking_dict_list:
+        #      rank += 1
+        #      rank_dict["sum_z_score_top_all_ranking"] = rank
+        #
+        #  # (1) By sort by sum_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_cosine_score'], reverse = True)
+        #  rank = 0
+        #  for rank_dict in ranking_dict_list:
+        #      rank += 1
+        #      rank_dict["sum_cosine_score_ranking"] = rank
+        #  # (2) By sort by max_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['max_cosine_score'], reverse = True)
+        #  rank = 0
+        #  for rank_dict in ranking_dict_list:
+        #      rank += 1
+        #      rank_dict["max_cosine_score_ranking"] = rank
+        #  # (3) By sort by avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['avg_cosine_score'], reverse = True)
+        #  rank = 0
+        #  for rank_dict in ranking_dict_list:
+        #      rank += 1
+        #      rank_dict["avg_cosine_score_ranking"] = rank
         # (4) By sort by sum_cosineXfrequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_cosineXfrequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["sum_cosineXfrequency_score_ranking"] = rank
+        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_cosineXfrequency_score'], reverse = True)
+        #  rank = 0
+        #  for rank_dict in ranking_dict_list:
+        #      rank += 1
+        #      rank_dict["sum_cosineXfrequency_score_ranking"] = rank
         # (5) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_cosineXnorm_frequency_score'], reverse = True)
+
+        # (1) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top3_sum_cosineXnorm_frequency_score'], reverse = True)
         rank = 0
         for rank_dict in ranking_dict_list:
             rank += 1
-            rank_dict["sum_cosineXnorm_frequency_score_ranking"] = rank
-        # (6) By sort by sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_scoreXnorm_frequency_score'], reverse = True)
+            rank_dict["top3_sum_cosineXnorm_frequency_score_ranking"] = rank
+        # (2) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top5_sum_cosineXnorm_frequency_score'], reverse = True)
         rank = 0
         for rank_dict in ranking_dict_list:
             rank += 1
-            rank_dict["sum_z_scoreXnorm_frequency_score_ranking"] = rank
+            rank_dict["top5_sum_cosineXnorm_frequency_score_ranking"] = rank
+        # (3) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top20_sum_cosineXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top20_sum_cosineXnorm_frequency_score_ranking"] = rank
+        # (4) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top50_sum_cosineXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top50_sum_cosineXnorm_frequency_score_ranking"] = rank
+        # (5) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top100_sum_cosineXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top100_sum_cosineXnorm_frequency_score_ranking"] = rank
+        # (6) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top_all_sum_cosineXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top_all_sum_cosineXnorm_frequency_score_ranking"] = rank
+
+        # (1) By sort by top3_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top3_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top3_sum_z_scoreXnorm_frequency_score_ranking"] = rank
+        # (2) By sort by top5_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top5_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top5_sum_z_scoreXnorm_frequency_score_ranking"] = rank
+        # (3) By sort by top20_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top20_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top20_sum_z_scoreXnorm_frequency_score_ranking"] = rank
+        # (4) By sort by top50_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top50_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top50_sum_z_scoreXnorm_frequency_score_ranking"] = rank
+        # (5) By sort by top100_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top100_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top100_sum_z_scoreXnorm_frequency_score_ranking"] = rank
+        # (6) By sort by top_all_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top_all_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top_all_sum_z_scoreXnorm_frequency_score_ranking"] = rank
 
         ordered_dicts = []
         for rank_dict in ranking_dict_list:
@@ -805,24 +1058,56 @@ class Methodology:
             ordered_dict['attraction_name'] = rank_dict['attraction_name']
             ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
             ordered_dict['original_ranking'] = int(self.attractions2[rank_dict['attraction_name']])
-            ordered_dict['sum_z_score_top5'] = rank_dict['sum_z_score_top5']
-            ordered_dict['sum_z_score_top5_ranking'] = rank_dict["sum_z_score_top5_ranking"]
-            ordered_dict['sum_z_score_top50'] = rank_dict['sum_z_score_top50']
-            ordered_dict['sum_z_score_top50_ranking'] = rank_dict["sum_z_score_top50_ranking"]
-            ordered_dict['sum_z_score_top100'] = rank_dict['sum_z_score_top100']
-            ordered_dict['sum_z_score_top100_ranking'] = rank_dict["sum_z_score_top100_ranking"]
-            ordered_dict['sum_cosineXfrequency_score_ranking'] = rank_dict["sum_cosineXfrequency_score_ranking"]
-            ordered_dict['sum_cosineXfrequency_score'] = rank_dict['sum_cosineXfrequency_score']
-            ordered_dict['sum_cosineXnorm_frequency_score_ranking'] = rank_dict["sum_cosineXnorm_frequency_score_ranking"]
-            ordered_dict['sum_cosineXnorm_frequency_score'] = rank_dict['sum_cosineXnorm_frequency_score']
-            ordered_dict['sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["sum_z_scoreXnorm_frequency_score_ranking"]
-            ordered_dict['sum_z_scoreXnorm_frequency_score'] = rank_dict['sum_z_scoreXnorm_frequency_score']
-            ordered_dict['sum_cosine_score_ranking'] = rank_dict["sum_cosine_score_ranking"]
-            ordered_dict['sum_cosine_score'] = rank_dict['sum_cosine_score']
-            ordered_dict['max_cosine_score_ranking'] = rank_dict["max_cosine_score_ranking"]
-            ordered_dict['max_cosine_score'] = rank_dict['max_cosine_score']
-            ordered_dict['avg_cosine_score_ranking'] = rank_dict["avg_cosine_score_ranking"]
-            ordered_dict['avg_cosine_score'] = rank_dict['avg_cosine_score']
+            #  ordered_dict['sum_z_score_top5'] = rank_dict['sum_z_score_top5']
+            #  ordered_dict['sum_z_score_top5_ranking'] = rank_dict["sum_z_score_top5_ranking"]
+            #  ordered_dict['sum_z_score_top50'] = rank_dict['sum_z_score_top50']
+            #  ordered_dict['sum_z_score_top50_ranking'] = rank_dict["sum_z_score_top50_ranking"]
+            #  ordered_dict['sum_z_score_top100'] = rank_dict['sum_z_score_top100']
+            #  ordered_dict['sum_z_score_top100_ranking'] = rank_dict["sum_z_score_top100_ranking"]
+            #  ordered_dict['sum_cosineXfrequency_score_ranking'] = rank_dict["sum_cosineXfrequency_score_ranking"]
+            #  ordered_dict['sum_cosineXfrequency_score'] = rank_dict['sum_cosineXfrequency_score']
+            ordered_dict['top3_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top3_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top3_sum_cosineXnorm_frequency_score'] = rank_dict['top3_sum_cosineXnorm_frequency_score']
+            ordered_dict['top5_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top5_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top5_sum_cosineXnorm_frequency_score'] = rank_dict['top5_sum_cosineXnorm_frequency_score']
+            ordered_dict['top20_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top20_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top20_sum_cosineXnorm_frequency_score'] = rank_dict['top20_sum_cosineXnorm_frequency_score']
+            ordered_dict['top50_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top50_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top50_sum_cosineXnorm_frequency_score'] = rank_dict['top50_sum_cosineXnorm_frequency_score']
+            ordered_dict['top100_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top100_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top100_sum_cosineXnorm_frequency_score'] = rank_dict['top100_sum_cosineXnorm_frequency_score']
+            ordered_dict['top_all_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top_all_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top_all_sum_cosineXnorm_frequency_score'] = rank_dict['top_all_sum_cosineXnorm_frequency_score']
+
+            ordered_dict['top3_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top3_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top3_sum_z_scoreXnorm_frequency_score'] = rank_dict['top3_sum_z_scoreXnorm_frequency_score']
+            ordered_dict['top5_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top5_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top5_sum_z_scoreXnorm_frequency_score'] = rank_dict['top5_sum_z_scoreXnorm_frequency_score']
+            ordered_dict['top20_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top20_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top20_sum_z_scoreXnorm_frequency_score'] = rank_dict['top20_sum_z_scoreXnorm_frequency_score']
+            ordered_dict['top50_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top50_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top50_sum_z_scoreXnorm_frequency_score'] = rank_dict['top50_sum_z_scoreXnorm_frequency_score']
+            ordered_dict['top100_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top100_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top100_sum_z_scoreXnorm_frequency_score'] = rank_dict['top100_sum_z_scoreXnorm_frequency_score']
+            ordered_dict['top_all_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top_all_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top_all_sum_z_scoreXnorm_frequency_score'] = rank_dict['top_all_sum_z_scoreXnorm_frequency_score']
+
+            #  ordered_dict['sum_cosine_score_ranking'] = rank_dict["sum_cosine_score_ranking"]
+            #  ordered_dict['sum_cosine_score'] = rank_dict['sum_cosine_score']
+            ordered_dict['top3_avg_cosine_score_ranking'] = rank_dict["top3_avg_cosine_score_ranking"]
+            ordered_dict['top3_avg_cosine_score'] = rank_dict['top3_avg_cosine_score']
+            ordered_dict['top5_avg_cosine_score_ranking'] = rank_dict["top5_avg_cosine_score_ranking"]
+            ordered_dict['top5_avg_cosine_score'] = rank_dict['top5_avg_cosine_score']
+            ordered_dict['top20_avg_cosine_score_ranking'] = rank_dict["top20_avg_cosine_score_ranking"]
+            ordered_dict['top20_avg_cosine_score'] = rank_dict['top20_avg_cosine_score']
+            ordered_dict['top50_avg_cosine_score_ranking'] = rank_dict["top50_avg_cosine_score_ranking"]
+            ordered_dict['top50_avg_cosine_score'] = rank_dict['top50_avg_cosine_score']
+            ordered_dict['top100_avg_cosine_score_ranking'] = rank_dict["top100_avg_cosine_score_ranking"]
+            ordered_dict['top100_avg_cosine_score'] = rank_dict['top100_avg_cosine_score']
+            ordered_dict['top_all_avg_cosine_score_ranking'] = rank_dict["top_all_avg_cosine_score_ranking"]
+            ordered_dict['top_all_avg_cosine_score'] = rank_dict['top_all_avg_cosine_score']
+            #  ordered_dict['avg_cosine_score_ranking'] = rank_dict["avg_cosine_score_ranking"]
+            #  ordered_dict['avg_cosine_score'] = rank_dict['avg_cosine_score']
             #print ordered_dict
             ordered_dicts.append(ordered_dict)
 
