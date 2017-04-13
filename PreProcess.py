@@ -177,7 +177,7 @@ class PreProcess:
             entity_ordered_dict["entity_name"] = entity["entity_name"]
             entity_ordered_dict["avg_rating_stars"] = entity["avg_rating_stars"]
             entity_ordered_dict["reranked_ranking"] = entity_ranking
-            entity_ordered_dict["original_ranking"] = entity["original_ranking"]
+            entity_ordered_dict["original_ranking"] = int(entity["original_ranking"])
             entity_ordered_dict["review_count"] = entity["review_count"]
 
             # Rating statistics
