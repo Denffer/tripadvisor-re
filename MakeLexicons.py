@@ -18,7 +18,7 @@ class MakeLexicons:
         # pos_lexicon initialization # pos stands for Part of Speech
         self.pos_tagged_statistics = {}
         self.pos_tags = ["JJ","JJR", "JJS", "RB","VBG","VBN"]
-        self.src = "data/reranked_reviews/"
+        self.src = "data/reviews/"
 
         self.stemmer = SnowballStemmer("english")
         self.stopwords = set(stopwords.words('english'))
@@ -62,7 +62,7 @@ class MakeLexicons:
                         with open(dirpath +"/"+ f) as file:
                             attraction = json.load(file)
 
-                    print "Processing " + "\033[1m" + attraction["attraction_name"] + "\033[0m" + " in " + "\033[1m" + attraction["location"] + "\033[0m"
+                    print "Processing " + "\033[1m" + attraction["entity_name"] + "\033[0m" + " in " + "\033[1m" + attraction["location"] + "\033[0m"
                     self.analyze_part_of_speech(attraction["reviews"])
             else:
                 print "No file is found"
@@ -200,7 +200,7 @@ class MakeLexicons:
 
         # Remove frequency less than 30
         print "Filtering out frequency lower than 30" + "\n" + "-"*50
-        pos_tagged_words = [key for key in self.pos_tagged_statistics if self.pos_tagged_statistics[key] > 2 ]
+        pos_tagged_words = [key for key in self.pos_tagged_statistics if self.pos_tagged_statistics[key] > 30 ]
         print "Stemming pos_tagged_words"
         pos_tagged_words = self.stem(pos_tagged_words)
         print "Numbers of pos_tagged sentiment word after filtering and stemming: " + "\033[1m" + str(len(pos_tagged_words)) +"\033[0m"
