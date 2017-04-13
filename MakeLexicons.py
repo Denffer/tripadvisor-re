@@ -1,6 +1,7 @@
 import json, sys, uuid, re, os
 from collections import OrderedDict
 from operator import itemgetter
+import unicodedata, linecache
 from nltk import pos_tag
 from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import stopwords, opinion_lexicon
@@ -16,9 +17,10 @@ class MakeLexicons:
         self.dst = "data/lexicon/"
 
         # pos_lexicon initialization # pos stands for Part of Speech
+        self.src = "data/reviews/"
         self.pos_tagged_statistics = {}
         self.pos_tags = ["JJ","JJR", "JJS", "RB","VBG","VBN"]
-        self.src = "data/reviews/"
+        self.frequency_threshold = 100
 
         self.stemmer = SnowballStemmer("english")
         self.stopwords = set(stopwords.words('english'))
@@ -74,9 +76,24 @@ class MakeLexicons:
         """ run nltk.pos_tag to analysis the part_of_speech of every word """
 
         for review_dict in reviews:
+
+            # Remove accents
+            text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore')
+            # Remove all website urls written in the review
+            text = re.sub(r'https?:\/\/.*[\r\n]*', ' ', text, flags=re.MULTILINE)
+
+            # I'm -> I am
+            text = re.sub(r"'m", " am", text)
+            text = re.sub(r"'re", " are", text)
+            text = re.sub(r"'s", " is", text)
+            text = re.sub(r"'ve", " have", text)
+            text = re.sub(r"'d", " would", text)
+            text = re.sub(r"n't", " not", text)
+            text = re.sub(r"'ll", " will", text)
+
             text = review_dict["review"].lower()
             # remove punctuation
-            text = re.sub(r'[^\w\s]|\_]', ' ', text)
+            text = re.sub(r'[^\w\s]|\_', ' ', text)
             # remove digits
             text = re.sub(r'[0-9]',' ', text)
             # turn multiple spaces into one
@@ -199,8 +216,8 @@ class MakeLexicons:
         """ run nltk.pos_tag to analysis the part_of_speech of every word """
 
         # Remove frequency less than 30
-        print "Filtering out frequency lower than 30" + "\n" + "-"*50
-        pos_tagged_words = [key for key in self.pos_tagged_statistics if self.pos_tagged_statistics[key] > 30 ]
+        print "Filtering out frequency lower than frequency_threshold" + "\n" + "-"*50
+        pos_tagged_words = [key for key in self.pos_tagged_statistics if self.pos_tagged_statistics[key] > self.frequency_threshold ]
         print "Stemming pos_tagged_words"
         pos_tagged_words = self.stem(pos_tagged_words)
         print "Numbers of pos_tagged sentiment word after filtering and stemming: " + "\033[1m" + str(len(pos_tagged_words)) +"\033[0m"
