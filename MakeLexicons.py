@@ -77,6 +77,7 @@ class MakeLexicons:
 
         for review_dict in reviews:
 
+            text = review_dict["review"].lower()
             # Remove accents
             text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore')
             # Remove all website urls written in the review
@@ -91,7 +92,6 @@ class MakeLexicons:
             text = re.sub(r"n't", " not", text)
             text = re.sub(r"'ll", " will", text)
 
-            text = review_dict["review"].lower()
             # remove punctuation
             text = re.sub(r'[^\w\s]|\_', ' ', text)
             # remove digits
