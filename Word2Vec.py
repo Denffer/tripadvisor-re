@@ -14,6 +14,8 @@ class Word2Vec:
             self.dst_v200 = "data/word2vec/" + self.filename + ".txt"
 
         self.verbose = 1
+        self.window_size = 3
+        self.dimension = 200
 
     def get_corpus(self):
         """ get reviews in corpus """
@@ -43,7 +45,7 @@ class Word2Vec:
 
         print '-'*80
         print "Running Word2Vec"
-        model = gensim.models.Word2Vec(sentences, min_count=20, size=200, window = 4, workers=4)
+        model = gensim.models.Word2Vec(sentences, min_count=20, size = self.dimension, window = self.window_size, workers=4)
         unique_words = list(model.vocab.keys())
 
         vectors200 = []
