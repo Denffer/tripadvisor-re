@@ -69,7 +69,6 @@ class Log:
         with open(self.dst_log, "w") as log_file:
             log_file.write("Total review count: " + str(total_review_count))
             log_file.write("\nAverage review count per entity: " + str(avg_review_count))
-            log_file.write("\nAverage review count per entity: " + str(avg_review_count))
             log_file.write("\nAverage opinion positive sentiment word count per review: " + str(avg_opinion_positive_count))
             log_file.write("\nAverage opinion negative sentiment word count per review: " + str(avg_opinion_negative_count))
             log_file.write("\nAverage pos_tagged sentiment word count per review: " + str(avg_pos_tagged_sentiment_count))
