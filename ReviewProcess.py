@@ -445,7 +445,7 @@ class ReviewProcess:
             orderedDict = OrderedDict()
             orderedDict["index"] = index
             orderedDict["count"] = sentiment_count
-            orderedDict["stemmed_sentiment_word"] = word_dict["stemmed_word"]
+            orderedDict["stemmed_word"] = word_dict["stemmed_word"]
             orderedDict["word"] = word_dict["word"]
             positive_statistics.append(NoIndent(orderedDict))
 
