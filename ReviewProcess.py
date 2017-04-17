@@ -24,7 +24,7 @@ class ReviewProcess:
         self.src_pos_tagged_lexicon = "data/lexicon/pos_tagged_lexicon.json"
         self.dst_frontend = "data/frontend_reviews/"
         self.dst_backend = "data/backend_reviews/"
-        self.dst_stars = "data/backend_stars_reviews/"
+        self.dst_starred = "data/starred_backend_reviews/"
         self.dst_hybrid = "data/hybrid_reviews/"
         self.dst_sentiment_statistics = "data/sentiment_statistics/"
 
@@ -36,7 +36,7 @@ class ReviewProcess:
         self.avg_nearest_opinion_sentiment_distance, self.avg_nearest_pos_tagged_sentiment_distance = 0.0, 0.0
 
         self.pos_tagged_sentiment_words, self.opinion_positive_words, self.opinion_negative_words, self.ratings = [], [], [], []
-        self.clean_reviews, self.frontend_reviews, self.backend_reviews, self.backend_stars_reviews, self.hybrid_reviews = [], [], [], [], []
+        self.clean_reviews, self.frontend_reviews, self.backend_reviews, self.starred_backend_reviews, self.hybrid_reviews = [], [], [], [], []
         self.opinion_sentiment_statistics, self. pos_tagged_sentiment_statistics = [], []
 
         self.stopwords = set(stopwords.words('english'))
@@ -250,11 +250,11 @@ class ReviewProcess:
                 sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
                 sys.stdout.flush()
 
-    def get_backend_stars_reviews(self):
+    def get_starred_backend_reviews(self):
         """ replace all entity_name by star_1 & star_2 & star_3 & star_4 & star_5 according to their rating """
 
         if self.verbose:
-            print "\n" + "-"*80 + "\n" + "Processing backend stars reviews"
+            print "\n" + "-"*80 + "\n" + "Processing starred_backend_reviews"
 
         stars = [" 1_star ", " 2_star ", " 3_star ", " 4_star ", " 5_star "]
         review_cnt = 0
@@ -280,14 +280,14 @@ class ReviewProcess:
             review = ' '.join(words_stemmed)
 
             #print review
-            self.backend_stars_reviews.append(review)
+            self.starred_backend_reviews.append(review)
 
             if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
                 sys.stdout.flush()
 
     def get_hybrid_reviews(self):
-        """ create parallel comparision for origin reviews and processed reviews """
+        """ create parallel comparision for original reviews and processed reviews """
         if self.verbose:
             print "\n" + "-"*80 + "\nProcessing hybrid_reviews"
 
@@ -314,9 +314,9 @@ class ReviewProcess:
             opinion_sentiment_words.append(n["stemmed_word"])
 
         review_cnt = 0
-        review_length = len(self.backend_stars_reviews)
+        review_length = len(self.starred_backend_reviews)
         opinion_nearest_sentiment_distance_list = []
-        for review in self.backend_stars_reviews:
+        for review in self.starred_backend_reviews:
             review_cnt += 1
             words = review.split(" ")[:-1]
             num_of_words = len(words)
@@ -374,9 +374,9 @@ class ReviewProcess:
             pos_tagged_sentiment_words.append(word_dict["stemmed_word"])
 
         review_cnt = 0
-        review_length = len(self.backend_stars_reviews)
+        review_length = len(self.starred_backend_reviews)
         pos_tagged_nearest_sentiment_distance_list = []
-        for review in self.backend_stars_reviews:
+        for review in self.starred_backend_reviews:
             review_cnt += 1
             words = review.split(" ")[:-1]
             num_of_words = len(words)
@@ -529,7 +529,7 @@ class ReviewProcess:
         if not os.path.exists(dir2):
             print "Creating Directory: " + dir2 + "/"
             os.makedirs(dir2)
-        dir3 = os.path.dirname(self.dst_stars + location)
+        dir3 = os.path.dirname(self.dst_starred + location)
         if not os.path.exists(dir3):
             print "Creating Directory: " + dir3 + "/"
             os.makedirs(dir3)
@@ -608,14 +608,14 @@ class ReviewProcess:
         if self.verbose:
             print self.filename, "'s backend is complete"
 
-        """ (3) save location_*.txt in ./backend_reviews/location/ """
-        stars_txt_file = open(self.dst_stars +"/"+ self.entity["location"].replace("-","_") +"/"+ self.filename + ".txt", "w+")
-        for review in self.backend_stars_reviews:
+        """ (3) save location_*.txt in ./starred_backend_reviews/location/ """
+        stars_txt_file = open(self.dst_starred +"/"+ self.entity["location"].replace("-","_") +"/"+ self.filename + ".txt", "w+")
+        for review in self.starred_backend_reviews:
             stars_txt_file.write(review.encode("utf-8") + '\n')
         stars_txt_file.close()
 
         if self.verbose:
-            print self.filename, "'s backend_stars is complete"
+            print self.filename, "'s starred_backend is complete"
 
         """ (4) save location_*.json in ./hybrid_reviews/location/ """
         hybrid_json_file = open(self.dst_hybrid +"/"+ self.entity["location"].replace("-","_") +"/"+ self.filename + ".json", "w+")
@@ -679,7 +679,7 @@ class ReviewProcess:
         self.get_clean_reviews()
         self.get_frontend_reviews()
         self.get_backend_reviews()
-        self.get_backend_stars_reviews()
+        self.get_starred_backend_reviews()
         self.get_opinion_lexicon()
         self.get_pos_tagged_lexicon()
         self.get_avg_nearest_opinion_sentiment_distance()
