@@ -10,8 +10,8 @@ import numpy as np
 from scipy import sparse
 
 logger = logging.getLogger("glove")
-dst_vocab = "data/line/vocab/"
-dst_cooccur = "data/line/cooccur/"
+dst_vocab = "data/glove/vocab/"
+dst_cooccur = "data/glove/cooccur/"
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
