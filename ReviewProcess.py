@@ -14,11 +14,12 @@ class ReviewProcess:
     """
 
     def __init__(self):
-        self.verbose = 0
+        self.verbose = 1
 
         self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
-        self.filename = re.findall("([A-Z]\w+)", self.src)[0]
-        print "Processing " +"\033[1m" + self.filename + ".json" + "\033[0m"
+        self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+\_.*.json)", self.src).group(1)
+        #print self.filename
+        print "Processing " +"\033[1m" + self.filename + "\033[0m"
 
         self.src_opinion_lexicon = "data/lexicon/opinion_lexicon.json"
         self.src_pos_tagged_lexicon = "data/lexicon/pos_tagged_lexicon.json"
@@ -520,7 +521,7 @@ class ReviewProcess:
 
     def create_dirs(self, location):
         """ create directory under data/backend_revies/ """
-        print "Creating directories if not existed"
+        # print "Creating directories if not existed"
         dir1 = os.path.dirname(self.dst_frontend + location)
         if not os.path.exists(dir1):
             print "Creating Directory: " + dir1 + "/"
