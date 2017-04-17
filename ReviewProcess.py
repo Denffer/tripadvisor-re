@@ -484,7 +484,11 @@ class ReviewProcess:
 
         self.avg_opinion_negative_count = float("{0:.3f}".format(float(total_negative_sentiment_count) / float(len(self.backend_reviews))))
 
-        self.opinion_sentiment_statistics = {"positive_statistics": positive_statistics, "negative_statistics": negative_statistics}
+
+        opinion_orderedDict = OrderedDict()
+        opinion_orderedDict["positive_statistics"] = positive_statistics
+        opinion_orderedDict["negative_statistics"] = negative_statistics
+        self.opinion_sentiment_statistics = opinion_orderedDict
 
     def get_pos_tagged_sentiment_statistics(self):
         """ count pos_tagged lexicon's sentiment words in reviews """
