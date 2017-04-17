@@ -19,7 +19,7 @@ class Word2Vec:
 
     def get_corpus(self):
         """ get reviews in corpus """
-        print "Loading data from:", self.src
+        #print "Loading data from:", self.src
 
         with open(self.src) as f:
             corpus = f.readlines()
@@ -43,8 +43,8 @@ class Word2Vec:
         """ run word to vector """
         sentences = self.get_sentences()
 
-        print '-'*80
-        print "Running Word2Vec"
+        #print '-'*80
+        print "Running Word2Vec on", self.src
         model = gensim.models.Word2Vec(sentences, min_count=20, size = self.dimension, window = self.window_size, workers=4)
         unique_words = list(model.vocab.keys())
 
