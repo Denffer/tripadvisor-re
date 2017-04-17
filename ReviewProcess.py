@@ -14,13 +14,12 @@ class ReviewProcess:
     """
 
     def __init__(self):
-        self.verbose = 1
+        self.verbose = 0
 
         self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
-        self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+\_.*.json)", self.src).group(1)
+        self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+\_.*).json", self.src).group(1)
         #print self.filename
-        print "Processing " +"\033[1m" + self.filename + "\033[0m"
-
+        print "Processing " +"\033[1m" + self.filename + ".json"  + "\033[0m"
         self.src_opinion_lexicon = "data/lexicon/opinion_lexicon.json"
         self.src_pos_tagged_lexicon = "data/lexicon/pos_tagged_lexicon.json"
         self.dst_frontend = "data/frontend_reviews/"
