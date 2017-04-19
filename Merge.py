@@ -285,7 +285,7 @@ class Merge:
         if location:
             print "Saving opinion positive_sentiment_statistics to:", "\033[1m" + self.dst_pss + location + "_opinion_positive.json" "\033[0m"
         else:
-            print "Saving opinion positive_sentiment_statistics to:", "\033[1m" + self.dst_l + "processed_opinion_positive_lexicon.json" "\033[0m"
+            print "Saving opinion positive_sentiment_statistics to:", "\033[1m" + self.dst_l + "processed_opinion_positive.json" "\033[0m"
 
         index = 0
         length = len(positive_statistics)
@@ -302,14 +302,14 @@ class Merge:
         if location:
             f_opinion_positive = open(self.dst_pss + location + "_opinion_positive.json", 'w+')
         else:
-            f_opinion_positive = open(self.dst_l + "processed_opinion_positive_lexicon.json", "w+")
+            f_opinion_positive = open(self.dst_l + "processed_opinion_positive.json", "w+")
         f_opinion_positive.write( json.dumps( ordered_dict_list, indent = 4, cls=NoIndentEncoder))
 
         # if location is not None
         if location:
             print "Saving opinion negative_sentiment_statistics to:", "\033[1m" + self.dst_pss + location + "_opinion_negative.json" "\033[0m"
         else:
-            print "Saving opinion negative_sentiment_statistics to:", "\033[1m" + self.dst_l + "processed_opinion_negative_lexicon.json" "\033[0m"
+            print "Saving opinion negative_sentiment_statistics to:", "\033[1m" + self.dst_l + "processed_opinion_negative.json" "\033[0m"
 
         index = 0
         length = len(negative_statistics)
