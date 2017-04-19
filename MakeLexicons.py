@@ -19,8 +19,9 @@ class MakeLexicons:
         # pos_lexicon initialization # pos stands for Part of Speech
         self.src = "data/reviews/"
         self.pos_tagged_statistics = {}
-        self.pos_tags = ["JJ","JJR", "JJS", "RB","VBG","VBN"]
-        self.frequency_threshold = 100
+        #self.pos_tags = ["JJ","JJR", "JJS", "RB","VBG","VBN"]
+        self.pos_tags = ["JJ","JJR", "JJS"]
+        self.frequency_threshold = 20
 
         self.stemmer = SnowballStemmer("english")
         self.stopwords = set(stopwords.words('english'))
@@ -44,7 +45,7 @@ class MakeLexicons:
         return positive_words, negative_words
 
     def get_attractions(self):
-        """ load all reviews in data/reranked_reviews/ and merge them """
+        """ load all reviews in data/reviews/ and merge them """
         for dirpath, dir_list, file_list in os.walk(self.src):
             print "Walking into directory: " + str(dirpath)
 
