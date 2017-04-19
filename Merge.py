@@ -302,7 +302,7 @@ class Merge:
         if location:
             f_opinion_positive = open(self.dst_pss + location + "_opinion_positive.json", 'w+')
         else:
-            f_opinion_positive = open(self.dst_pss + "overall/opinion_positive.json", "w+")
+            f_opinion_positive = open(self.dst_l + "processed_opinion_positive_lexicon.json", "w+")
         f_opinion_positive.write( json.dumps( ordered_dict_list, indent = 4, cls=NoIndentEncoder))
 
         # if location is not None
