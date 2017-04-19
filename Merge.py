@@ -18,7 +18,7 @@ class Merge:
         self.dst_c = "data/corpora/"
         self.dst_cs = "data/corpora/starred/"
         self.dst_pss = "data/processed_sentiment_statistics/"
-        self.dst_psso = "data/processed_sentiment_statistics/overall/"
+        self.dst_l = "data/lexicon/"
         self.dst_log = "data/log.txt"
 
     def walk_backend_reviews(self):
@@ -285,7 +285,7 @@ class Merge:
         if location:
             print "Saving opinion positive_sentiment_statistics to:", "\033[1m" + self.dst_pss + location + "_opinion_positive.json" "\033[0m"
         else:
-            print "Saving opinion positive_sentiment_statistics to:", "\033[1m" + self.dst_psso + "opinion_positive.json" "\033[0m"
+            print "Saving opinion positive_sentiment_statistics to:", "\033[1m" + self.dst_l + "processed_opinion_positive_lexicon.json" "\033[0m"
 
         index = 0
         length = len(positive_statistics)
@@ -309,7 +309,7 @@ class Merge:
         if location:
             print "Saving opinion negative_sentiment_statistics to:", "\033[1m" + self.dst_pss + location + "_opinion_negative.json" "\033[0m"
         else:
-            print "Saving opinion negative_sentiment_statistics to:", "\033[1m" + self.dst_psso + "opinion_negative.json" "\033[0m"
+            print "Saving opinion negative_sentiment_statistics to:", "\033[1m" + self.dst_l + "processed_opinion_negative_lexicon.json" "\033[0m"
 
         index = 0
         length = len(negative_statistics)
@@ -326,7 +326,7 @@ class Merge:
         if location:
             f_opinion_negative = open(self.dst_pss + location + "_opinion_negative.json", 'w+')
         else:
-            f_opinion_negative = open(self.dst_pss + "overall/opinion_negative.json", "w+")
+            f_opinion_negative = open(self.dst_l + "processed_opinion_negative.json", "w+")
         f_opinion_negative.write( json.dumps( ordered_dict_list, indent = 4, cls=NoIndentEncoder))
 
         print "-"*80
@@ -394,7 +394,7 @@ class Merge:
         if location:
             print "Saving pos_tagged sentiment_statistics to:", "\033[1m" + self.dst_pss + location + "_pos_tagged.json" "\033[0m"
         else:
-            print "Saving pos_tagged sentiment_statistics to:", "\033[1m" + self.dst_psso + "pos_tagged.json" "\033[0m"
+            print "Saving pos_tagged sentiment_statistics to:", "\033[1m" + self.dst_l + "processed_pos_tagged_lexicon.json" "\033[0m"
 
         index = 0
         length = len(pos_tagged_sentiment_statistics)
@@ -411,7 +411,7 @@ class Merge:
         if location:
             f_pos_tagged = open(self.dst_pss + location + "_pos_tagged.json", 'w+')
         else:
-            f_pos_tagged = open(self.dst_pss + "overall/pos_tagged.json", "w+")
+            f_pos_tagged = open(self.dst_l + "processed_pos_tagged_lexicon.json", "w+")
         f_pos_tagged.write( json.dumps( ordered_dict_list, indent = 4, cls=NoIndentEncoder))
 
         print "-"*80
@@ -421,7 +421,7 @@ class Merge:
         dir1 = os.path.dirname(self.dst_c)
         dir2 = os.path.dirname(self.dst_cs)
         dir3 = os.path.dirname(self.dst_pss)
-        dir4 = os.path.dirname(self.dst_psso)
+        dir4 = os.path.dirname(self.dst_l)
 
         print "Checking destination directories"
         if not os.path.exists(dir1):
