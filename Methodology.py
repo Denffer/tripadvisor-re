@@ -9,60 +9,59 @@ import numpy as np
 from scipy import spatial
 
 class Methodology:
-    """ This program renders
-    (1) topN positive sentiment_words with nearest cosine similarity for the given queries (attraction_name)
-        data/distance/location/...
-    (2) rankings of the queries (attraction_name)
+    """ This program aims to
+    (1) compute / sum topN sentiment_words with nearest cosine similarity for the given queries (entity_name) in data/distance/location/...
+    (2) compute the rankings of the queries (entity_name)
         data/ranking/location/...
     """
 
     def __init__(self, argv1, argv2):
-        self.src = argv1
-        self.threshold = float(argv2)
-        self.src_enhanced_lexicon = "data/lexicon/enhanced_lexicon.json"
-        self.src_lexicon = "data/lexicon/sentiment_statistics.json"
-        self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src).group(1)
-        self.src_fr = "data/frontend_reviews/" + self.filename + "/"
-        self.src_ss = "data/sentiment_statistics/"
-        self.src_lss = "data/location_sentiment_statistics/"
+        self.src_line = argv1 # E.g., data/line/norm_vectors200/Amsterdam.txt
+        self.location = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src_line).group(1)
+        self.src_word2vec = "data/word2vec/" + self.location + ".txt"
 
-        self.dst_distance = "data/distance/" + self.filename + "/"
-        self.dst_ranking = "data/ranking/" + self.filename + "/"
+        self.threshold = 0
+        #self.threshold = float(argv2)
+        self.src_opinion = "data/lexicon/processed_opinion_positive_lexicon.json"
+        self.src_1star = "data/lexicon/1_star.json"
+        self.src_2star = "data/lexicon/2_star.json"
+        self.src_3star = "data/lexicon/3_star.json"
+        self.src_4star = "data/lexicon/4_star.json"
+        self.src_5star = "data/lexicon/5_star.json"
+        self.src_fr = "data/frontend_reviews/" + self.location + "/"
+        self.src_processed_ss = "data/processed_sentiment_statistics/"
 
-        self.positive_minus_negative_flag = 0
+        self.dst_distance = "data/distance/" + self.location + "/"
+        self.dst_ranking = "data/ranking/" + self.location + "/"
 
-        self.topN = 500
+        self.topN = 300
         self.queries = []
-        self.positive = []
-        self.positive_vectors200 = []
-        self.extreme_positive, self.strong_positive, self.moderate_positive = [], [], []
-        self.extreme_negative, self.strong_negative, self.moderate_negative = [], [], []
-        self.positive_cosine_topN, self.negative_cosine_topN = [], []
 
-        self.attractions, self.attractions2 = {}, {}
-        self.reranked_scores, self.locations, self.attraction_names = {}, {}, {}
-	self.unique_words = {}
-        self.vectors200 = []
-        self.extreme_positive_vectors200, self.strong_positive_vectors200, self.moderate_positive_vectors200 = [], [], []
-        self.extreme_negative_vectors200, self.strong_negative_vectors200, self.moderate_negative_vectors200 = [], [], []
+        self.entity_reranked_ranking_dict = {}
+        self.entity_reranked_score_dict = {}
+        self.entity_original_ranking_dict = {}
+        self.entity_location_dict = {}
+        self.entity_name_dict = {}
 
-        self.verbose = 1
+        self.verbose = 0
 
-    def get_source(self):
+    def get_line_source(self):
 	""" first call readline() to read thefirst line of vectors200 file to get vocab_size and dimension_size """
 
         if self.verbose:
-            print "Loading data from " + "\033[1m" + self.src + "\033[0m"
-        f_src = open(self.src, "r")
+            print "Loading data from " + "\033[1m" + self.src_line + "\033[0m"
+        f_src = open(self.src_line, "r")
         vocab_size, dimension_size = f_src.readline().split(' ')
 
         if self.verbose:
-            print "Building Index"
+            print "Building index ..."
+
+        line_unique_words, line_embeddings = {}, []
         for index in range(0, int(vocab_size)):
             line = f_src.readline().split(' ')
             # {"good":1, "attraciton":2, "Tokyo": 3}
-            self.unique_words[line[0]]=index
-            self.vectors200.append([float(i) for i in line[1:-1]])
+            line_unique_words[line[0]]=index
+            line_embeddings.append([float(i) for i in line[1:-1]])
 
             if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(index+1, vocab_size))
@@ -72,12 +71,41 @@ class Methodology:
         if self.verbose:
             print "\n" + "-"*70
 
-    def get_attractions(self):
-        """ get attraction_names as queries """
+        return line_unique_words, line_embeddings
 
-        attraction_names = []
+    def get_word2vec_source(self):
+	""" first call readline() to read thefirst line of vectors200 file to get vocab_size and dimension_size """
+
         if self.verbose:
-            print "Loading attraction_names from: " + self.src_fr
+            print "Loading data from " + "\033[1m" + self.src_word2vec + "\033[0m"
+        f_src = open(self.src_word2vec, "r")
+        vocab_size, dimension_size = f_src.readline().split(' ')
+
+        if self.verbose:
+            print "Building index ..."
+
+        word2vec_unique_words, word2vec_embeddings = {}, []
+        for index in range(0, int(vocab_size)):
+            line = f_src.readline().split(' ')
+            # {"good":1, "attraciton":2, "Tokyo": 3}
+            word2vec_unique_words[line[0]]=index
+            word2vec_embeddings.append([float(i) for i in line[1:-1]])
+
+            if self.verbose:
+                sys.stdout.write("\rStatus: %s / %s"%(index+1, vocab_size))
+                sys.stdout.flush()
+
+        f_src.close()
+        if self.verbose:
+            print "\n" + "-"*70
+
+        return word2vec_unique_words, word2vec_embeddings
+
+    def get_entities(self):
+        """ load data from frontend_review and extract information  """
+        if self.verbose:
+            print "Loading the entity_names from: " + self.src_fr
+
         for dirpath, dir_list, file_list in os.walk(self.src_fr):
             if self.verbose:
                 print "Walking into directory: " + str(dirpath)
@@ -100,46 +128,49 @@ class Methodology:
                         if self.verbose:
                             print "Merging " + str(dirpath) + str(f)
                         with open(dirpath + f) as file:
-                            attraction = json.load(file)
-                            # attraction_al => attraction append location E.g. Happy-Temple_Bangkok
-                            attraction_al = attraction["attraction_name"].lower() + "_" + attraction["location"].lower()
-                            # attraction_ranking = attraction["ranking"]
-                            reranked_ranking = attraction["reranked_ranking"]
-                            self.attractions.update({attraction_al: reranked_ranking})
-                            reranked_score = attraction["ranking_score"]
-                            self.reranked_scores.update({attraction_al: reranked_score})
-                            original_ranking = attraction["original_ranking"]
-                            self.attractions2.update({attraction_al: original_ranking})
-                            location = attraction["location"]
-                            self.locations.update({attraction_al: location})
-                            attraction_name = attraction["attraction_name"]
-                            self.attraction_names.update({attraction_al: attraction_name})
+                            entity = json.load(file)
+                            # entity_al => entity 'a'ppend 'l'ocation E.g. Happy-Temple_Bangkok
+                            entity_al = entity["entity_name"].lower() + "_" + entity["location"].lower()
+                            # get reranked_ranking
+                            reranked_ranking = entity["reranked_ranking"]
+                            self.entity_reranked_ranking_dict.update({entity_al: reranked_ranking})
+                            # get reranked_score # E.g., 4.9
+                            reranked_score = entity["avg_rating_stars"]
+                            self.entity_reranked_score_dict.update({entity_al: reranked_score})
+                            # get original_ranking
+                            original_ranking = entity["original_ranking"]
+                            self.entity_original_ranking_dict.update({entity_al: original_ranking})
+                            # get entity_name
+                            entity_name = entity["entity_name"]
+                            self.entity_name_dict.update({entity_al: entity_name})
             else:
                 print "No file is found"
                 print "-"*80
 
-        print "-"*80
-        #print self.attractions
-        return self.attractions
+        if self.verbose:
+            print "-"*80
 
-    def get_lexicon(self):
-	""" open data/lexicon/sentiment_statistics.json and load extreme_positive & strong_positive & moderate_positive """
+    def get_opinion_sentiment(self, unique_words, embeddings):
+	""" (1) load sentiment_words from data/lexicon/processed_opinion_positive_lexicon.json
+            (2) return sentiment_words and sentiment_embedding by the given embeddings
+            (3) the given embeddings could be from Line or Word2Vec """
+
+        with open(self.src_opinion, 'r') as f:
+            opinion_lexicon = json.load(f)
 
         if self.verbose:
-            print "Loading data from " + "\033[1m" + self.src_lexicon + "\033[0m"
-        with open(self.src_lexicon, 'r') as f:
-            lexicon = json.load(f)
+            print "Loading data from " + "\033[1m" + self.src_opinion + "\033[0m"
+            print "Processing words in opinion lexicon"
 
-        positive = lexicon["positive_statistics"]
-        print "Processing positive"
+        opinion_sentiment_words, opinion_sentiment_embeddings = [], []
         cnt = 0
-        length = len(self.unique_words.keys())
-        for key, value in self.unique_words.iteritems():
+        length = len(unique_words.keys())
+        for key, value in unique_words.iteritems():
             cnt += 1
-            for word_dict in positive:
+            for word_dict in opinion_lexicon:
                 if word_dict["stemmed_word"] == key.decode("utf-8"):
-                    self.positive.append(word_dict)
-                    self.positive_vectors200.append(self.vectors200[value])
+                    opinion_sentiment_words.append(word_dict)
+                    opinion_sentiment_embeddings.append(embeddings[value])
 
             if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
@@ -147,243 +178,217 @@ class Methodology:
 
         if self.verbose:
             print "\n" + "-"*70
+        return opinion_sentiment_words, opinion_sentiment_embeddings
 
-
-    def get_positive_cosine_topN(self):
-        """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
-        """ cos_sim stands for cosine_similarity """
+    def get_star_sentiment(self, source, unique_words, embeddings):
+	""" open data/lexicon/5_star.json and load sentiment words """
 
         if self.verbose:
-            print "Calculating Cosine Similarity between queries and every positive word"
+            print "Loading data from " + "\033[5m" + source + "\033[0m"
+            print "Processing star lexicon"
 
+        with open(source, 'r') as f:
+            json_data = json.load(f)
+
+        star_lexicon = json_data["topN_sentiment_words"]
+        star_sentiment_words, star_sentiment_embeddings = [], []
+        cnt = 0
+        length = len(unique_words.keys())
+        for key, value in unique_words.iteritems():
+            cnt += 1
+            for word_dict in star_lexicon:
+                if word_dict["stemmed_word"] == key:
+                    star_sentiment_words.append(word_dict)
+                    star_sentiment_embeddings.append(embeddings[value])
+
+            if self.verbose:
+                sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+                sys.stdout.flush()
+
+        if self.verbose:
+            print "\n" + "-"*70
+        return star_sentiment_words, star_sentiment_embeddings
+
+    def get_topN_sentiment_words(self, sentiment_type, unique_words, embeddings, sentiment_words, sentiment_words_embeddings):
+        """ (1) calculate cosine similarity (2) get topN sentiment words with the highest cosine similarity"""
+
+        if self.verbose:
+            print "Calculating Cosine Similarity between queries and every sentiment word in opinion_lexicon"
+
+        processed_entities = []
         for query in self.queries:
-            positive_cos_sim_list = []
+            cos_sim_list = []
 
             # cosine_similarity ranges from -1 ~ 1
-            for index in xrange(len(self.positive)):
+            for index in xrange(len(sentiment_words)):
                 try:
-                    positive_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.positive_vectors200[index]))
+                    #print embeddings[unique_words[query]]
+                    #print sentiment_words_embeddings[unique_words[query]]
+                    cos_sim_list.append(1-spatial.distance.cosine(embeddings[unique_words[query]], sentiment_words_embeddings[index]))
                 except:
+                    # No match
                     pass
-                    print "No match"
 
-            print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
-            # sorting index
-            positive_sorted_index = sorted(range(len(positive_cos_sim_list)), key=lambda k: positive_cos_sim_list[k], reverse=True)
+            if self.verbose:
+                print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
+            # sorting indices # indices is the plural form of index
+            sorted_indices = sorted(range(len(cos_sim_list)), key=lambda k: cos_sim_list[k], reverse=True)
 
-            sentiment_statistics = self.get_location_sentiment_statistics(query)
-            #print sentiment_statistics
+            # this get the locational sentiment_statistics # E.g., Amsterdam
+            sentiment_statistics = self.get_locational_sentiment_statistics(sentiment_type)
 
             word_dict_list = []
-            for i, index in enumerate(positive_sorted_index):
+            for i, index in enumerate(sorted_indices):
                 try:
-                    positive_word_dict = {
-                            "stemmed_word": self.positive[index]["stemmed_word"],
-                            "word": self.positive[index]["word"],
-                            "locational_frequency": sentiment_statistics[self.positive[index]["stemmed_word"]]["count"],
-                            "norm_locational_frequency": sentiment_statistics[self.positive[index]["stemmed_word"]]["norm_count"],
-                            "total_frequency": self.positive[index]["count"],
-                            "cos_sim": positive_cos_sim_list[index],
-                            "cosineXfrequency_score": positive_cos_sim_list[index] * sentiment_statistics[self.positive[index]["stemmed_word"]]["count"],
-                            "cosineXnorm_frequency_score": positive_cos_sim_list[index] * sentiment_statistics[self.positive[index]["stemmed_word"]]["norm_count"]
+                    word_dict = {
+                        "stemmed_word": sentiment_words[index]["stemmed_word"],
+                        "word": sentiment_words[index]["word"],
+                        "locational_frequency": sentiment_statistics[sentiment_words[index]["stemmed_word"]]["count"],
+                        "norm_locational_frequency": sentiment_statistics[sentiment_words[index]["stemmed_word"]]["norm_count"],
+                        "total_frequency": sentiment_words[index]["count"],
+                        "cos_sim": cos_sim_list[index],
+                        "cosineXfrequency_score": cos_sim_list[index] * sentiment_statistics[sentiment_words[index]["stemmed_word"]]["count"],
+                        "cosineXnorm_frequency_score": cos_sim_list[index] * sentiment_statistics[sentiment_words[index]["stemmed_word"]]["norm_count"]
                             }
-                    word_dict_list.append(positive_word_dict)
+                    #print word_dict
+                    word_dict_list.append(word_dict)
                 except:
                     pass
+                    #print "ya"
                 #print word_dict
 
+            #print word_dict_list
             cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list if float(word_dict["cos_sim"]) >= self.threshold]
             #print cos_sim_list
-            #max_cosine_score = max(cos_sim_list)
-            #avg_cosine_score = sum(cos_sim_list)/len(cos_sim_list)
             sum_cosine_score = sum(cos_sim_list)
 
             # (1) top3 avg
             top3_avg_cosine_score = max(cos_sim_list[:3])/len(cos_sim_list[:3])
-            # (2) top5 avg
-            top5_avg_cosine_score = max(cos_sim_list[:5])/len(cos_sim_list[:5])
-            # (3) top20 avg
-            top20_avg_cosine_score = max(cos_sim_list[:20])/len(cos_sim_list[:20])
-            # (4) top50 avg
+            # (2) top10 avg
+            top10_avg_cosine_score = max(cos_sim_list[:10])/len(cos_sim_list[:10])
+            # (3) top50 avg
             top50_avg_cosine_score = max(cos_sim_list[:50])/len(cos_sim_list[:50])
-            # (5) top100 avg
+            # (4) top100 avg
             top100_avg_cosine_score = max(cos_sim_list[:100])/len(cos_sim_list[:100])
-            # (6) top_all avg
+            # (5) top_all avg
             top_all_avg_cosine_score = max(cos_sim_list[:])/len(cos_sim_list[:])
 
-            # remove count = 0
+            # remove count <= 0
             refined_word_dict_list = [word_dict for word_dict in word_dict_list if float(word_dict["locational_frequency"]) >= 0]
             # cutting threshold
             refined_word_dict_list = [word_dict for word_dict in word_dict_list if float(word_dict["cos_sim"]) >= self.threshold]
-            #  sum_cosineXfrequency_score = sum([float(word_dict["cosineXfrequency_score"]) for word_dict in refined_word_dict_list])
-            #  sum_cosineXnorm_frequency_score = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in refined_word_dict_list])
 
-            # top3 cosine X norm_frequency
+            # (1) top3 cosine X norm_frequency
             top3 = refined_word_dict_list[:3]
             top3_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top3])
-            top5 = refined_word_dict_list[:5]
-            top5_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top5])
-            top20 = refined_word_dict_list[:20]
-            top20_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top20])
+            # (2) top10 cosine X norm_frequency
+            top10 = refined_word_dict_list[:10]
+            top10_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top10])
+            # (3) top50 cosine X norm_frequency
             top50 = refined_word_dict_list[:50]
             top50_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top50])
+            # (4) top100 cosine X norm_frequency
             top100 = refined_word_dict_list[:100]
             top100_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top100])
+            # (5) top100 cosine X norm_frequency
             top_all = refined_word_dict_list[:]
             top_all_sum_cXnf = sum([float(word_dict["cosineXnorm_frequency_score"]) for word_dict in top_all])
 
             # sum_z_scoreXnorm_frequency_score
-            mean = np.mean([w["cos_sim"] for w in refined_word_dict_list])
-            std = np.std([w["cos_sim"] for w in refined_word_dict_list])
-            sum_z_scoreXnorm_frequency_score = sum( [((w["cos_sim"]-mean)/std) * w["cos_sim"] * w["cos_sim"] * w["norm_locational_frequency"] for w in refined_word_dict_list] )
-
-            #  # calculate the score out of topN cosine similarity
-            #  # (1) top3
-            #  top3 = word_dict_list[:3]
-            #  top3_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top3])
-            #  top3_std = np.std([float(word_dict["cos_sim"]) for word_dict in top3])
-            #  sum_z_score_top3 = sum([(((float(w["cos_sim"])-top3_mean)/top3_std) * float(w["cos_sim"])) for w in top3 if float(w["cos_sim"]) >= self.threshold])
-            #  # (2) top5
-            #  top5 = word_dict_list[:5]
-            #  top5_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top5])
-            #  top5_std = np.std([float(word_dict["cos_sim"]) for word_dict in top5])
-            #  sum_z_score_top5 = sum([(((float(w["cos_sim"])-top5_mean)/top5_std) * float(w["cos_sim"])) for w in top5 if float(w["cos_sim"]) >= self.threshold])
-            #  # (3) top20
-            #  top20 = word_dict_list[:20]
-            #  top20_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top20])
-            #  top20_std = np.std([float(word_dict["cos_sim"]) for word_dict in top20])
-            #  sum_z_score_top20 = sum([(((float(w["cos_sim"])-top20_mean)/top20_std) * float(w["cos_sim"])) for w in top20 if float(w["cos_sim"]) >= self.threshold])
-            #  # (4) top50
-            #  top50 = word_dict_list[:50]
-            #  top50_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top50])
-            #  top50_std = np.std([float(word_dict["cos_sim"]) for word_dict in top50])
-            #  sum_z_score_top50 = sum([(((float(w["cos_sim"])-top50_mean)/top50_std) * float(w["cos_sim"])) for w in top50 if float(w["cos_sim"]) >= self.threshold])
-            #  # (5) top100
-            #  top100 = word_dict_list[:100]
-            #  top100_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top100])
-            #  top100_std = np.std([float(word_dict["cos_sim"]) for word_dict in top100])
-            #  sum_z_score_top100 = sum([(((float(w["cos_sim"])-top100_mean)/top100_std) * float(w["cos_sim"])) for w in top100 if float(w["cos_sim"]) >= self.threshold])
-            #  # (6) top_all
-            #  top_all = word_dict_list[:]
-            #  top_all_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top_all])
-            #  top_all_std = np.std([float(word_dict["cos_sim"]) for word_dict in top_all])
-            #  sum_z_score_top_all = sum([(((float(w["cos_sim"])-top_all_mean)/top_all_std) * float(w["cos_sim"])) for w in top_all if float(w["cos_sim"]) >= self.threshold])
-
-            # calculate the score out of topN cosine similarity
             # (1) top3
             top3 = word_dict_list[:3]
             top3_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top3])
             top3_std = np.std([float(word_dict["cos_sim"]) for word_dict in top3])
             top3_sum_zXnf = sum([(((float(w["cos_sim"])-top3_mean)/top3_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top3 if float(w["cos_sim"]) >= self.threshold])
-            # (2) top5
-            top5 = word_dict_list[:5]
-            top5_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top5])
-            top5_std = np.std([float(word_dict["cos_sim"]) for word_dict in top5])
-            top5_sum_zXnf = sum([(((float(w["cos_sim"])-top5_mean)/top5_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top5 if float(w["cos_sim"]) >= self.threshold])
-            # (3) top20
-            top20 = word_dict_list[:20]
-            top20_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top20])
-            top20_std = np.std([float(word_dict["cos_sim"]) for word_dict in top20])
-            top20_sum_zXnf = sum([(((float(w["cos_sim"])-top20_mean)/top20_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top20 if float(w["cos_sim"]) >= self.threshold])
-            # (4) top50
+            # (2) top10
+            top10 = word_dict_list[:10]
+            top10_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top10])
+            top10_std = np.std([float(word_dict["cos_sim"]) for word_dict in top10])
+            top10_sum_zXnf = sum([(((float(w["cos_sim"])-top10_mean)/top10_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top10 if float(w["cos_sim"]) >= self.threshold])
+            # (3) top50
             top50 = word_dict_list[:50]
             top50_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top50])
             top50_std = np.std([float(word_dict["cos_sim"]) for word_dict in top50])
             top50_sum_zXnf = sum([(((float(w["cos_sim"])-top50_mean)/top50_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top50 if float(w["cos_sim"]) >= self.threshold])
-            # (5) top100
+            # (4) top100
             top100 = word_dict_list[:100]
             top100_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top100])
             top100_std = np.std([float(word_dict["cos_sim"]) for word_dict in top100])
             top100_sum_zXnf = sum([(((float(w["cos_sim"])-top100_mean)/top100_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top100 if float(w["cos_sim"]) >= self.threshold])
-            # (6) top_all
+            # (5) top_all
             top_all = word_dict_list[:]
             top_all_mean = np.mean([float(word_dict["cos_sim"]) for word_dict in top_all])
             top_all_std = np.std([float(word_dict["cos_sim"]) for word_dict in top_all])
             top_all_sum_zXnf = sum([(((float(w["cos_sim"])-top_all_mean)/top_all_std) * float(w["cos_sim"]) * w['norm_locational_frequency']) for w in top_all if float(w["cos_sim"]) >= self.threshold])
 
-            # generate cosine score
-            print "top3_avg_cosine_score :", top3_avg_cosine_score
-            print "top5_avg_cosine_score :", top5_avg_cosine_score
-            print "top20_avg_cosine_score :", top20_avg_cosine_score
-            print "top50_avg_cosine_score :", top50_avg_cosine_score
-            print "top100_avg_cosine_score :", top100_avg_cosine_score
-            print "top_all_avg_cosine_score :", top_all_avg_cosine_score
-            #print "avg_cosine_score :", avg_cosine_score
-            #  print "sum_cosine_score :", sum_cosine_score
-            #  print "sum cosine_similarity * locational_frequency = score :", sum_cosineXfrequency_score
-            print "top3 sum cosine_similarity * norm_locational_frequency = score :", top3_sum_cXnf
-            print "top5 sum cosine_similarity * norm_locational_frequency = score :", top5_sum_cXnf
-            print "top20 sum cosine_similarity * norm_locational_frequency = score :", top20_sum_cXnf
-            print "top50 sum cosine_similarity * norm_locational_frequency = score :", top50_sum_cXnf
-            print "top100 sum cosine_similarity * norm_locational_frequency = score :", top100_sum_cXnf
-            print "top_all sum cosine_similarity * norm_locational_frequency = score :", top_all_sum_cXnf
-            #  print "sum cosine_similarity * locational_frequency = score :", sum_cosineXfrequency_score
-            print "top3 sum z_score * norm_locational_frequency = score :", top3_sum_zXnf
-            print "top5 sum z_score * norm_locational_frequency = score :", top5_sum_zXnf
-            print "top20 sum z_score * norm_locational_frequency = score :", top20_sum_zXnf
-            print "top50 sum z_score * norm_locational_frequency = score :", top50_sum_zXnf
-            print "top100 sum z_score * norm_locational_frequency = score :", top100_sum_zXnf
-            print "top_all sum z_score * norm_locational_frequency = score :", top_all_sum_zXnf
-            #  print "sum z_score * norm_locational_frequency = score :", sum_z_scoreXnorm_frequency_score
-            #  print "sum_z_score_top3: ", sum_z_score_top3
-            #  print "sum_z_score_top5: ", sum_z_score_top5
-            #  print "sum_z_score_top20: ", sum_z_score_top20
-            #  print "sum_z_score_top50: ", sum_z_score_top50
-            #  print "sum_z_score_top100: ", sum_z_score_top100
-            #  print "sum_z_score_top_all: ", sum_z_score_top_all
+            #  # avg
+            #  print "top3_avg_cosine_score :", top3_avg_cosine_score
+            #  print "top10_avg_cosine_score :", top10_avg_cosine_score
+            #  print "top50_avg_cosine_score :", top50_avg_cosine_score
+            #  print "top100_avg_cosine_score :", top100_avg_cosine_score
+            #  print "top_all_avg_cosine_score :", top_all_avg_cosine_score
+            #  # sum
+            #  print "top3 sum cosine_similarity * norm_locational_frequency = score :", top3_sum_cXnf
+            #  print "top10 sum cosine_similarity * norm_locational_frequency = score :", top10_sum_cXnf
+            #  print "top50 sum cosine_similarity * norm_locational_frequency = score :", top50_sum_cXnf
+            #  print "top100 sum cosine_similarity * norm_locational_frequency = score :", top100_sum_cXnf
+            #  print "top_all sum cosine_similarity * norm_locational_frequency = score :", top_all_sum_cXnf
+            #  #  sum_zscoreXnorm_frequency_score
+            #  print "top3 sum z_score * norm_locational_frequency = score :", top3_sum_zXnf
+            #  print "top10 sum z_score * norm_locational_frequency = score :", top10_sum_zXnf
+            #  print "top50 sum z_score * norm_locational_frequency = score :", top50_sum_zXnf
+            #  print "top100 sum z_score * norm_locational_frequency = score :", top100_sum_zXnf
+            #  print "top_all sum z_score * norm_locational_frequency = score :", top_all_sum_zXnf
 
-            self.positive_cosine_topN.append({"query": query,
-                "positive_topN_cosine_similarity": refined_word_dict_list,
-                #"avg_cosine_score": avg_cosine_score,
-                #"avg_cosine_score": avg_cosine_score,
+            processed_entities.append({"query": query,
+                "sentiment_type": sentiment_type,
+                "topN_sentiment_words": refined_word_dict_list,
+                # avg
                 "top3_avg_cosine_score": top3_avg_cosine_score,
-                "top5_avg_cosine_score": top5_avg_cosine_score,
-                "top20_avg_cosine_score": top20_avg_cosine_score,
+                "top10_avg_cosine_score": top10_avg_cosine_score,
                 "top50_avg_cosine_score": top50_avg_cosine_score,
                 "top100_avg_cosine_score": top100_avg_cosine_score,
                 "top_all_avg_cosine_score": top_all_avg_cosine_score,
-                #  "sum_cosine_score": sum_cosine_score,
-                #  "sum_cosineXfrequency_score": sum_cosineXfrequency_score,
+                # sum
                 "top3_sum_cosineXnorm_frequency_score": top3_sum_cXnf,
-                "top5_sum_cosineXnorm_frequency_score": top5_sum_cXnf,
-                "top20_sum_cosineXnorm_frequency_score": top20_sum_cXnf,
+                "top10_sum_cosineXnorm_frequency_score": top10_sum_cXnf,
                 "top50_sum_cosineXnorm_frequency_score": top50_sum_cXnf,
                 "top100_sum_cosineXnorm_frequency_score": top100_sum_cXnf,
                 "top_all_sum_cosineXnorm_frequency_score": top_all_sum_cXnf,
-                #  "sum cosine_similarity * locational_frequency = score :", sum_cosineXfrequency_score
+                #  sum_zscoreXnorm_frequency_score
                 "top3_sum_z_scoreXnorm_frequency_score": top3_sum_zXnf,
-                "top5_sum_z_scoreXnorm_frequency_score": top5_sum_zXnf,
-                "top20_sum_z_scoreXnorm_frequency_score": top20_sum_zXnf,
+                "top10_sum_z_scoreXnorm_frequency_score": top10_sum_zXnf,
                 "top50_sum_z_scoreXnorm_frequency_score": top50_sum_zXnf,
                 "top100_sum_z_scoreXnorm_frequency_score": top100_sum_zXnf,
                 "top_all_sum_z_scoreXnorm_frequency_score": top_all_sum_zXnf
-                #"sum_cosineXnorm_frequency_score": sum_cosineXnorm_frequency_score,
-                #"sum_z_scoreXnorm_frequency_score": sum_z_scoreXnorm_frequency_score,
-                #  "sum_z_score_top3": sum_z_score_top3,
-                #  "sum_z_score_top5": sum_z_score_top5,
-                #  "sum_z_score_top20": sum_z_score_top20,
-                #  "sum_z_score_top50": sum_z_score_top50,
-                #  "sum_z_score_top100": sum_z_score_top100,
-                #  "sum_z_score_top_all": sum_z_score_top_all
                 })
 
-            print "-"*70
+            if self.verbose:
+                print "-"*70
 
-    def get_location_sentiment_statistics(self, query):
+        return processed_entities
+
+    def get_locational_sentiment_statistics(self, statistics_type):
         """ get sentiment_statistic for a particular location | return frequencies of sentiment words """
 
-        location = re.search("_([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)", query).group(1)
-        location = location.replace("-","_")
-        print "Searching for: " + "\033[1m" + location + ".json" + "\033[0m" + " in " + self.src_lss
+        if "opinion" in statistics_type:
+            target_filename = self.location + "_opinion_positive.json"
+        elif "star" in statistics_type:
+            target_filename = self.location + "_pos_tagged.json"
+        else:
+            raise
+            print "Unknown sentiment statistics type"
 
-        sentiment_statistics = []
-        for dirpath, dir_list, file_list in os.walk(self.src_lss):
-            print "Walking into directory: " + str(dirpath)
+        if self.verbose:
+            print "Searching for: " + "\033[1m" + target_filename + "\033[0m" + " in " + self.src_processed_ss
+
+        locational_sentiment_statistics = []
+        for dirpath, dir_list, file_list in os.walk(self.src_processed_ss):
+            #print "Walking into directory: " + str(dirpath)
 
             # in case there is a goddamn .DS_Store file
             if len(file_list) > 0:
                 # print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
-
                 file_cnt = 0
                 length = len(file_list)
                 for f in file_list:
@@ -392,219 +397,270 @@ class Methodology:
                         os.remove(dirpath + f)
                         break
                     else:
-                        if location in f.lower():
-                            print "Loading location_sentiment_sentiment_statistics from " + dirpath + str(f)
+                        if target_filename in f:
+                            # print "Loading locational_sentiment_sentiment_statistics from " + dirpath + str(f)
                             with open(dirpath + "/" + f) as file:
                                 json_data = json.load(file)
-                            sentiment_statistics = json_data["positive_statistics"]
+                            locational_sentiment_statistics = json_data
                         else:
                             #print "No match"
                             pass
             else:
                 print "No file is found"
 
-        print "Normalizing frequencies ..."
+        if self.verbose:
+            print "Normalizing frequencies ..."
         count_list = []
-        for word_dict in sentiment_statistics:
+        for word_dict in locational_sentiment_statistics:
             count_list.append(word_dict["count"])
         norm_count_list = [( (float(c)-min(count_list)) / (max(count_list)-min(count_list)) ) for c in count_list]
 
         sentiment_dict = {}
-        for word_dict, norm_count in zip(sentiment_statistics, norm_count_list):
+        for word_dict, norm_count in zip(locational_sentiment_statistics, norm_count_list):
             sentiment_dict[word_dict["stemmed_word"]] = {"count": word_dict["count"], "norm_count": norm_count}
 
+        #print sentiment_dict
         return sentiment_dict
 
-    def get_enhanced_lexicon(self):
-	""" open data/lexicon/enhanced_lexicon.json and load extreme_positive & strong_positive & moderate_positive """
+    def renderDistance(self, entities, embedding_type, sentiment_type):
+        """ save to data/distance/ """
 
         if self.verbose:
-            print "Loading data from " + "\033[1m" + self.src_enhanced_lexicon + "\033[0m"
-        with open(self.src_enhanced_lexicon, 'r') as f:
-            enhanced_lexicon = json.load(f)
+            print "Putting Cosine word dicts in order"
+        entity_ordered_dicts = []
 
-        positive = enhanced_lexicon["positive"]
+        sorted_entities = sorted(entities, key=lambda k: k['top_all_sum_cosineXnorm_frequency_score'], reverse = True)
+        ranking = 0
+        length = len(sorted_entities)
+        for ranking_dict in sorted_entities:
+            ranking += 1
+            entity_ordered_dict = OrderedDict()
+            entity_ordered_dict['computed_ranking'] = ranking
+            entity_ordered_dict['embedding_type'] = embedding_type
+            entity_ordered_dict['sentiment_tpye'] = sentiment_type
+            entity_ordered_dict["query"] = ranking_dict["query"]
+            entity_ordered_dict['location'] = self.location
+            entity_ordered_dict['entity_name'] = self.entity_name_dict[ranking_dict['query']]
+            entity_ordered_dict['reranked_score'] = self.entity_reranked_score_dict[ranking_dict['query']]
+            entity_ordered_dict['reranked_ranking'] = self.entity_reranked_ranking_dict[ranking_dict['query']]
+            entity_ordered_dict['original_ranking'] = self.entity_original_ranking_dict[ranking_dict['query']]
+            entity_ordered_dict["cosine_threshold"] = self.threshold
+            entity_ordered_dict["sentiment_type"] = ranking_dict["sentiment_type"]
 
-        print "Processing positive"
-        cnt = 0
-        length = len(self.unique_words.keys())
-        for key, value in self.unique_words.iteritems():
-            cnt += 1
-            # (1) extreme_positive
-            for word_dict in positive["extreme_positive"]:
-                if word_dict["stemmed_word"] == key.decode("utf-8"):
-                    self.extreme_positive.append(word_dict)
-                    self.extreme_positive_vectors200.append(self.vectors200[value])
-            # (2) strong_positive
-            for word_dict in positive["strong_positive"]:
-                if word_dict["stemmed_word"] == key:
-                    self.strong_positive.append(word_dict)
-                    self.strong_positive_vectors200.append(self.vectors200[value])
-            # (3) moderate_positive
-            for word_dict in positive["moderate_positive"]:
-                if word_dict["stemmed_word"] == key:
-                    self.moderate_positive.append(word_dict)
-                    self.moderate_positive_vectors200.append(self.vectors200[value])
+            refined_word_dict_list = []
+            index = 0
+            for word_dict in ranking_dict["topN_sentiment_words"]:
+                index += 1
+                ordered_dict = OrderedDict()
+                ordered_dict["index"] = index
+                ordered_dict["cos_sim"] = word_dict["cos_sim"]
+                ordered_dict["loc_freq"] = word_dict["locational_frequency"]
+                #ordered_dict["norm_loc_freq"] = word_dict["norm_locational_frequency"]
+                ordered_dict["stemmed_word"] = word_dict["stemmed_word"]
+                ordered_dict["word"] = word_dict["word"]
+                ordered_dict["total_freq"] = word_dict["total_frequency"]
+                refined_word_dict_list.append(NoIndent(ordered_dict))
 
-            if self.verbose:
-                sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
-                sys.stdout.flush()
+            entity_ordered_dict["topN_sentiment_words"] = refined_word_dict_list
+            # append one query(entity) after another
+            entity_ordered_dicts.append(entity_ordered_dict)
 
-        negative = enhanced_lexicon["negative"]
-
-        print "\nProcessing negative"
-        cnt = 0
-        length = len(self.unique_words.keys())
-        for key, value in self.unique_words.iteritems():
-            cnt += 1
-            # (1) extreme_negative
-            for word_dict in negative["extreme_negative"]:
-                if word_dict["stemmed_word"] == key:
-                    self.extreme_negative.append(word_dict)
-                    self.extreme_negative_vectors200.append(self.vectors200[value])
-            # (2) strong_negative
-            for word_dict in negative["strong_negative"]:
-                if word_dict["stemmed_word"] == key:
-                    self.strong_negative.append(word_dict)
-                    self.strong_negative_vectors200.append(self.vectors200[value])
-            # (3) moderate_negative
-            for word_dict in negative["moderate_negative"]:
-                if word_dict["stemmed_word"] == key:
-                    self.moderate_negative.append(word_dict)
-                    self.moderate_negative_vectors200.append(self.vectors200[value])
-
-            if self.verbose:
-                sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
-                sys.stdout.flush()
+        # Writing to data/distance/New_York_City_line_star1.json
+        print "Writing data to", "\033[1m" + str(self.dst_distance) + embedding_type + "_" + sentiment_type +".json \033[0m"
+        f = open(self.dst_distance + embedding_type + "_" + sentiment_type + ".json", "w")
+        f.write(json.dumps(entity_ordered_dicts, indent = 4, cls=NoIndentEncoder))
 
         if self.verbose:
-            print "\n" + "-"*70
+            print "-"*80
 
-    def get_cosine_topN(self):
-        """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
-        """ cos_sim stands for cosine_similarity """
+    def renderRanking(self, entities, embedding_type, sentiment_type):
+        """ put entities in orderedDict and save to data/ranking/ """
 
         if self.verbose:
-            print "Calculating Cosine Similarity between queries and every positive word"
+            print "Ranking queries ..."
+        ranking_dict_list = []
+        for ranking_dict in entities:
 
-        for query in self.queries:
-            extreme_cos_sim_list, strong_cos_sim_list, moderate_cos_sim_list = [], [],[]
+            ranking_dict_list.append({
+                "entity_name": ranking_dict["query"],
+                "top3_avg_cosine_score": ranking_dict["top3_avg_cosine_score"],
+                "top10_avg_cosine_score": ranking_dict["top10_avg_cosine_score"],
+                "top50_avg_cosine_score": ranking_dict["top50_avg_cosine_score"],
+                "top100_avg_cosine_score": ranking_dict["top100_avg_cosine_score"],
+                "top_all_avg_cosine_score": ranking_dict["top_all_avg_cosine_score"],
 
-            # cosine_similarity ranges from -1 ~ 1
-            for index in xrange(len(self.extreme_positive)):
-                extreme_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.extreme_positive_vectors200[index]))
-            for index in xrange(len(self.strong_positive)):
-                strong_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.strong_positive_vectors200[index]))
-            for index in xrange(len(self.moderate_positive)):
-                moderate_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.moderate_positive_vectors200[index]))
+                "top3_sum_cosineXnorm_frequency_score": ranking_dict["top3_sum_cosineXnorm_frequency_score"],
+                "top10_sum_cosineXnorm_frequency_score": ranking_dict["top10_sum_cosineXnorm_frequency_score"],
+                "top50_sum_cosineXnorm_frequency_score": ranking_dict["top50_sum_cosineXnorm_frequency_score"],
+                "top100_sum_cosineXnorm_frequency_score": ranking_dict["top100_sum_cosineXnorm_frequency_score"],
+                "top_all_sum_cosineXnorm_frequency_score": ranking_dict["top_all_sum_cosineXnorm_frequency_score"],
 
-            print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
-            # sorting index
-            extreme_sorted_index = sorted(range(len(extreme_cos_sim_list)), key=lambda k: extreme_cos_sim_list[k], reverse=True)
-            strong_sorted_index = sorted(range(len(strong_cos_sim_list)), key=lambda k: strong_cos_sim_list[k], reverse=True)
-            moderate_sorted_index = sorted(range(len(moderate_cos_sim_list)), key=lambda k: moderate_cos_sim_list[k], reverse=True)
-
-            extreme_word_dict_list = []
-            for i, index in enumerate(extreme_sorted_index):
-                if i < self.topN:
-                    extreme_word_dict = {"word": self.extreme_positive[index], "cos_sim": extreme_cos_sim_list[index]}
-                    extreme_word_dict_list.append(extreme_word_dict)
-
-            strong_word_dict_list = []
-            for i, index in enumerate(strong_sorted_index):
-                if i < self.topN:
-                    strong_word_dict = {"word": self.strong_positive[index], "cos_sim": strong_cos_sim_list[index]}
-                    strong_word_dict_list.append(strong_word_dict)
-
-            moderate_word_dict_list = []
-            for i, index in enumerate(moderate_sorted_index):
-                if i < self.topN:
-                    moderate_word_dict = {"word": self.moderate_positive[index], "cos_sim": moderate_cos_sim_list[index]}
-                    moderate_word_dict_list.append(moderate_word_dict)
-
-            # cutting threshold
-            extreme_topN_cos_sim_list = [float(extreme_word_dict["cos_sim"]) for extreme_word_dict in extreme_word_dict_list if float(extreme_word_dict["cos_sim"]) >= self.threshold]
-            strong_topN_cos_sim_list = [float(strong_word_dict["cos_sim"]) for strong_word_dict in strong_word_dict_list if float(strong_word_dict["cos_sim"]) >= self.threshold]
-            moderate_topN_cos_sim_list = [float(moderate_word_dict["cos_sim"]) for moderate_word_dict in moderate_word_dict_list if float(moderate_word_dict["cos_sim"]) >= self.threshold]
-
-            # calculate the score out of topN cosine similarity
-            extreme_cos_score = sum(extreme_topN_cos_sim_list)
-            strong_cos_score = sum(strong_topN_cos_sim_list)
-            moderate_cos_score = sum(moderate_topN_cos_sim_list)
-
-            # generate cosine score
-            cos_score = extreme_cos_score
-            #cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
-            print "positive cosine score:", cos_score
-
-            self.positive_cosine_topN.append({"query": query,
-                "extreme_positive_topN_cosine_similarity": extreme_word_dict_list,
-                "strong_positive_topN_cosine_similarity": strong_word_dict_list,
-                "moderate_positive_topN_cosine_similarity": moderate_word_dict_list,
-                "cos_score": cos_score,
+                "top3_sum_z_scoreXnorm_frequency_score": ranking_dict["top3_sum_z_scoreXnorm_frequency_score"],
+                "top10_sum_z_scoreXnorm_frequency_score": ranking_dict["top10_sum_z_scoreXnorm_frequency_score"],
+                "top50_sum_z_scoreXnorm_frequency_score": ranking_dict["top50_sum_z_scoreXnorm_frequency_score"],
+                "top100_sum_z_scoreXnorm_frequency_score": ranking_dict["top100_sum_z_scoreXnorm_frequency_score"],
+                "top_all_sum_z_scoreXnorm_frequency_score": ranking_dict["top_all_sum_z_scoreXnorm_frequency_score"],
                 })
 
-        print "-"*70
-        print "Calculating Cosine Similarity between queries and every negative word"
+        # Avg
+        # (1) Sort by top3_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top3_avg_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top3_avg_cosine_score_ranking"] = rank
+        # (2) Sort by top10_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top10_avg_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top10_avg_cosine_score_ranking"] = rank
+        # (3) Sort by top50_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top50_avg_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top50_avg_cosine_score_ranking"] = rank
+        # (4) Sort by top100_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top100_avg_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top100_avg_cosine_score_ranking"] = rank
+        # (5) Sort by top_all_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top_all_avg_cosine_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top_all_avg_cosine_score_ranking"] = rank
 
-        self.negative_cosine_topN = []
-        for query in self.queries:
-            extreme_cos_sim_list, strong_cos_sim_list, moderate_cos_sim_list = [], [],[]
-            # cosine_similarity ranges from -1 ~ 1
-            for index in xrange(len(self.extreme_negative)):
-                extreme_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.extreme_negative_vectors200[index]))
-            for index in xrange(len(self.strong_negative)):
-                strong_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.strong_negative_vectors200[index]))
-            for index in xrange(len(self.moderate_negative)):
-                moderate_cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.moderate_negative_vectors200[index]))
+        # sum_cosineXnorm_frequency_score
+        # (1) Sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top3_sum_cosineXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top3_sum_cosineXnorm_frequency_score_ranking"] = rank
+        # (2) Sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top10_sum_cosineXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top10_sum_cosineXnorm_frequency_score_ranking"] = rank
+        # (3) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top50_sum_cosineXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top50_sum_cosineXnorm_frequency_score_ranking"] = rank
+        # (4) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top100_sum_cosineXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top100_sum_cosineXnorm_frequency_score_ranking"] = rank
+        # (5) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top_all_sum_cosineXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top_all_sum_cosineXnorm_frequency_score_ranking"] = rank
 
-            if self.verbose:
-                print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
-            extreme_sorted_index = sorted(range(len(extreme_cos_sim_list)), key=lambda k: extreme_cos_sim_list[k], reverse=True)
-            strong_sorted_index = sorted(range(len(strong_cos_sim_list)), key=lambda k: strong_cos_sim_list[k], reverse=True)
-            moderate_sorted_index = sorted(range(len(moderate_cos_sim_list)), key=lambda k: moderate_cos_sim_list[k], reverse=True)
+        # sum_z_scoreXnorm_frequency_score
+        # (1) By sort by top3_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top3_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top3_sum_z_scoreXnorm_frequency_score_ranking"] = rank
+        # (2) By sort by top10_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top10_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top10_sum_z_scoreXnorm_frequency_score_ranking"] = rank
+        # (3) By sort by top50_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top50_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top50_sum_z_scoreXnorm_frequency_score_ranking"] = rank
+        # (4) By sort by top100_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top100_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for rank_dict in ranking_dict_list:
+            rank += 1
+            rank_dict["top100_sum_z_scoreXnorm_frequency_score_ranking"] = rank
+        # (5) By sort by top_all_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
+        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top_all_sum_z_scoreXnorm_frequency_score'], reverse = True)
+        rank = 0
+        for ranking_dict in ranking_dict_list:
+            rank += 1
+            ranking_dict["top_all_sum_z_scoreXnorm_frequency_score_ranking"] = rank
 
-            extreme_word_dict_list = []
-            for i, index in enumerate(extreme_sorted_index):
-                if i < self.topN:
-                    extreme_word_dict = {"word": self.extreme_negative[index], "cos_sim": extreme_cos_sim_list[index]}
-                    extreme_word_dict_list.append(extreme_word_dict)
+        # putting them in ordered_dict
+        entity_ordered_dict = OrderedDict()
+        entity_ordered_dict['embedding_type'] = embedding_type
+        entity_ordered_dict['sentiment_tpye'] = sentiment_type
+        entity_ordered_dict['threshold'] = self.threshold
 
-            strong_word_dict_list = []
-            for i, index in enumerate(strong_sorted_index):
-                if i < self.topN:
-                    strong_word_dict = {"word": self.strong_negative[index], "cos_sim": strong_cos_sim_list[index]}
-                    strong_word_dict_list.append(strong_word_dict)
+        ordered_dicts = []
+        computed_ranking = 0
+        for ranking_dict in ranking_dict_list:
+            computed_ranking += 1
+            #print ranking_dict
+            ordered_dict = OrderedDict()
+            ordered_dict['entity_name'] = self.entity_name_dict[ranking_dict['entity_name']]
+            ordered_dict['computed_ranking'] = computed_ranking
+            ordered_dict['reranked_ranking'] = self.entity_reranked_ranking_dict[ranking_dict['entity_name']]
+            ordered_dict['reranked_score'] = self.entity_reranked_score_dict[ranking_dict['entity_name']]
+            ordered_dict['original_ranking'] = self.entity_original_ranking_dict[ranking_dict['entity_name']]
 
-            moderate_word_dict_list = []
-            for i, index in enumerate(moderate_sorted_index):
-                if i < self.topN:
-                    moderate_word_dict = {"word": self.moderate_negative[index], "cos_sim": moderate_cos_sim_list[index]}
-                    moderate_word_dict_list.append(moderate_word_dict)
+            # sum_cosineXnorm_frequency
+            ordered_dict['top3_sum_cosineXnorm_frequency_score_ranking'] = ranking_dict["top3_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top3_sum_cosineXnorm_frequency_score'] = ranking_dict['top3_sum_cosineXnorm_frequency_score']
+            ordered_dict['top10_sum_cosineXnorm_frequency_score_ranking'] = ranking_dict["top10_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top10_sum_cosineXnorm_frequency_score'] = ranking_dict['top10_sum_cosineXnorm_frequency_score']
+            ordered_dict['top50_sum_cosineXnorm_frequency_score_ranking'] = ranking_dict["top50_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top50_sum_cosineXnorm_frequency_score'] = ranking_dict['top50_sum_cosineXnorm_frequency_score']
+            ordered_dict['top100_sum_cosineXnorm_frequency_score_ranking'] = ranking_dict["top100_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top100_sum_cosineXnorm_frequency_score'] = ranking_dict['top100_sum_cosineXnorm_frequency_score']
+            ordered_dict['top_all_sum_cosineXnorm_frequency_score_ranking'] = ranking_dict["top_all_sum_cosineXnorm_frequency_score_ranking"]
+            ordered_dict['top_all_sum_cosineXnorm_frequency_score'] = ranking_dict['top_all_sum_cosineXnorm_frequency_score']
 
-            # cutting threshold
-            extreme_topN_cos_sim_list = [float(extreme_word_dict["cos_sim"]) for extreme_word_dict in extreme_word_dict_list if float(extreme_word_dict["cos_sim"]) >= self.threshold]
-            strong_topN_cos_sim_list = [float(strong_word_dict["cos_sim"]) for strong_word_dict in strong_word_dict_list if float(strong_word_dict["cos_sim"]) >= self.threshold]
-            moderate_topN_cos_sim_list = [float(moderate_word_dict["cos_sim"]) for moderate_word_dict in moderate_word_dict_list if float(moderate_word_dict["cos_sim"]) >= self.threshold]
+            # sum_z_scoreXnorm_frequency
+            ordered_dict['top3_sum_z_scoreXnorm_frequency_score_ranking'] = ranking_dict["top3_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top3_sum_z_scoreXnorm_frequency_score'] = ranking_dict['top3_sum_z_scoreXnorm_frequency_score']
+            ordered_dict['top10_sum_z_scoreXnorm_frequency_score_ranking'] = ranking_dict["top10_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top10_sum_z_scoreXnorm_frequency_score'] = ranking_dict['top10_sum_z_scoreXnorm_frequency_score']
+            ordered_dict['top50_sum_z_scoreXnorm_frequency_score_ranking'] = ranking_dict["top50_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top50_sum_z_scoreXnorm_frequency_score'] = ranking_dict['top50_sum_z_scoreXnorm_frequency_score']
+            ordered_dict['top100_sum_z_scoreXnorm_frequency_score_ranking'] = ranking_dict["top100_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top100_sum_z_scoreXnorm_frequency_score'] = ranking_dict['top100_sum_z_scoreXnorm_frequency_score']
+            ordered_dict['top_all_sum_z_scoreXnorm_frequency_score_ranking'] = ranking_dict["top_all_sum_z_scoreXnorm_frequency_score_ranking"]
+            ordered_dict['top_all_sum_z_scoreXnorm_frequency_score'] = ranking_dict['top_all_sum_z_scoreXnorm_frequency_score']
 
-            # calculate the score out of topN cosine similarity
-            extreme_cos_score = sum(extreme_topN_cos_sim_list)
-            strong_cos_score = sum(strong_topN_cos_sim_list)
-            moderate_cos_score = sum(moderate_topN_cos_sim_list)
+            # Avg
+            ordered_dict['top3_avg_cosine_score_ranking'] = ranking_dict["top3_avg_cosine_score_ranking"]
+            ordered_dict['top3_avg_cosine_score'] = ranking_dict['top3_avg_cosine_score']
+            ordered_dict['top10_avg_cosine_score_ranking'] = ranking_dict["top10_avg_cosine_score_ranking"]
+            ordered_dict['top10_avg_cosine_score'] = ranking_dict['top10_avg_cosine_score']
+            ordered_dict['top50_avg_cosine_score_ranking'] = ranking_dict["top50_avg_cosine_score_ranking"]
+            ordered_dict['top50_avg_cosine_score'] = ranking_dict['top50_avg_cosine_score']
+            ordered_dict['top100_avg_cosine_score_ranking'] = ranking_dict["top100_avg_cosine_score_ranking"]
+            ordered_dict['top100_avg_cosine_score'] = ranking_dict['top100_avg_cosine_score']
+            ordered_dict['top_all_avg_cosine_score_ranking'] = ranking_dict["top_all_avg_cosine_score_ranking"]
+            ordered_dict['top_all_avg_cosine_score'] = ranking_dict['top_all_avg_cosine_score']
+            #print ordered_dict
+            ordered_dicts.append(ordered_dict)
 
-            # generate cosine score
-            cos_score = extreme_cos_score
-            #cos_score = extreme_cos_score + strong_cos_score + moderate_cos_score
-            print "negative cosine score:", cos_score
+        entity_ordered_dict['Entity_Rankings'] = ordered_dicts
 
-            self.negative_cosine_topN.append({"query": query,
-                "extreme_negative_topN_cosine_similarity": extreme_word_dict_list,
-                "strong_negative_topN_cosine_similarity": strong_word_dict_list,
-                "moderate_negative_topN_cosine_similarity": moderate_word_dict_list,
-                "cos_score": cos_score})
 
-        if self.verbose:
-            print "-"*70
+        #FIXME remove location # Writing to data/ranking/New_York_City/New_York_City_line_opinion
+        print "Writing data to " + "\033[1m" + str(self.dst_ranking) + embedding_type + "_" + sentiment_type + ".json \033[0m"
+        f = open(self.dst_ranking + embedding_type + "_" + sentiment_type + ".json", "w")
+        f.write(json.dumps(entity_ordered_dict, indent = 4, cls=NoIndentEncoder))
 
     def create_dirs(self):
         """ create the directory if not exist"""
@@ -618,523 +674,80 @@ class Methodology:
             print "Creating directory: " + dir2
             os.makedirs(dir2)
 
-    def renderDistance(self):
-        """ save to data/distance/ """
-
-        if self.verbose:
-            print "Putting Cosine word dicts in order"
-        query_ordered_dict_list = []
-
-        cnt = 0
-        length = len(self.positive_cosine_topN)
-        for p_cos_word_dict, n_cos_word_dict in zip(self.positive_cosine_topN, self.negative_cosine_topN):
-            cnt += 1
-            query_ordered_dict = OrderedDict()
-            query_ordered_dict['method'] = "CosineThreshold"
-            query_ordered_dict["query"] = p_cos_word_dict["query"]
-            query_ordered_dict["cosine_threshold"] = self.threshold
-
-            # (1) extreme positive cosine
-            extreme_positive_cosine_word_dict_list = []
-            index = 0
-            for cosine_word_dict in p_cos_word_dict["extreme_positive_topN_cosine_similarity"]:
-                index += 1
-                ordered_dict = OrderedDict()
-                ordered_dict["index"] = index
-                ordered_dict["cosine_similarity"] = cosine_word_dict["cos_sim"]
-                ordered_dict["count"] = cosine_word_dict["word"]["count"]
-                ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
-                ordered_dict["word"] = cosine_word_dict["word"]["word"]
-                extreme_positive_cosine_word_dict_list.append(NoIndent(ordered_dict))
-
-            query_ordered_dict["extreme_positive_topN_cosine_similarity"] = extreme_positive_cosine_word_dict_list
-
-            # (2) strong positive cosine
-            strong_positive_cosine_word_dict_list = []
-            index = 0
-            for cosine_word_dict in p_cos_word_dict["strong_positive_topN_cosine_similarity"]:
-                index += 1
-                ordered_dict = OrderedDict()
-                ordered_dict["index"] = index
-                ordered_dict["cosine_similarity"] = cosine_word_dict["cos_sim"]
-                ordered_dict["count"] = cosine_word_dict["word"]["count"]
-                ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
-                ordered_dict["word"] = cosine_word_dict["word"]["word"]
-                strong_positive_cosine_word_dict_list.append(NoIndent(ordered_dict))
-
-            query_ordered_dict["strong_positive_topN_cosine_similarity"] = strong_positive_cosine_word_dict_list
-
-            # (3) moderate positive cosine
-            moderate_positive_cosine_word_dict_list = []
-            index = 0
-            for cosine_word_dict in p_cos_word_dict["moderate_positive_topN_cosine_similarity"]:
-                index += 1
-                ordered_dict = OrderedDict()
-                ordered_dict["index"] = index
-                ordered_dict["cosine_similarity"] = cosine_word_dict["cos_sim"]
-                ordered_dict["count"] = cosine_word_dict["word"]["count"]
-                ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
-                ordered_dict["word"] = cosine_word_dict["word"]["word"]
-                moderate_positive_cosine_word_dict_list.append(NoIndent(ordered_dict))
-
-            query_ordered_dict["moderate_positive_topN_cosine_similarity"] = moderate_positive_cosine_word_dict_list
-
-            # (4) extreme negative cosine
-            extreme_negative_cosine_word_dict_list = []
-            index = 0
-            for cosine_word_dict in n_cos_word_dict["extreme_negative_topN_cosine_similarity"]:
-                index += 1
-                ordered_dict = OrderedDict()
-                ordered_dict["index"] = index
-                ordered_dict["cosine_similarity"] = cosine_word_dict["cos_sim"]
-                ordered_dict["count"] = cosine_word_dict["word"]["count"]
-                ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
-                ordered_dict["word"] = cosine_word_dict["word"]["word"]
-                extreme_negative_cosine_word_dict_list.append(NoIndent(ordered_dict))
-
-            query_ordered_dict["extreme_negative_topN_cosine_similarity"] = extreme_negative_cosine_word_dict_list
-
-            # (5) strong negative cosine
-            strong_negative_cosine_word_dict_list = []
-            index = 0
-            for cosine_word_dict in n_cos_word_dict["strong_negative_topN_cosine_similarity"]:
-                index += 1
-                ordered_dict = OrderedDict()
-                ordered_dict["index"] = index
-                ordered_dict["cosine_similarity"] = cosine_word_dict["cos_sim"]
-                ordered_dict["count"] = cosine_word_dict["word"]["count"]
-                ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
-                ordered_dict["word"] = cosine_word_dict["word"]["word"]
-                strong_negative_cosine_word_dict_list.append(NoIndent(ordered_dict))
-
-            query_ordered_dict["strong_negative_topN_cosine_similarity"] = strong_negative_cosine_word_dict_list
-
-            # (6) moderate negative cosine
-            moderate_negative_cosine_word_dict_list = []
-            index = 0
-            for cosine_word_dict in n_cos_word_dict["moderate_negative_topN_cosine_similarity"]:
-                index += 1
-                ordered_dict = OrderedDict()
-                ordered_dict["index"] = index
-                ordered_dict["cosine_similarity"] = cosine_word_dict["cos_sim"]
-                ordered_dict["count"] = cosine_word_dict["word"]["count"]
-                ordered_dict["stemmed_word"] = cosine_word_dict["word"]["stemmed_word"]
-                ordered_dict["word"] = cosine_word_dict["word"]["word"]
-                moderate_negative_cosine_word_dict_list.append(NoIndent(ordered_dict))
-
-            query_ordered_dict["moderate_negative_topN_cosine_similarity"] = moderate_negative_cosine_word_dict_list
-
-            # append one query after another
-            query_ordered_dict_list.append(query_ordered_dict)
-
-        if self.verbose:
-            # Writing to data/distance/New_York_City_Threshold.json
-            print "Writing data to " + "\033[1m" + str(self.dst_distance) + self.filename + "-Threshold" + str(self.threshold) + ".json""\033[0m"
-
-        f = open(self.dst_distance + self.filename + "-Threshold" + str(self.threshold) + ".json", "w")
-        f.write(json.dumps(query_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
-
-        if self.verbose:
-            print "-"*80
-
-    def renderRanking(self):
-        """ save to data/ranking/ """
-
-        location_ordered_dict = OrderedDict()
-        location_ordered_dict['method'] = "CosineThreshold"
-        location_ordered_dict['threshold'] = self.threshold
-        location_ordered_dict['topN'] = self.topN
-
-        if self.verbose:
-            print "Ranking queries according to cosine score"
-        score_list = []
-        for p_cos_word_dict, n_cos_word_dict in zip(self.positive_cosine_topN, self.negative_cosine_topN):
-            if self.positive_minus_negative_flag:
-                score = p_cos_word_dict["cos_score"] - n_cos_word_dict["cos_score"]
-            else:
-                score = p_cos_word_dict["cos_score"]
-            score_list.append({"attraction_name": p_cos_word_dict["query"], "score": score})
-
-         # derive ranking_list from a the unsorted score_list
-        ranking_list = sorted(score_list, key=lambda k: k['score'], reverse = True)
-
-        ordered_dicts = []
-        ranking = 0
-        for rank_dict in ranking_list:
-            ranking += 1
-            ordered_dict = OrderedDict()
-            ordered_dict['attraction_name'] = rank_dict['attraction_name']
-            ordered_dict['computed_ranking'] = ranking
-            ordered_dict['cosineXnorm_frequency_score'] = rank_dict['cosineXnorm_frequency_score']
-            ordered_dict['max_score'] = rank_dict['max_score']
-            ordered_dict['avg_score'] = rank_dict['avg_score']
-            ordered_dict['sum_score'] = rank_dict['sum_score']
-            ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
-            ordered_dict['original_ranking'] = int(self.attractions2[rank_dict['attraction_name']])
-            ordered_dicts.append(ordered_dict)
-
-        location_ordered_dict['cosine_threshold_ranking'] = ordered_dicts
-
-        # Writing to data/ranking/New_York_City/New_York_City_Threshold0.25
-        if self.verbose:
-            print "Writing to " + "\033[1m" + str(self.dst_ranking) + self.filename + "-Threshold" + str(self.threshold) + ".json""\033[0m"
-        f = open(self.dst_ranking + self.filename + "-Threshold" + str(self.threshold) + ".json", "w")
-        f.write(json.dumps(location_ordered_dict, indent = 4, cls=NoIndentEncoder))
-
-    def renderPositiveDistance(self):
-        """ save to data/distance/ """
-
-        if self.verbose:
-            print "Putting Cosine word dicts in order"
-        query_ordered_dict_list = []
-
-        #sorted_positive_cosine_topN = sorted(self.positive_cosine_topN, key=lambda k: k['sum_cosineXfrequency_score'], reverse = True)
-        sorted_positive_cosine_topN = sorted(self.positive_cosine_topN, key=lambda k: k['top_all_sum_cosineXnorm_frequency_score'], reverse = True)
-        ranking = 0
-        length = len(sorted_positive_cosine_topN)
-        for ranking_dict in sorted_positive_cosine_topN:
-            ranking += 1
-            query_ordered_dict = OrderedDict()
-            query_ordered_dict['computed_ranking'] = ranking
-            query_ordered_dict['method'] = "CosineThreshold"
-            query_ordered_dict["query"] = ranking_dict["query"]
-            query_ordered_dict['location'] = self.locations[ranking_dict['query']]
-            query_ordered_dict['attraction_name'] = self.attraction_names[ranking_dict['query']]
-            query_ordered_dict['reranked_score'] = self.reranked_scores[ranking_dict['query']]
-            query_ordered_dict["cosine_threshold"] = self.threshold
-
-            # (1) positive cosine (from sentiment_statistics)
-            positive_cosine_word_dict_list = []
-            index = 0
-            for cosine_word_dict in ranking_dict["positive_topN_cosine_similarity"]:
-                index += 1
-                ordered_dict = OrderedDict()
-                ordered_dict["index"] = index
-                ordered_dict["cosine_similarity"] = cosine_word_dict["cos_sim"]
-                ordered_dict["locational_frequency"] = cosine_word_dict["locational_frequency"]
-                ordered_dict["norm_locational_frequency"] = cosine_word_dict["norm_locational_frequency"]
-                ordered_dict["stemmed_word"] = cosine_word_dict["stemmed_word"]
-                ordered_dict["word"] = cosine_word_dict["word"]
-                ordered_dict["total_frequency"] = cosine_word_dict["total_frequency"]
-                positive_cosine_word_dict_list.append(NoIndent(ordered_dict))
-
-            query_ordered_dict["positive_topN_cosine_similarity"] = positive_cosine_word_dict_list
-
-            # append one query after another
-            query_ordered_dict_list.append(query_ordered_dict)
-
-        if self.verbose:
-            # Writing to data/distance/New_York_City_Threshold.json
-            print "Writing data to " + "\033[1m" + str(self.dst_distance) + self.filename + "-Threshold" + str(self.threshold) + ".json""\033[0m"
-
-        f = open(self.dst_distance + self.filename + "-Threshold" + str(self.threshold) + ".json", "w")
-        f.write(json.dumps(query_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
-
-        if self.verbose:
-            print "-"*80
-
-    def renderPositiveRanking(self):
-        """ save to data/ranking/ """
-
-        location_ordered_dict = OrderedDict()
-        location_ordered_dict['method'] = "CosineThreshold"
-        location_ordered_dict['threshold'] = self.threshold
-
-        if self.verbose:
-            print "Ranking queries according to cosine score"
-        ranking_dict_list = []
-        for ranking_dict in self.positive_cosine_topN:
-
-            ranking_dict_list.append({
-                "attraction_name": ranking_dict["query"],
-                #  "sum_z_score_top3": ranking_dict["sum_z_score_top3"],
-                #  "sum_z_score_top5": ranking_dict["sum_z_score_top5"],
-                #  "sum_z_score_top20": ranking_dict["sum_z_score_top20"],
-                #  "sum_z_score_top50": ranking_dict["sum_z_score_top50"],
-                #  "sum_z_score_top100": ranking_dict["sum_z_score_top100"],
-                #  "sum_z_score_top_all": ranking_dict["sum_z_score_top_all"],
-                #  "sum_cosineXfrequency_score": ranking_dict["sum_cosineXfrequency_score"],
-                "top3_sum_cosineXnorm_frequency_score": ranking_dict["top3_sum_cosineXnorm_frequency_score"],
-                "top5_sum_cosineXnorm_frequency_score": ranking_dict["top5_sum_cosineXnorm_frequency_score"],
-                "top20_sum_cosineXnorm_frequency_score": ranking_dict["top20_sum_cosineXnorm_frequency_score"],
-                "top50_sum_cosineXnorm_frequency_score": ranking_dict["top50_sum_cosineXnorm_frequency_score"],
-                "top100_sum_cosineXnorm_frequency_score": ranking_dict["top100_sum_cosineXnorm_frequency_score"],
-                "top_all_sum_cosineXnorm_frequency_score": ranking_dict["top_all_sum_cosineXnorm_frequency_score"],
-
-                "top3_sum_z_scoreXnorm_frequency_score": ranking_dict["top3_sum_z_scoreXnorm_frequency_score"],
-                "top5_sum_z_scoreXnorm_frequency_score": ranking_dict["top5_sum_z_scoreXnorm_frequency_score"],
-                "top20_sum_z_scoreXnorm_frequency_score": ranking_dict["top20_sum_z_scoreXnorm_frequency_score"],
-                "top50_sum_z_scoreXnorm_frequency_score": ranking_dict["top50_sum_z_scoreXnorm_frequency_score"],
-                "top100_sum_z_scoreXnorm_frequency_score": ranking_dict["top100_sum_z_scoreXnorm_frequency_score"],
-                "top_all_sum_z_scoreXnorm_frequency_score": ranking_dict["top_all_sum_z_scoreXnorm_frequency_score"],
-                #  "sum_cosine_score": ranking_dict["sum_cosine_score"],
-
-                "top3_avg_cosine_score": ranking_dict["top3_avg_cosine_score"],
-                "top5_avg_cosine_score": ranking_dict["top5_avg_cosine_score"],
-                "top20_avg_cosine_score": ranking_dict["top20_avg_cosine_score"],
-                "top50_avg_cosine_score": ranking_dict["top50_avg_cosine_score"],
-                "top100_avg_cosine_score": ranking_dict["top100_avg_cosine_score"],
-                "top_all_avg_cosine_score": ranking_dict["top_all_avg_cosine_score"]
-                #"avg_cosine_score": ranking_dict["avg_cosine_score"]
-                })
-
-        # (1) Sort by top3_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top3_avg_cosine_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top3_avg_cosine_score_ranking"] = rank
-        # (2) Sort by top5_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top5_avg_cosine_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top5_avg_cosine_score_ranking"] = rank
-        # (3) Sort by top20_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top20_avg_cosine_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top20_avg_cosine_score_ranking"] = rank
-        # (4) Sort by top50_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top50_avg_cosine_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top50_avg_cosine_score_ranking"] = rank
-        # (5) Sort by top100_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top100_avg_cosine_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top100_avg_cosine_score_ranking"] = rank
-        # (6) Sort by top_all_avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top_all_avg_cosine_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top_all_avg_cosine_score_ranking"] = rank
-
-        #  # () By sort by sum_z_score_top3 # derive sorted_ranking_list from a the unsorted ranking_list
-        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top3'], reverse = True)
-        #  rank = 0
-        #  for rank_dict in ranking_dict_list:
-        #      rank += 1
-        #      rank_dict["sum_z_score_top3_ranking"] = rank
-        #  # () By sort by sum_z_score_top5 # derive sorted_ranking_list from a the unsorted ranking_list
-        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top5'], reverse = True)
-        #  rank = 0
-        #  for rank_dict in ranking_dict_list:
-        #      rank += 1
-        #      rank_dict["sum_z_score_top5_ranking"] = rank
-        #  # () By sort by sum_z_score_top20 # derive sorted_ranking_list from a the unsorted ranking_list
-        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top20'], reverse = True)
-        #  rank = 0
-        #  for rank_dict in ranking_dict_list:
-        #      rank += 1
-        #      rank_dict["sum_z_score_top20_ranking"] = rank
-        #  # () By sort by sum_z_score_top50 # derive sorted_ranking_list from a the unsorted ranking_list
-        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top50'], reverse = True)
-        #  rank = 0
-        #  for rank_dict in ranking_dict_list:
-        #      rank += 1
-        #      rank_dict["sum_z_score_top50_ranking"] = rank
-        #  # () By sort by sum_z_score_top100 # derive sorted_ranking_list from a the unsorted ranking_list
-        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top100'], reverse = True)
-        #  rank = 0
-        #  for rank_dict in ranking_dict_list:
-        #      rank += 1
-        #      rank_dict["sum_z_score_top100_ranking"] = rank
-        #  # () By sort by sum_z_score_top_all # derive sorted_ranking_list from a the unsorted ranking_list
-        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_z_score_top_all'], reverse = True)
-        #  rank = 0
-        #  for rank_dict in ranking_dict_list:
-        #      rank += 1
-        #      rank_dict["sum_z_score_top_all_ranking"] = rank
-        #
-        #  # (1) By sort by sum_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_cosine_score'], reverse = True)
-        #  rank = 0
-        #  for rank_dict in ranking_dict_list:
-        #      rank += 1
-        #      rank_dict["sum_cosine_score_ranking"] = rank
-        #  # (2) By sort by max_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['max_cosine_score'], reverse = True)
-        #  rank = 0
-        #  for rank_dict in ranking_dict_list:
-        #      rank += 1
-        #      rank_dict["max_cosine_score_ranking"] = rank
-        #  # (3) By sort by avg_cosine_score # derive sorted_ranking_list from a the unsorted ranking_list
-        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['avg_cosine_score'], reverse = True)
-        #  rank = 0
-        #  for rank_dict in ranking_dict_list:
-        #      rank += 1
-        #      rank_dict["avg_cosine_score_ranking"] = rank
-        # (4) By sort by sum_cosineXfrequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        #  ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['sum_cosineXfrequency_score'], reverse = True)
-        #  rank = 0
-        #  for rank_dict in ranking_dict_list:
-        #      rank += 1
-        #      rank_dict["sum_cosineXfrequency_score_ranking"] = rank
-        # (5) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-
-        # (1) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top3_sum_cosineXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top3_sum_cosineXnorm_frequency_score_ranking"] = rank
-        # (2) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top5_sum_cosineXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top5_sum_cosineXnorm_frequency_score_ranking"] = rank
-        # (3) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top20_sum_cosineXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top20_sum_cosineXnorm_frequency_score_ranking"] = rank
-        # (4) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top50_sum_cosineXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top50_sum_cosineXnorm_frequency_score_ranking"] = rank
-        # (5) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top100_sum_cosineXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top100_sum_cosineXnorm_frequency_score_ranking"] = rank
-        # (6) By sort by sum_cosineXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top_all_sum_cosineXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top_all_sum_cosineXnorm_frequency_score_ranking"] = rank
-
-        # (1) By sort by top3_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top3_sum_z_scoreXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top3_sum_z_scoreXnorm_frequency_score_ranking"] = rank
-        # (2) By sort by top5_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top5_sum_z_scoreXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top5_sum_z_scoreXnorm_frequency_score_ranking"] = rank
-        # (3) By sort by top20_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top20_sum_z_scoreXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top20_sum_z_scoreXnorm_frequency_score_ranking"] = rank
-        # (4) By sort by top50_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top50_sum_z_scoreXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top50_sum_z_scoreXnorm_frequency_score_ranking"] = rank
-        # (5) By sort by top100_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top100_sum_z_scoreXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top100_sum_z_scoreXnorm_frequency_score_ranking"] = rank
-        # (6) By sort by top_all_sum_z_scoreXnorm_frequency_score # derive sorted_ranking_list from a the unsorted ranking_list
-        ranking_dict_list = sorted(ranking_dict_list, key=lambda k: k['top_all_sum_z_scoreXnorm_frequency_score'], reverse = True)
-        rank = 0
-        for rank_dict in ranking_dict_list:
-            rank += 1
-            rank_dict["top_all_sum_z_scoreXnorm_frequency_score_ranking"] = rank
-
-        ordered_dicts = []
-        for rank_dict in ranking_dict_list:
-            ordered_dict = OrderedDict()
-            ordered_dict['attraction_name'] = rank_dict['attraction_name']
-            ordered_dict['reranked_ranking'] = self.attractions[rank_dict['attraction_name']]
-            ordered_dict['original_ranking'] = int(self.attractions2[rank_dict['attraction_name']])
-            #  ordered_dict['sum_z_score_top5'] = rank_dict['sum_z_score_top5']
-            #  ordered_dict['sum_z_score_top5_ranking'] = rank_dict["sum_z_score_top5_ranking"]
-            #  ordered_dict['sum_z_score_top50'] = rank_dict['sum_z_score_top50']
-            #  ordered_dict['sum_z_score_top50_ranking'] = rank_dict["sum_z_score_top50_ranking"]
-            #  ordered_dict['sum_z_score_top100'] = rank_dict['sum_z_score_top100']
-            #  ordered_dict['sum_z_score_top100_ranking'] = rank_dict["sum_z_score_top100_ranking"]
-            #  ordered_dict['sum_cosineXfrequency_score_ranking'] = rank_dict["sum_cosineXfrequency_score_ranking"]
-            #  ordered_dict['sum_cosineXfrequency_score'] = rank_dict['sum_cosineXfrequency_score']
-            ordered_dict['top3_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top3_sum_cosineXnorm_frequency_score_ranking"]
-            ordered_dict['top3_sum_cosineXnorm_frequency_score'] = rank_dict['top3_sum_cosineXnorm_frequency_score']
-            ordered_dict['top5_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top5_sum_cosineXnorm_frequency_score_ranking"]
-            ordered_dict['top5_sum_cosineXnorm_frequency_score'] = rank_dict['top5_sum_cosineXnorm_frequency_score']
-            ordered_dict['top20_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top20_sum_cosineXnorm_frequency_score_ranking"]
-            ordered_dict['top20_sum_cosineXnorm_frequency_score'] = rank_dict['top20_sum_cosineXnorm_frequency_score']
-            ordered_dict['top50_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top50_sum_cosineXnorm_frequency_score_ranking"]
-            ordered_dict['top50_sum_cosineXnorm_frequency_score'] = rank_dict['top50_sum_cosineXnorm_frequency_score']
-            ordered_dict['top100_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top100_sum_cosineXnorm_frequency_score_ranking"]
-            ordered_dict['top100_sum_cosineXnorm_frequency_score'] = rank_dict['top100_sum_cosineXnorm_frequency_score']
-            ordered_dict['top_all_sum_cosineXnorm_frequency_score_ranking'] = rank_dict["top_all_sum_cosineXnorm_frequency_score_ranking"]
-            ordered_dict['top_all_sum_cosineXnorm_frequency_score'] = rank_dict['top_all_sum_cosineXnorm_frequency_score']
-
-            ordered_dict['top3_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top3_sum_z_scoreXnorm_frequency_score_ranking"]
-            ordered_dict['top3_sum_z_scoreXnorm_frequency_score'] = rank_dict['top3_sum_z_scoreXnorm_frequency_score']
-            ordered_dict['top5_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top5_sum_z_scoreXnorm_frequency_score_ranking"]
-            ordered_dict['top5_sum_z_scoreXnorm_frequency_score'] = rank_dict['top5_sum_z_scoreXnorm_frequency_score']
-            ordered_dict['top20_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top20_sum_z_scoreXnorm_frequency_score_ranking"]
-            ordered_dict['top20_sum_z_scoreXnorm_frequency_score'] = rank_dict['top20_sum_z_scoreXnorm_frequency_score']
-            ordered_dict['top50_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top50_sum_z_scoreXnorm_frequency_score_ranking"]
-            ordered_dict['top50_sum_z_scoreXnorm_frequency_score'] = rank_dict['top50_sum_z_scoreXnorm_frequency_score']
-            ordered_dict['top100_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top100_sum_z_scoreXnorm_frequency_score_ranking"]
-            ordered_dict['top100_sum_z_scoreXnorm_frequency_score'] = rank_dict['top100_sum_z_scoreXnorm_frequency_score']
-            ordered_dict['top_all_sum_z_scoreXnorm_frequency_score_ranking'] = rank_dict["top_all_sum_z_scoreXnorm_frequency_score_ranking"]
-            ordered_dict['top_all_sum_z_scoreXnorm_frequency_score'] = rank_dict['top_all_sum_z_scoreXnorm_frequency_score']
-
-            #  ordered_dict['sum_cosine_score_ranking'] = rank_dict["sum_cosine_score_ranking"]
-            #  ordered_dict['sum_cosine_score'] = rank_dict['sum_cosine_score']
-            ordered_dict['top3_avg_cosine_score_ranking'] = rank_dict["top3_avg_cosine_score_ranking"]
-            ordered_dict['top3_avg_cosine_score'] = rank_dict['top3_avg_cosine_score']
-            ordered_dict['top5_avg_cosine_score_ranking'] = rank_dict["top5_avg_cosine_score_ranking"]
-            ordered_dict['top5_avg_cosine_score'] = rank_dict['top5_avg_cosine_score']
-            ordered_dict['top20_avg_cosine_score_ranking'] = rank_dict["top20_avg_cosine_score_ranking"]
-            ordered_dict['top20_avg_cosine_score'] = rank_dict['top20_avg_cosine_score']
-            ordered_dict['top50_avg_cosine_score_ranking'] = rank_dict["top50_avg_cosine_score_ranking"]
-            ordered_dict['top50_avg_cosine_score'] = rank_dict['top50_avg_cosine_score']
-            ordered_dict['top100_avg_cosine_score_ranking'] = rank_dict["top100_avg_cosine_score_ranking"]
-            ordered_dict['top100_avg_cosine_score'] = rank_dict['top100_avg_cosine_score']
-            ordered_dict['top_all_avg_cosine_score_ranking'] = rank_dict["top_all_avg_cosine_score_ranking"]
-            ordered_dict['top_all_avg_cosine_score'] = rank_dict['top_all_avg_cosine_score']
-            #  ordered_dict['avg_cosine_score_ranking'] = rank_dict["avg_cosine_score_ranking"]
-            #  ordered_dict['avg_cosine_score'] = rank_dict['avg_cosine_score']
-            #print ordered_dict
-            ordered_dicts.append(ordered_dict)
-
-
-        location_ordered_dict['CosineThreshold_Ranking'] = ordered_dicts
-
-        # Writing to data/ranking/New_York_City/New_York_City_Threshold0.25
-        if self.verbose:
-            print "Writing to " + "\033[1m" + str(self.dst_ranking) + self.filename + "-Threshold" + str(self.threshold) + ".json""\033[0m"
-        f = open(self.dst_ranking + self.filename + "-Threshold" + str(self.threshold) + ".json", "w")
-        f.write(json.dumps(location_ordered_dict, indent = 4, cls=NoIndentEncoder))
-
-
     def run(self):
         """ run the entire program """
-        self.get_source()
-        #self.get_enhanced_lexicon()
-        self.get_lexicon()
-        self.queries = self.get_attractions().keys()
         self.create_dirs()
+        line_unique_words, line_embeddings = self.get_line_source()
+        word2vec_unique_words, word2vec_embeddings = self.get_word2vec_source()
 
-        #self.get_cosine_topN()
-        self.get_positive_cosine_topN()
-        #self.renderDistance()
-        self.renderPositiveDistance()
-        #self.renderRanking()
-        self.renderPositiveRanking()
+        self.get_entities()
+        self.queries = self.entity_name_dict.keys()
+
+        # (1) opinion
+        opinion_sentiment_words, opinion_sentiment_embeddings = self.get_opinion_sentiment(line_unique_words, line_embeddings)
+        # line x opinion
+        entities = self.get_topN_sentiment_words("opinion", line_unique_words, line_embeddings, opinion_sentiment_words, opinion_sentiment_embeddings)
+        self.renderDistance(entities, "line", "opinion")
+        self.renderRanking(entities, "line", "opinion")
+        # word2vec x opinion
+        entities = self.get_topN_sentiment_words("opinion", word2vec_unique_words, word2vec_embeddings, opinion_sentiment_words, opinion_sentiment_embeddings)
+        self.renderDistance(entities, "word2vec", "opinion")
+        self.renderRanking(entities, "word2vec", "opinion")
+
+        # (2) 5_star
+        star5_sentiment_words, star5_sentiment_embeddings = self.get_star_sentiment(self.src_5star, line_unique_words, line_embeddings)
+        # line x 5_star
+        entities = self.get_topN_sentiment_words("star", line_unique_words, line_embeddings, star5_sentiment_words, star5_sentiment_embeddings)
+        self.renderDistance(entities, "line", "star5")
+        self.renderRanking(entities, "line", "star5")
+        # word2vec x 5_star
+        entities = self.get_topN_sentiment_words("star", word2vec_unique_words, word2vec_embeddings, star5_sentiment_words, star5_sentiment_embeddings)
+        self.renderDistance(entities, "word2vec", "star5")
+        self.renderRanking(entities, "word2vec", "star5")
+
+        # (3) 4_star
+        star4_sentiment_words, star4_sentiment_embeddings = self.get_star_sentiment(self.src_4star, line_unique_words, line_embeddings)
+        # line x 4_star
+        entities = self.get_topN_sentiment_words("star", line_unique_words, line_embeddings, star4_sentiment_words, star4_sentiment_embeddings)
+        self.renderDistance(entities, "line", "star4")
+        self.renderRanking(entities, "line", "star4")
+        # word2vec x 4_star
+        entities = self.get_topN_sentiment_words("star", word2vec_unique_words, word2vec_embeddings, star4_sentiment_words, star4_sentiment_embeddings)
+        self.renderDistance(entities, "word2vec", "star4")
+        self.renderRanking(entities, "word2vec", "star4")
+
+        # (4) 3_star
+        star3_sentiment_words, star3_sentiment_embeddings = self.get_star_sentiment(self.src_3star, line_unique_words, line_embeddings)
+        # line x 3_star
+        entities = self.get_topN_sentiment_words("star", line_unique_words, line_embeddings, star3_sentiment_words, star3_sentiment_embeddings)
+        self.renderDistance(entities, "line", "star3")
+        self.renderRanking(entities, "line", "star3")
+        # word2vec x 3_star
+        entities = self.get_topN_sentiment_words("star", word2vec_unique_words, word2vec_embeddings, star3_sentiment_words, star3_sentiment_embeddings)
+        self.renderDistance(entities, "word2vec", "star3")
+        self.renderRanking(entities, "word2vec", "star3")
+
+        # (5) 2_star
+        star2_sentiment_words, star2_sentiment_embeddings = self.get_star_sentiment(self.src_2star, line_unique_words, line_embeddings)
+        # line x 2_star
+        entities = self.get_topN_sentiment_words("star", line_unique_words, line_embeddings, star2_sentiment_words, star2_sentiment_embeddings)
+        self.renderDistance(entities, "line", "star2")
+        self.renderRanking(entities, "line", "star2")
+        # word2vec x 2_star
+        entities = self.get_topN_sentiment_words("star", word2vec_unique_words, word2vec_embeddings, star2_sentiment_words, star2_sentiment_embeddings)
+        self.renderDistance(entities, "word2vec", "star2")
+        self.renderRanking(entities, "word2vec", "star2")
+
+        # (1) 1_star
+        star1_sentiment_words, star1_sentiment_embeddings = self.get_star_sentiment(self.src_1star, line_unique_words, line_embeddings)
+        # line x 1_star
+        entities = self.get_topN_sentiment_words("star", line_unique_words, line_embeddings, star1_sentiment_words, star1_sentiment_embeddings)
+        self.renderDistance(entities, "line", "star1")
+        self.renderRanking(entities, "line", "star1")
+        # word2vec x 1_star
+        entities = self.get_topN_sentiment_words("star", word2vec_unique_words, word2vec_embeddings, star1_sentiment_words, star1_sentiment_embeddings)
+        self.renderDistance(entities, "word2vec", "star1")
+        self.renderRanking(entities, "word2vec", "star1")
 
 class NoIndent(object):
     def __init__(self, value):
