@@ -22,7 +22,7 @@ class Methodology:
 
         self.threshold = 0
         #self.threshold = float(argv2)
-        self.src_opinion = "data/lexicon/processed_opinion_positive_lexicon.json"
+        self.src_opinion = "data/lexicon/processed_opinion_positive.json"
         self.src_1star = "data/lexicon/1_star.json"
         self.src_2star = "data/lexicon/2_star.json"
         self.src_3star = "data/lexicon/3_star.json"
