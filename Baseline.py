@@ -10,14 +10,15 @@ class Baseline:
     def __init__(self):
         self.src_vectors200 = sys.argv[1]
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src_vectors200).group(1)
-        self.src_cooccur = "data/line/cooccur/" + self.filename + ".txt"
+        self.src_cooccur = "data/glove/cooccur/" + self.filename + ".txt"
         self.src_frontend = "data/frontend_reviews/" + self.filename + "/"
-        self.src_lexicon = "data/lexicon/sentiment_statistics.json"
+        self.src_opinion_lexicon = "data/lexicon/processed_opinion_positive_lexicon.json"
+        self.src_pos_tagged_lexicon = "data/lexicon/processed_pos_tagged_lexicon.json"
         self.dst = "data/ranking/" + self.filename + "/"
 
         self.unique_words = {}
-        self.sentiment_words = []
-        self.attractions = []
+        self.opinion_sentiment_words, pos_tagged_sentiment_words = [], []
+        self.entities = []
         self.cooccur_matrix = np.zeros(shape=(1,1))
         self.baseline1, self.baseline2, self.baseline3 = [], [], []
 
@@ -61,10 +62,10 @@ class Baseline:
             sys.stdout.flush()
         print ""
 
-    def get_attractions(self):
-        """ get attraction_names and total_review_mentioned_count """
+    def get_entities(self):
+        """ extract (1) entity_name (2) entity_mentioned_count (3) reranked_ranking (4) original_ranking """
 
-        print "Loading attraction_names from: " + self.src_frontend
+        print "Loading entity_names from: " + self.src_frontend
         for dirpath, dir_list, file_list in os.walk(self.src_frontend):
             print "Walking into directory: " + str(dirpath)
 
@@ -83,109 +84,178 @@ class Baseline:
                         file_cnt += 1
                         print "Merging " + str(dirpath) + str(f)
                         with open(dirpath + f) as file:
-                            attraction = json.load(file)
-                            # attraction_al => attraction append location E.g. Happy-Temple_Bangkok
-                            attraction_name = attraction["attraction_name"].lower() + "_" + attraction["location"].lower()
-                            attraction_mentioned_count = attraction["total_attraction_name_mentioned_count"]
-                            #  original_ranking = int(attraction["original_ranking"])
-                            reranked_ranking = int(attraction["reranked_ranking"])
-                            original_ranking = int(attraction["original_ranking"])
-                            self.attractions.append({
-                                "attraction_name": attraction_name, "attraction_mentioned_count": attraction_mentioned_count,
+                            entity = json.load(file)
+                            # entity_al => entity append location E.g. Happy-Temple_Bangkok
+                            entity_name = entity["entity_name"].lower() + "_" + entity["location"].lower()
+                            entity_mentioned_count = entity["total_entity_count"]
+                            #  original_ranking = int(entity["original_ranking"])
+                            reranked_ranking = int(entity["reranked_ranking"])
+                            original_ranking = int(entity["original_ranking"])
+                            self.entities.append({
+                                "entity_name": entity_name, "entity_mentioned_count": entity_mentioned_count,
                                 "reranked_ranking": reranked_ranking, "original_ranking": original_ranking})
             else:
                 print "No file is found"
                 print "-"*80
 
         print "-"*80
-        #print self.attractions
-        return self.attractions
 
-    def get_sentiment_words(self):
+    def get_opinion_lexicon(self):
         """ get all sentiment_words for baseline2 """
 
-        with open(self.src_lexicon) as f:
-            lexicon = json.load(f)
+        with open(self.src_opinion_lexicon) as f:
+            opinion_lexicon = json.load(f)
+        self.opinion_sentiment_words = opinion_lexicon
 
-        self.sentiment_words = lexicon["positive_statistics"]
+    def get_pos_tagged_lexicon(self):
+        """ get all sentiment_words for baseline3 """
+
+        with open(self.src_pos_tagged_lexicon) as f:
+            pos_tagged_lexicon = json.load(f)
+        self.pos_tagged_sentiment_words = pos_tagged_lexicon
 
     def get_baseline1(self):
-        """ baseline1 ranks the attractions by the frequency of total_attraction_name_mentioned_count """
+        """ baseline1 ranks the entities by the frequency of entity_mentioned_count """
 
-        print "Rendering Baseline1 ..."
-        self.attractions = sorted(self.attractions, key=lambda k: k['attraction_mentioned_count'], reverse = True)
+        print "Processing Baseline1 ..."
+        self.entities = sorted(self.entities, key=lambda k: k['entity_mentioned_count'], reverse = True)
+
         ranking_by_mentioned_count = 0
-        for attraction_dict in self.attractions:
+        for entity_dict in self.entities:
             ranking_by_mentioned_count += 1
-            attraction_dict.update({"ranking_by_mentioned_count": ranking_by_mentioned_count})
-
-        #pprint.pprint(self.attractions)
+            entity_dict.update({"ranking_by_mentioned_count": ranking_by_mentioned_count})
 
     def get_baseline2(self):
-        """ baseline2 ranks the attractions by the sum of attraction_cooccur_sentiment_words """
+        """ baseline2 ranks the entities by the sum of entity_cooccur_opinion_sentiment_words """
 
-        print "Rendering Baseline2 ..."
+        print "Processing Baseline2 ..."
         sentiment_indices = []
-        for sentiment_dict in self.sentiment_words:
+        for sentiment_dict in self.opinion_sentiment_words:
             try:
                 sentiment_indices.append(self.unique_words[sentiment_dict["stemmed_word"]])
             except:
                 pass
 
-        for attraction_dict in self.attractions:
+        for entity_dict in self.entities:
             try:
-                # look for the index of attraction_al in unique_words
-                attraction_index = self.unique_words[attraction_dict["attraction_name"]]
+                # look for the index of entity_al in unique_words
+                entity_index = self.unique_words[entity_dict["entity_name"]]
                 cooccur_sum = 0
 
                 for sentiment_index in sentiment_indices:
-                    cooccur_sum += self.cooccur_matrix[attraction_index][sentiment_index]
+                    cooccur_sum += self.cooccur_matrix[entity_index][sentiment_index]
 
-                attraction_dict.update({"cooccur_sum":cooccur_sum})
+                entity_dict.update({"opinion_cooccur_sum": cooccur_sum})
             except:
-                attraction_dict.update({"cooccur_sum":0})
+                entity_dict.update({"opinion_cooccur_sum": 0})
 
-        self.attractions = sorted(self.attractions, key=lambda k: k['cooccur_sum'], reverse = True)
+        self.entities = sorted(self.entities, key=lambda k: k['opinion_cooccur_sum'], reverse = True)
         rank = 0
-        for attraction_dict in self.attractions:
+        for entity_dict in self.entities:
             rank += 1
-            attraction_dict.update({"ranking_by_cooccur_sum": rank})
+            entity_dict.update({"ranking_by_opinion_cooccur_sum": rank})
 
-        #pprint.pprint(self.attractions)
+        #pprint.pprint(self.entities)
 
     def get_baseline3(self):
-        """ baseline3 ranks the attractions by the cosine_similarity between attraction_cooccur_matrix_row and sentiment_words_cooccur_matrix_row """
+        """ baseline3 ranks the entities by the sum of entity_cooccur_pos_tagged_sentiment_words """
 
-        print "Rendering Baseline3 ..."
+        print "Processing Baseline3 ..."
+        sentiment_indices = []
+        for sentiment_dict in self.pos_tagged_sentiment_words:
+            try:
+                sentiment_indices.append(self.unique_words[sentiment_dict["stemmed_word"]])
+            except:
+                pass
+
+        for entity_dict in self.entities:
+            try:
+                # look for the index of entity_al in unique_words
+                entity_index = self.unique_words[entity_dict["entity_name"]]
+                cooccur_sum = 0
+
+                for sentiment_index in sentiment_indices:
+                    cooccur_sum += self.cooccur_matrix[entity_index][sentiment_index]
+
+                entity_dict.update({"pos_tagged_cooccur_sum": cooccur_sum})
+            except:
+                entity_dict.update({"pos_tagged_cooccur_sum": 0})
+
+        self.entities = sorted(self.entities, key=lambda k: k['pos_tagged_cooccur_sum'], reverse = True)
+        rank = 0
+        for entity_dict in self.entities:
+            rank += 1
+            entity_dict.update({"ranking_by_pos_tagged_cooccur_sum": rank})
+
+        #pprint.pprint(self.entities)
+
+    def get_baseline4(self):
+        """ baseline4 ranks the entities by the cosine_similarity between entity_cooccur_matrix_row and opinion_sentiment_words_cooccur_matrix_row """
+
+        print "Processing Baseline4 ..."
         sentiment_matrix_rows = []
-        for sentiment_dict in self.sentiment_words:
+        for sentiment_dict in self.opinion_sentiment_words:
             try:
                 sentiment_index = self.unique_words[sentiment_dict["stemmed_word"]]
                 sentiment_matrix_rows.append(self.cooccur_matrix[sentiment_index])
             except:
                 pass
 
-        for attraction_dict in self.attractions:
+        for entity_dict in self.entities:
             try:
-                # look for the index of attraction_al in unique_words
-                attraction_index = self.unique_words[attraction_dict["attraction_name"]]
-                attraction_matrix_row = self.cooccur_matrix[attraction_index]
+                # look for the index of entity_al in unique_words
+                entity_index = self.unique_words[entity_dict["entity_name"]]
+                entity_matrix_row = self.cooccur_matrix[entity_index]
                 cosine_sum = 0
                 for sentiment_matrix_row in sentiment_matrix_rows:
-                    cosine_sum += 1-spatial.distance.cosine(attraction_matrix_row, sentiment_matrix_row)
+                    cosine_sum += 1-spatial.distance.cosine(entity_matrix_row, sentiment_matrix_row)
 
-                attraction_dict.update({"cosine_sum":cosine_sum})
+                entity_dict.update({"opinion_cosine_sum":cosine_sum})
             except:
-                attraction_dict.update({"cosine_sum":0})
+                entity_dict.update({"opinion_cosine_sum":0})
 
 
-        self.attractions = sorted(self.attractions, key=lambda k: k['cosine_sum'], reverse = True)
+        self.entities = sorted(self.entities, key=lambda k: k['opinion_cosine_sum'], reverse = True)
         rank = 0
-        for attraction_dict in self.attractions:
+        for entity_dict in self.entities:
             rank += 1
-            attraction_dict.update({"ranking_by_cosine_sum": rank})
+            entity_dict.update({"ranking_by_opinion_cosine_sum": rank})
 
-        #pprint.pprint(self.attractions)
+        #pprint.pprint(self.entities)
+
+    def get_baseline5(self):
+        """ baseline5 ranks the entities by the cosine_similarity between entity_cooccur_matrix_row and pos_tagged_sentiment_words_cooccur_matrix_row """
+
+        print "Processing Baseline5 ..."
+        sentiment_matrix_rows = []
+        for sentiment_dict in self.pos_tagged_sentiment_words:
+            try:
+                sentiment_index = self.unique_words[sentiment_dict["stemmed_word"]]
+                sentiment_matrix_rows.append(self.cooccur_matrix[sentiment_index])
+            except:
+                pass
+
+        for entity_dict in self.entities:
+            try:
+                # look for the index of entity_al in unique_words
+                entity_index = self.unique_words[entity_dict["entity_name"]]
+                entity_matrix_row = self.cooccur_matrix[entity_index]
+                cosine_sum = 0
+                for sentiment_matrix_row in sentiment_matrix_rows:
+                    cosine_sum += 1-spatial.distance.cosine(entity_matrix_row, sentiment_matrix_row)
+
+                entity_dict.update({"pos_tagged_cosine_sum":cosine_sum})
+            except:
+                entity_dict.update({"pos_tagged_cosine_sum":0})
+
+
+        self.entities = sorted(self.entities, key=lambda k: k['pos_tagged_cosine_sum'], reverse = True)
+        rank = 0
+        for entity_dict in self.entities:
+            rank += 1
+            entity_dict.update({"ranking_by_pos_tagged_cosine_sum": rank})
+
+        #pprint.pprint(self.entities)
 
     def create_dirs(self):
         """ create the directory if not exist"""
@@ -200,43 +270,51 @@ class Baseline:
 
         self.get_unique_words()
         self.get_cooccurrence_matrix()
-        self.get_attractions()
-        self.get_sentiment_words()
+        self.get_entities()
+        self.get_opinion_lexicon()
+        self.get_pos_tagged_lexicon()
         self.get_baseline1()
         self.get_baseline2()
-        # self.get_baseline3()
+        self.get_baseline3()
+        #  self.get_baseline4()
+        #  self.get_baseline5()
         self.create_dirs()
 
-        # reorder self.attractions by original_ranking
-        # reorder self.attractions by reranked_ranking
-        #self.attractions = sorted(self.attractions, key=lambda k: k['original_ranking'])
-        self.attractions = sorted(self.attractions, key=lambda k: k['reranked_ranking'])
+        # reorder self.entities by original_ranking
+        # self.entities = sorted(self.entities, key=lambda k: k['original_ranking'])
+        # reorder self.entities by reranked_ranking
+        self.entities = sorted(self.entities, key=lambda k: k['reranked_ranking'])
 
         baseline_ordered_dict = OrderedDict()
         baseline_ordered_dict["method"] = "Baseline"
+        baseline_ordered_dict["location"] = self.filename
 
-        ordered_attractions = []
-        for attraction_dict in self.attractions:
+        ordered_entities = []
+        for entity_dict in self.entities:
             ordered_dict = OrderedDict()
-            ordered_dict['attraction_name'] = attraction_dict['attraction_name']
-            ordered_dict['reranked_ranking'] = attraction_dict['reranked_ranking']
-            ordered_dict['original_ranking'] = attraction_dict['original_ranking']
-            ordered_dict['attraction_mentioned_count'] = attraction_dict['attraction_mentioned_count']
-            ordered_dict['ranking_by_mentioned_count'] = attraction_dict['ranking_by_mentioned_count']
-            ordered_dict['cooccur_sum'] = attraction_dict['cooccur_sum']
-            ordered_dict['ranking_by_cooccur_sum'] = attraction_dict['ranking_by_cooccur_sum']
-            #  ordered_dict['cosine_sum'] = attraction_dict['cosine_sum']
-            #  ordered_dict['ranking_by_cosine_sum'] = attraction_dict['ranking_by_cosine_sum']
-            ordered_attractions.append(ordered_dict)
+            ordered_dict['entity_name'] = entity_dict['entity_name']
+            ordered_dict['reranked_ranking'] = entity_dict['reranked_ranking']
+            ordered_dict['original_ranking'] = entity_dict['original_ranking']
+            # (1)
+            ordered_dict['entity_mentioned_count'] = entity_dict['entity_mentioned_count']
+            ordered_dict['ranking_by_mentioned_count'] = entity_dict['ranking_by_mentioned_count']
+            # (2)
+            ordered_dict['opinion_cooccur_sum'] = entity_dict['opinion_cooccur_sum']
+            ordered_dict['ranking_by_opinion_cooccur_sum'] = entity_dict['ranking_by_opinion_cooccur_sum']
+            # (3)
+            ordered_dict['pos_tagged_cooccur_sum'] = entity_dict['pos_tagged_cooccur_sum']
+            ordered_dict['ranking_by_pos_tagged_cooccur_sum'] = entity_dict['ranking_by_pos_tagged_cooccur_sum']
 
-        baseline_ordered_dict["Baseline_Ranking"] = ordered_attractions
+            ordered_entities.append(ordered_dict)
+
+        baseline_ordered_dict["Baseline_Ranking"] = ordered_entities
 
         # Writing to data/ranking/Amsterdam_baseline
-        print "Writing to " + "\033[1m" + str(self.dst) + self.filename + "_Baseline.json" + "\033[0m"
-        f = open(self.dst + self.filename + "_Baseline.json", "w")
+        #print "Writing to " + "\033[1m" + str(self.dst) + self.filename + "_Baseline.json" + "\033[0m"
+        print "Writing to " + "\033[1m" + str(self.dst) + "baseline.json" + "\033[0m"
+        f = open(self.dst + "baseline.json", "w")
         f.write(json.dumps(baseline_ordered_dict, indent = 4))
         print "Done"
-
 
     def PrintException(self):
         exc_type, exc_obj, tb = sys.exc_info()
