@@ -75,7 +75,7 @@ class MakeStarsLexicon:
     def get_topN_sentiment_words(self):
         """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
 
-        print "(3) Calculating " + "\033[1m" + "Cosine Similarity" + "\033[0m" + " between queries and every " + "\033[1m" + "sentiment" + "\033[0m" + " word"
+        print "(3) Calculating " + "\033[1m" + "Cosine Similarity" + "\033[0m" + " between queries and every " + "\033[1m" + "sentiment" + "\033[0m" + " word" + "\n" + "-"*50
         star_cnt = 0 # loop 1_star to 5_star
         for query in self.queries:
             cos_sim_list = []
@@ -95,7 +95,6 @@ class MakeStarsLexicon:
 
             self.render(query, topN_sentiment_words)
 
-        print "-"*50
 
     def render(self, query, topN_sentiment_words):
         """ save every sentiment_word_dict in sentiment_word_dicts for 1_star ~ 5_star """
@@ -119,7 +118,7 @@ class MakeStarsLexicon:
 
         query_ordered_dict["topN_sentiment_words"] = ordered_topN_sentiment_words
 
-        print "Saving lexicon to", str(self.dst), "\033[1m" + str(query) + ".json" + "\033[0m"
+        print "Saving lexicon to", str(self.dst) + "\033[1m" + str(query) + ".json" + "\033[0m"
         f = open(self.dst + str(query) + ".json", "w")
         f.write(json.dumps(query_ordered_dict, indent = 4, cls=NoIndentEncoder))
         print "-"*50
