@@ -13,7 +13,7 @@ class Correlation:
         self.src_vectors = sys.argv[1]
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src_vectors).group(1)
         self.src_norm_vectors = "data/line/norm_vectors200/" + self.filename + ".txt"
-        self.src_cooccur = "data/line/cooccur/" + self.filename + ".txt"
+        self.src_cooccur = "data/glove/cooccur/" + self.filename + ".txt"
         self.dst = "data/correlation/"
         self.verbose = 1
         self.norm_flag = 1
