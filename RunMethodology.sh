@@ -8,6 +8,6 @@ do
         #ts -n -f sh -c "python Methodology.py $i $j" &
     #done
 done
-#ts -S 10
+ts -S 10
 
 
