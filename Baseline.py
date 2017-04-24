@@ -12,7 +12,7 @@ class Baseline:
         self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src_vectors200).group(1)
         self.src_cooccur = "data/glove/cooccur/" + self.filename + ".txt"
         self.src_frontend = "data/frontend_reviews/" + self.filename + "/"
-        self.src_opinion_lexicon = "data/lexicon/processed_opinion_positive_lexicon.json"
+        self.src_opinion_lexicon = "data/lexicon/processed_opinion_positive.json"
         self.src_pos_tagged_lexicon = "data/lexicon/processed_pos_tagged_lexicon.json"
         self.dst = "data/ranking/" + self.filename + "/"
 
