@@ -7,35 +7,22 @@ from collections import OrderedDict
 
 class Evaluate:
     """ This program
-        (1) takes data/ranking/location/location-Threshold.json & location-Baseline.json as inputs
-        (2) calculates Kendalltau of both Threshold and Baseline with original ranking on tripadvisor
-        (3) calculates NDCG@10 of both Threshold and Baseline with original ranking on tripadvisor
+        (1) takes data/ranking/location/parameter1_parameter2.json & baseline.json as inputs
+        (2) calculates Kendalltau of the reranked rankings ( or original rankings )
+        (3) calculates 1) NDCG@5 2) NDCG@10 3) NDCG@20 of the reranked rankings ( or original rankings )
     """
 
     def __init__(self):
-        # sample argv input : data/ranking/New_York_City/
+        # sample argv input: data/ranking/New_York_City/ reranked | data/ranking/New_York_City original
         self.src = sys.argv[1]
         self.order = sys.argv[2]
         self.filename = re.search("data\/ranking\/([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)", self.src).group(1) # E.g. New_York_City
         self.dst = "data/results/"
 
-        self.baseline1_data = {}
         self.methodology_data = []
 
-        #  baseline1_kendalltau, baseline1_ndcg = [], []
-        #  baseline2_kendalltau, baseline2_ndcg = [], []
-        #  max_kendalltau, max_ndcg = [], []
-        #  avg_kendalltau, avg_ndcg = [], []
-        #  sum_kendalltau, sum_ndcg = [], []
-        #  sum_cXf_kendalltau, sum_cXf_ndcg = [], []
-        #  top3_kendalltau, top3_ndcg = [], []
-        #  top5_kendalltau, top5_ndcg = [], []
-        #  top10_kendalltau, top10_ndcg = [], []
-        #  top50_kendalltau, top50_ndcg = [], []
-        #  top100_kendalltau, top100_ndcg = [], []
-
-    def get_source(self):
-        """ load all json file in data/ranking/location/location-Threshold.json """
+    def get_baseline_source(self, target_filename):
+        """ load all json file in data/ranking/location/baseline.json """
         print "Loading data from: " + self.src
         for dirpath, dir_list, file_list in os.walk(self.src):
             #print "Walking into directory: " + str(dirpath)
@@ -52,45 +39,72 @@ class Evaluate:
                     if str(f) == ".DS_Store":
                         print "Removing " + dirpath + "/" + str(f)
                         os.remove(dirpath+ "/"+ f)
-                    else:
+                    elif target_filename in f:
                         file_cnt += 1
 
                         with open(dirpath + "/" + f) as file:
                             file_data = json.loads(file.read())
 
-                            if file_data["method"] == "Baseline":
-                                #print "Initializing Baseline from", str(dirpath) + str(f)
-                                self.baseline_data = file_data["Baseline_Ranking"]
-                                # reorder according to input self.order
-                                if self.order == "original":
-                                    self.baseline_data = sorted(self.baseline_data, key=lambda k: k['original_ranking'])
-                                elif self.order == "reranked":
-                                    self.baseline_data = sorted(self.baseline_data, key=lambda k: k['reranked_ranking'])
-                                else:
-                                    raise
-                            elif file_data["method"] == "CosineThreshold":
-                                #print "Initializing Methodology from", str(dirpath) + str(f)
-                                self.methodology_data = file_data["CosineThreshold_Ranking"]
-                                # reorder according to input self.order
-                                if self.order == "original":
-                                    self.methodology_data = sorted(self.methodology_data, key=lambda k: k['original_ranking'])
-                                elif self.order == "reranked":
-                                    self.methodology_data = sorted(self.methodology_data, key=lambda k: k['reranked_ranking'])
-                                else:
-                                    raise
+                            #print "Initializing Baseline from", str(dirpath) + str(f)
+                            self.baseline_data = file_data["Baseline_Ranking"]
+                            # reorder according to input self.order
+                            if self.order == "original":
+                                self.baseline_data = sorted(self.baseline_data, key=lambda k: k['original_ranking'])
+                            elif self.order == "reranked":
+                                self.baseline_data = sorted(self.baseline_data, key=lambda k: k['reranked_ranking'])
                             else:
-                                print "No match for Baseline or CosineThreshold"
-                                pass
-
+                                raise
             else:
                 print "No file is found"
             print "-"*80
 
-    def get_baseline1(self):
+    def get_source(self, target_filename):
+        """ load all json file in data/ranking/location/para1_para2.json """
+
+        print "Loading data from: " + self.src
+        source = []
+        for dirpath, dir_list, file_list in os.walk(self.src):
+            #print "Walking into directory: " + str(dirpath)
+
+            if len(file_list) > 0:
+                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
+                file_cnt = 0
+                length = len(file_list)
+
+                ranking_dict_list = []
+                for f in file_list:
+                    # in case there is a goddamn .DS_Store file
+                    if str(f) == ".DS_Store":
+                        print "Removing " + dirpath + "/" + str(f)
+                        os.remove(dirpath+ "/"+ f)
+                    elif target_filename in f:
+
+
+                        file_cnt += 1
+                        with open(dirpath + "/" + f) as file:
+                            file_data = json.loads(file.read())
+
+                            source = file_data["Entity_Rankings"]
+                            # reorder according to input self.order
+                            if self.order == "original":
+                                source = sorted(source, key=lambda k: k['original_ranking'])
+                            elif self.order == "reranked":
+                                source = sorted(source, key=lambda k: k['reranked_ranking'])
+                            else:
+                                raise
+                    else:
+                        pass
+            else:
+                print "No target_file is found"
+
+            print "-"*80
+            return source
+
+    def get_baselineN(self, source, parameter):
         """ get NDCG & Kendalltau between original_rankings and rankings_by_mentioned_count """
 
-        print "Processing: " + "\033[1m" + "baseline1" + "\033[0m"
-        rankings, baseline1_rankings = [], []
+        print "Processing: " + "\033[1m" + "baseline by " + str(parameter) + "\033[0m"
+        rankings, baseline_rankings = [], []
         for attraction_dict in self.baseline_data:
             if self.order == "original":
                 rankings.append(attraction_dict["original_ranking"])
@@ -98,514 +112,76 @@ class Evaluate:
                 rankings.append(attraction_dict["reranked_ranking"])
             else:
                 raise
-            baseline1_rankings.append(attraction_dict["ranking_by_mentioned_count"])
+            baseline_rankings.append(attraction_dict[parameter])
 
-
-        baseline1_kendalltau = self.get_kendalltau(rankings, baseline1_rankings)
-        baseline1_ndcg = self.get_ndcg(rankings, baseline1_rankings)
-
-        print "-"*80
-        return baseline1_kendalltau, baseline1_ndcg
-
-    def get_baseline2(self):
-        """ get NDCG & Kendalltau between original_rankings and rankings_by_cooccur_sum """
-
-        print "Processing: " + "\033[1m" + "baseline2" + "\033[0m"
-        rankings, baseline2_rankings = [], []
-        for attraction_dict in self.baseline_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            baseline2_rankings.append(attraction_dict["ranking_by_cooccur_sum"])
-
-        baseline2_kendalltau = self.get_kendalltau(rankings, baseline2_rankings)
-        baseline2_ndcg = self.get_ndcg(rankings, baseline2_rankings)
+        kendalltau = self.get_kendalltau(rankings, baseline_rankings)
+        ndcg = self.get_ndcg(rankings, baseline_rankings)
 
         print "-"*80
-        return baseline2_kendalltau, baseline2_ndcg
+        return kendalltau, ndcg
 
-    def get_top3_avg(self):
-        """ get NDCG & Kendalltau between original_rankings and computed_rankings """
+    def get_topN_avg(self, source, n):
+        """ get NDCG & Kendalltau between reranked_rankings ( or original_rankings ) and computed_rankings """
 
-        print "Processing: " + "\033[1m" + "top3_avg_cosine" + "\033[0m"
+        print "Processing: " + "\033[1m" + "top" + n + "_avg_cosine_score_ranking" + "\033[0m"
+        key = "top" + str(n) + "_avg_cosine_score_ranking"
         rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
+        for attraction_dict in source:
             if self.order == "original":
                 rankings.append(attraction_dict["original_ranking"])
             elif self.order == "reranked":
                 rankings.append(attraction_dict["reranked_ranking"])
             else:
                 raise
-            computed_rankings.append(attraction_dict["top3_avg_cosine_score_ranking"])
+            computed_rankings.append(attraction_dict[key])
 
-        top3_avg_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        top3_avg_ndcg = self.get_ndcg(rankings, computed_rankings)
+        kendalltau = self.get_kendalltau(rankings, computed_rankings)
+        ndcg = self.get_ndcg(rankings, computed_rankings)
 
         print "-"*80
-        return top3_avg_kendalltau, top3_avg_ndcg
+        return kendalltau, ndcg
 
-    def get_top5_avg(self):
-        """ get NDCG & Kendalltau between original_rankings and computed_rankings """
+    def get_topN_sum_cXnf(self, source, n):
+        """ get NDCG & Kendalltau between reranked_rankings ( or original_ranking ) and computed_rankings """
 
-        print "Processing: " + "\033[1m" + "top5_avg_cosine" + "\033[0m"
+        print "Processing: " + "\033[1m" + "top" + n + "_sum_cosineXnorm_frequency" + "\033[0m"
+        key = "top" + str(n) + "_sum_cosineXnorm_frequency_score_ranking"
         rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
+        for attraction_dict in source:
             if self.order == "original":
                 rankings.append(attraction_dict["original_ranking"])
             elif self.order == "reranked":
                 rankings.append(attraction_dict["reranked_ranking"])
             else:
                 raise
-            computed_rankings.append(attraction_dict["top5_avg_cosine_score_ranking"])
+            computed_rankings.append(attraction_dict[key])
 
-        top5_avg_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        top5_avg_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return top5_avg_kendalltau, top5_avg_ndcg
-
-    def get_top20_avg(self):
-        """ get NDCG & Kendalltau between original_rankings and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top20_avg_cosine" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top20_avg_cosine_score_ranking"])
-
-        top20_avg_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        top20_avg_ndcg = self.get_ndcg(rankings, computed_rankings)
+        kendalltau = self.get_kendalltau(rankings, computed_rankings)
+        ndcg = self.get_ndcg(rankings, computed_rankings)
 
         print "-"*80
-        return top20_avg_kendalltau, top20_avg_ndcg
+        return kendalltau, ndcg
 
-    def get_top50_avg(self):
-        """ get NDCG & Kendalltau between original_rankings and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top50_avg_cosine" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top50_avg_cosine_score_ranking"])
-
-        top50_avg_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        top50_avg_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return top50_avg_kendalltau, top50_avg_ndcg
-
-    def get_top100_avg(self):
-        """ get NDCG & Kendalltau between original_rankings and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top100_avg_cosine" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top100_avg_cosine_score_ranking"])
-
-        top100_avg_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        top100_avg_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return top100_avg_kendalltau, top100_avg_ndcg
-
-    def get_top_all_avg(self):
-        """ get NDCG & Kendalltau between original_rankings and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top_all_avg_cosine" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top_all_avg_cosine_score_ranking"])
-
-        top_all_avg_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        top_all_avg_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return top_all_avg_kendalltau, top_all_avg_ndcg
-
-    #  def get_avg(self):
-    #      """ get NDCG & Kendalltau between original_rankings and computed_rankings """
-    #
-    #      print "Processing: " + "\033[1m" + "avg_cosine" + "\033[0m"
-    #      rankings, computed_rankings = [], []
-    #      for attraction_dict in self.methodology_data:
-    #          if self.order == "original":
-    #              rankings.append(attraction_dict["original_ranking"])
-    #          elif self.order == "reranked":
-    #              rankings.append(attraction_dict["reranked_ranking"])
-    #          else:
-    #              raise
-    #          computed_rankings.append(attraction_dict["avg_cosine_score_ranking"])
-    #
-    #      avg_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-    #      avg_ndcg = self.get_ndcg(rankings, computed_rankings)
-    #
-    #      print "-"*80
-    #      return avg_kendalltau, avg_ndcg
-
-    #  def get_sum(self):
-    #      """ get NDCG & Kendalltau between original_rankings and computed_rankings """
-    #
-    #      print "Processing: " + "\033[1m" + "sum_cosine" + "\033[0m"
-    #      rankings, computed_rankings = [], []
-    #      for attraction_dict in self.methodology_data:
-    #          if self.order == "original":
-    #              rankings.append(attraction_dict["original_ranking"])
-    #          elif self.order == "reranked":
-    #              rankings.append(attraction_dict["reranked_ranking"])
-    #          else:
-    #              raise
-    #          computed_rankings.append(attraction_dict["sum_cosine_score_ranking"])
-    #
-    #      sum_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-    #      sum_ndcg = self.get_ndcg(rankings, computed_rankings)
-    #
-    #      print "-"*80
-    #      return sum_kendalltau, sum_ndcg
-
-    #  def get_sum_cXf(self):
-    #      """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-    #
-    #      print "Processing: " + "\033[1m" + "sum_cosineXfrequency" + "\033[0m"
-    #      rankings, computed_rankings = [], []
-    #      for attraction_dict in self.methodology_data:
-    #          if self.order == "original":
-    #              rankings.append(attraction_dict["original_ranking"])
-    #          elif self.order == "reranked":
-    #              rankings.append(attraction_dict["reranked_ranking"])
-    #          else:
-    #              raise
-    #          computed_rankings.append(attraction_dict["sum_cosineXfrequency_score_ranking"])
-    #
-    #      methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-    #      methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-    #
-    #      print "-"*80
-    #      return methodology_kendalltau, methodology_ndcg
-
-    def get_top3_sum_cXnf(self):
+    def get_topN_sum_zXnf(self, source, n):
         """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
 
-        print "Processing: " + "\033[1m" + "top3_sum_cosineXnorm_frequency" + "\033[0m"
+        print "Processing: " + "\033[1m" + "top" + n + "_sum_z_scoreXnorm_frequency" + "\033[0m"
+        key = "top" + str(n) + "_sum_z_scoreXnorm_frequency_score_ranking"
         rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
+        for attraction_dict in source:
             if self.order == "original":
                 rankings.append(attraction_dict["original_ranking"])
             elif self.order == "reranked":
                 rankings.append(attraction_dict["reranked_ranking"])
             else:
                 raise
-            computed_rankings.append(attraction_dict["top3_sum_cosineXnorm_frequency_score_ranking"])
+            computed_rankings.append(attraction_dict[key])
 
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top5_sum_cXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top5_sum_cosineXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top5_sum_cosineXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
+        kendalltau = self.get_kendalltau(rankings, computed_rankings)
+        ndcg = self.get_ndcg(rankings, computed_rankings)
 
         print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top20_sum_cXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top20_sum_cosineXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top20_sum_cosineXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top50_sum_cXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top50_sum_cosineXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top50_sum_cosineXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top100_sum_cXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top100_sum_cosineXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top100_sum_cosineXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top_all_sum_cXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top_all_sum_cosineXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top_all_sum_cosineXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top3_sum_zXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top3_sum_z_scoreXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top3_sum_z_scoreXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top5_sum_zXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top5_sum_z_scoreXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top5_sum_z_scoreXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top20_sum_zXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top20_sum_z_scoreXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top20_sum_z_scoreXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top50_sum_zXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top50_sum_z_scoreXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top50_sum_z_scoreXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top100_sum_zXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top100_sum_z_scoreXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top100_sum_z_scoreXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    def get_top_all_sum_zXnf(self):
-        """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-
-        print "Processing: " + "\033[1m" + "top_all_sum_z_scoreXnorm_frequency" + "\033[0m"
-        rankings, computed_rankings = [], []
-        for attraction_dict in self.methodology_data:
-            if self.order == "original":
-                rankings.append(attraction_dict["original_ranking"])
-            elif self.order == "reranked":
-                rankings.append(attraction_dict["reranked_ranking"])
-            else:
-                raise
-            computed_rankings.append(attraction_dict["top_all_sum_z_scoreXnorm_frequency_score_ranking"])
-
-        methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-        methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-
-        print "-"*80
-        return methodology_kendalltau, methodology_ndcg
-
-    #  def get_top5(self):
-    #      """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-    #
-    #      print "Processing: " + "\033[1m" + "top5" + "\033[0m"
-    #      rankings, computed_rankings = [], []
-    #      for attraction_dict in self.methodology_data:
-    #          if self.order == "original":
-    #              rankings.append(attraction_dict["original_ranking"])
-    #          elif self.order == "reranked":
-    #              rankings.append(attraction_dict["reranked_ranking"])
-    #          else:
-    #              raise
-    #          computed_rankings.append(attraction_dict["sum_z_score_top5_ranking"])
-    #
-    #      methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-    #      methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-    #
-    #      print "-"*80
-    #      return methodology_kendalltau, methodology_ndcg
-    #
-    #  def get_top50(self):
-    #      """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-    #
-    #      print "Processing: " + "\033[1m" + "top50" + "\033[0m"
-    #      rankings, computed_rankings = [], []
-    #      for attraction_dict in self.methodology_data:
-    #          if self.order == "original":
-    #              rankings.append(attraction_dict["original_ranking"])
-    #          elif self.order == "reranked":
-    #              rankings.append(attraction_dict["reranked_ranking"])
-    #          else:
-    #              raise
-    #          computed_rankings.append(attraction_dict["sum_z_score_top50_ranking"])
-    #
-    #      methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-    #      methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-    #
-    #      print "-"*80
-    #      return methodology_kendalltau, methodology_ndcg
-    #
-    #  def get_top100(self):
-    #      """ get NDCG & Kendalltau between reranked_rankings(or original_ranking) and computed_rankings """
-    #
-    #      print "Processing: " + "\033[1m" + "top100" + "\033[0m"
-    #      rankings, computed_rankings = [], []
-    #      for attraction_dict in self.methodology_data:
-    #          if self.order == "original":
-    #              rankings.append(attraction_dict["original_ranking"])
-    #          elif self.order == "reranked":
-    #              rankings.append(attraction_dict["reranked_ranking"])
-    #          else:
-    #              raise
-    #          computed_rankings.append(attraction_dict["sum_z_score_top100_ranking"])
-    #
-    #      methodology_kendalltau = self.get_kendalltau(rankings, computed_rankings)
-    #      methodology_ndcg = self.get_ndcg(rankings, computed_rankings)
-    #
-    #      print "-"*80
-    #      return methodology_kendalltau, methodology_ndcg
+        return kendalltau, ndcg
 
     def get_kendalltau(self, ground_truth_rankings, comparing_rankings):
         """ get kendalltau for two input lists """
@@ -677,116 +253,45 @@ class Evaluate:
             print "Creating directory:", dir1
             os.makedirs(dir1)
 
-    def render(self):
-        """Render kendalltau and NDCG according to baseline1, baseline2, baseline3, methodology """
+    def render(self, result_dict):
+        """Render kendalltau and NDCG according to baseline1, baseline2, baseline3, all methonds in methodology """
 
         self.create_dirs(self.dst, self.filename)
+        baselines = result_dict["baselines"]
 
+        # kendalltau
         ordered_dict = OrderedDict()
-        ordered_dict["b1_kendalltau"] = self.baseline1_kendalltau
-        ordered_dict["b2_kendalltau"] = self.baseline2_kendalltau
-        #ordered_dict["max_kendalltau"] = self.max_kendalltau
-        #ordered_dict["avg_kendalltau"] = self.avg_kendalltau
-        ordered_dict["top3_avg_kendalltau"] = self.top3_avg_kendalltau
-        ordered_dict["top5_avg_kendalltau"] = self.top5_avg_kendalltau
-        ordered_dict["top20_avg_kendalltau"] = self.top20_avg_kendalltau
-        ordered_dict["top50_avg_kendalltau"] = self.top50_avg_kendalltau
-        ordered_dict["top100_avg_kendalltau"] = self.top100_avg_kendalltau
-        ordered_dict["top_all_avg_kendalltau"] = self.top_all_avg_kendalltau
-        #ordered_dict["sum_kendalltau"] = self.sum_kendalltau
-        #ordered_dict["sum_cXf_kendalltau"] = self.sum_cXf_kendalltau
-        ordered_dict["top3_sum_cXnf_kendalltau"] = self.top3_sum_cXnf_kendalltau
-        ordered_dict["top5_sum_cXnf_kendalltau"] = self.top5_sum_cXnf_kendalltau
-        ordered_dict["top20_sum_cXnf_kendalltau"] = self.top20_sum_cXnf_kendalltau
-        ordered_dict["top50_sum_cXnf_kendalltau"] = self.top50_sum_cXnf_kendalltau
-        ordered_dict["top100_sum_cXnf_kendalltau"] = self.top100_sum_cXnf_kendalltau
-        ordered_dict["top_all_sum_cXnf_kendalltau"] = self.top_all_sum_cXnf_kendalltau
+        ordered_dict["b1_kendalltau"] = baselines["baseline1_kendalltau"]
+        ordered_dict["b2_kendalltau"] = baselines["baseline2_kendalltau"]
+        ordered_dict["b3_kendalltau"] = baselines["baseline3_kendalltau"]
+        ordered_dict["b1_ndcg@5"] = baselines["baseline1_ndcg"][4]
+        ordered_dict["b2_ndcg@5"] = baselines["baseline2_ndcg"][4]
+        ordered_dict["b3_ndcg@5"] = baselines["baseline3_ndcg"][4]
+        ordered_dict["b1_ndcg@10"] = baselines["baseline1_ndcg"][9]
+        ordered_dict["b2_ndcg@10"] = baselines["baseline2_ndcg"][9]
+        ordered_dict["b3_ndcg@10"] = baselines["baseline3_ndcg"][9]
+        ordered_dict["b1_ndcg@20"] = baselines["baseline1_ndcg"][19]
+        ordered_dict["b2_ndcg@20"] = baselines["baseline2_ndcg"][19]
+        ordered_dict["b3_ndcg@20"] = baselines["baseline3_ndcg"][19]
 
-        ordered_dict["top3_sum_zXnf_kendalltau"] = self.top3_sum_zXnf_kendalltau
-        ordered_dict["top5_sum_zXnf_kendalltau"] = self.top5_sum_zXnf_kendalltau
-        ordered_dict["top20_sum_zXnf_kendalltau"] = self.top20_sum_zXnf_kendalltau
-        ordered_dict["top50_sum_zXnf_kendalltau"] = self.top50_sum_zXnf_kendalltau
-        ordered_dict["top100_sum_zXnf_kendalltau"] = self.top100_sum_zXnf_kendalltau
-        ordered_dict["top_all_sum_zXnf_kendalltau"] = self.top_all_sum_zXnf_kendalltau
+        for key in result_dict:
+            if key != "baselines":
+                ordered_dict[key+"_top_all_avg_kendalltau"] = result_dict[key]["top_all_avg_kendalltau"]
+                ordered_dict[key+"_top_all_sum_cXnf_kendalltau"] = result_dict[key]["top_all_sum_cXnf_kendalltau"]
+                ordered_dict[key+"_top_all_sum_zXnf_kendalltau"] = result_dict[key]["top_all_sum_zXnf_kendalltau"]
 
-        #  ordered_dict["top5_kendalltau"] = self.top5_kendalltau
-        #  ordered_dict["top50_kendalltau"] = self.top50_kendalltau
-        #  ordered_dict["top100_kendalltau"] = self.top100_kendalltau
-
-        # ndcg@5
-        ordered_dict["b1_ndcg@5"] = self.baseline1_ndcg[4]
-        ordered_dict["b2_ndcg@5"] = self.baseline2_ndcg[4]
-
-        ordered_dict["top3_avg_ndcg@5"] = self.top3_avg_ndcg[4]
-        ordered_dict["top5_avg_ndcg@5"] = self.top5_avg_ndcg[4]
-        ordered_dict["top20_avg_ndcg@5"] = self.top20_avg_ndcg[4]
-        ordered_dict["top50_avg_ndcg@5"] = self.top50_avg_ndcg[4]
-        ordered_dict["top100_avg_ndcg@5"] = self.top100_avg_ndcg[4]
-        ordered_dict["top_all_avg_ndcg@5"] = self.top_all_avg_ndcg[4]
-
-        ordered_dict["top3_sum_cXnf_ndcg@5"] = self.top3_sum_cXnf_ndcg[4]
-        ordered_dict["top5_sum_cXnf_ndcg@5"] = self.top5_sum_cXnf_ndcg[4]
-        ordered_dict["top20_sum_cXnf_ndcg@5"] = self.top20_sum_cXnf_ndcg[4]
-        ordered_dict["top50_sum_cXnf_ndcg@5"] = self.top50_sum_cXnf_ndcg[4]
-        ordered_dict["top100_sum_cXnf_ndcg@5"] = self.top100_sum_cXnf_ndcg[4]
-        ordered_dict["top_all_sum_cXnf_ndcg@5"] = self.top_all_sum_cXnf_ndcg[4]
-
-        ordered_dict["top3_sum_zXnf_ndcg@5"] = self.top3_sum_zXnf_ndcg[4]
-        ordered_dict["top5_sum_zXnf_ndcg@5"] = self.top5_sum_zXnf_ndcg[4]
-        ordered_dict["top20_sum_zXnf_ndcg@5"] = self.top20_sum_zXnf_ndcg[4]
-        ordered_dict["top50_sum_zXnf_ndcg@5"] = self.top50_sum_zXnf_ndcg[4]
-        ordered_dict["top100_sum_zXnf_ndcg@5"] = self.top100_sum_zXnf_ndcg[4]
-        ordered_dict["top_all_sum_zXnf_ndcg@5"] = self.top_all_sum_zXnf_ndcg[4]
-
-        # ndcg@10
-        ordered_dict["b1_ndcg@10"] = self.baseline1_ndcg[9]
-        ordered_dict["b2_ndcg@10"] = self.baseline2_ndcg[9]
-
-        ordered_dict["top3_avg_ndcg@10"] = self.top3_avg_ndcg[9]
-        ordered_dict["top5_avg_ndcg@10"] = self.top5_avg_ndcg[9]
-        ordered_dict["top20_avg_ndcg@10"] = self.top20_avg_ndcg[9]
-        ordered_dict["top50_avg_ndcg@10"] = self.top50_avg_ndcg[9]
-        ordered_dict["top100_avg_ndcg@10"] = self.top100_avg_ndcg[9]
-        ordered_dict["top_all_avg_ndcg@10"] = self.top_all_avg_ndcg[9]
-
-        ordered_dict["top3_sum_cXnf_ndcg@10"] = self.top3_sum_cXnf_ndcg[9]
-        ordered_dict["top5_sum_cXnf_ndcg@10"] = self.top5_sum_cXnf_ndcg[9]
-        ordered_dict["top20_sum_cXnf_ndcg@10"] = self.top20_sum_cXnf_ndcg[9]
-        ordered_dict["top50_sum_cXnf_ndcg@10"] = self.top50_sum_cXnf_ndcg[9]
-        ordered_dict["top100_sum_cXnf_ndcg@10"] = self.top100_sum_cXnf_ndcg[9]
-        ordered_dict["top_all_sum_cXnf_ndcg@10"] = self.top_all_sum_cXnf_ndcg[9]
-
-        ordered_dict["top3_sum_zXnf_ndcg@10"] = self.top3_sum_zXnf_ndcg[9]
-        ordered_dict["top5_sum_zXnf_ndcg@10"] = self.top5_sum_zXnf_ndcg[9]
-        ordered_dict["top20_sum_zXnf_ndcg@10"] = self.top20_sum_zXnf_ndcg[9]
-        ordered_dict["top50_sum_zXnf_ndcg@10"] = self.top50_sum_zXnf_ndcg[9]
-        ordered_dict["top100_sum_zXnf_ndcg@10"] = self.top100_sum_zXnf_ndcg[9]
-        ordered_dict["top_all_sum_zXnf_ndcg@10"] = self.top_all_sum_zXnf_ndcg[9]
-
-        # ndcg@20
-        ordered_dict["b1_ndcg@20"] = self.baseline1_ndcg[18]
-        ordered_dict["b2_ndcg@20"] = self.baseline2_ndcg[18]
-
-        ordered_dict["top3_avg_ndcg@20"] = self.top3_avg_ndcg[18]
-        ordered_dict["top5_avg_ndcg@20"] = self.top5_avg_ndcg[18]
-        ordered_dict["top20_avg_ndcg@20"] = self.top20_avg_ndcg[18]
-        ordered_dict["top50_avg_ndcg@20"] = self.top50_avg_ndcg[18]
-        ordered_dict["top100_avg_ndcg@20"] = self.top100_avg_ndcg[18]
-        ordered_dict["top_all_avg_ndcg@20"] = self.top_all_avg_ndcg[18]
-
-        ordered_dict["top3_sum_cXnf_ndcg@20"] = self.top3_sum_cXnf_ndcg[18]
-        ordered_dict["top5_sum_cXnf_ndcg@20"] = self.top5_sum_cXnf_ndcg[18]
-        ordered_dict["top20_sum_cXnf_ndcg@20"] = self.top20_sum_cXnf_ndcg[18]
-        ordered_dict["top50_sum_cXnf_ndcg@20"] = self.top50_sum_cXnf_ndcg[18]
-        ordered_dict["top100_sum_cXnf_ndcg@20"] = self.top100_sum_cXnf_ndcg[18]
-        ordered_dict["top_all_sum_cXnf_ndcg@20"] = self.top_all_sum_cXnf_ndcg[18]
-
-        ordered_dict["top3_sum_zXnf_ndcg@20"] = self.top3_sum_zXnf_ndcg[18]
-        ordered_dict["top5_sum_zXnf_ndcg@20"] = self.top5_sum_zXnf_ndcg[18]
-        ordered_dict["top20_sum_zXnf_ndcg@20"] = self.top20_sum_zXnf_ndcg[18]
-        ordered_dict["top50_sum_zXnf_ndcg@20"] = self.top50_sum_zXnf_ndcg[18]
-        ordered_dict["top100_sum_zXnf_ndcg@20"] = self.top100_sum_zXnf_ndcg[18]
-        ordered_dict["top_all_sum_zXnf_ndcg@20"] = self.top_all_sum_zXnf_ndcg[18]
+                # ndcg@5
+                ordered_dict[key+"_top_all_avg_ndcg@5"] = result_dict[key]["top_all_avg_ndcg"][4]
+                ordered_dict[key+"_top_all_sum_cXnf_ndcg@5"] = result_dict[key]["top_all_sum_cXnf_ndcg"][4]
+                ordered_dict[key+"_top_all_sum_zXnf_ndcg@5"] = result_dict[key]["top_all_sum_zXnf_ndcg"][4]
+                # ndcg@10
+                ordered_dict[key+"_top_all_avg_ndcg@10"] = result_dict[key]["top_all_avg_ndcg"][9]
+                ordered_dict[key+"_top_all_sum_cXnf_ndcg@10"] = result_dict[key]["top_all_sum_cXnf_ndcg"][9]
+                ordered_dict[key+"_top_all_sum_zXnf_ndcg@10"] = result_dict[key]["top_all_sum_zXnf_ndcg"][9]
+                # ndcg@20
+                ordered_dict[key+"_top_all_avg_ndcg@20"] = result_dict[key]["top_all_avg_ndcg"][19]
+                ordered_dict[key+"_top_all_sum_cXnf_ndcg@20"] = result_dict[key]["top_all_sum_cXnf_ndcg"][19]
+                ordered_dict[key+"_top_all_sum_zXnf_ndcg@20"] = result_dict[key]["top_all_sum_zXnf_ndcg"][19]
 
         print "Saving", "\033[1m" + self.filename + ".json" + "\033[0m", "to", self.dst
         with open(self.dst + "/" + self.filename + ".json", "w") as f:
@@ -796,38 +301,152 @@ class Evaluate:
     def run(self):
         """ plot cosine ranking and dot ranking according to the given flags """
         print "Ground truth is set to be: " + "\033[1m" + self.order + "\033[0m"
-        self.get_source()
-        self.baseline1_kendalltau, self.baseline1_ndcg = self.get_baseline1()
-        self.baseline2_kendalltau, self.baseline2_ndcg = self.get_baseline2()
+        result_dict = {}
 
-        self.top3_avg_kendalltau, self.top3_avg_ndcg = self.get_top3_avg()
-        self.top5_avg_kendalltau, self.top5_avg_ndcg = self.get_top5_avg()
-        self.top20_avg_kendalltau, self.top20_avg_ndcg = self.get_top20_avg()
-        self.top50_avg_kendalltau, self.top50_avg_ndcg = self.get_top50_avg()
-        self.top100_avg_kendalltau, self.top100_avg_ndcg = self.get_top100_avg()
-        self.top_all_avg_kendalltau, self.top_all_avg_ndcg = self.get_top_all_avg()
-        #self.avg_kendalltau, self.avg_ndcg = self.get_avg()
-        #self.sum_kendalltau, self.sum_ndcg = self.get_sum()
-        #self.sum_cXf_kendalltau, self.sum_cXf_ndcg = self.get_sum_cXf()
+        baselines = {}
+        # baseline
+        source = self.get_baseline_source("baseline")
+        baseline1_kendalltau, baseline1_ndcg = self.get_baselineN(source, "ranking_by_mentioned_count")
+        baselines.update({"baseline1_kendalltau": baseline1_kendalltau, "baseline1_ndcg": baseline1_ndcg})
+        baseline2_kendalltau, baseline2_ndcg = self.get_baselineN(source, "ranking_by_opinion_cooccur_sum")
+        baselines.update({"baseline2_kendalltau": baseline2_kendalltau, "baseline2_ndcg": baseline2_ndcg})
+        baseline3_kendalltau, baseline3_ndcg = self.get_baselineN(source, "ranking_by_pos_tagged_cooccur_sum")
+        baselines.update({"baseline3_kendalltau": baseline3_kendalltau, "baseline3_ndcg": baseline3_ndcg})
+        result_dict.update({"baselines": baselines})
 
-        self.top3_sum_cXnf_kendalltau, self.top3_sum_cXnf_ndcg = self.get_top3_sum_cXnf()
-        self.top5_sum_cXnf_kendalltau, self.top5_sum_cXnf_ndcg = self.get_top5_sum_cXnf()
-        self.top20_sum_cXnf_kendalltau, self.top20_sum_cXnf_ndcg = self.get_top20_sum_cXnf()
-        self.top50_sum_cXnf_kendalltau, self.top50_sum_cXnf_ndcg = self.get_top50_sum_cXnf()
-        self.top100_sum_cXnf_kendalltau, self.top100_sum_cXnf_ndcg = self.get_top100_sum_cXnf()
-        self.top_all_sum_cXnf_kendalltau, self.top_all_sum_cXnf_ndcg = self.get_top_all_sum_cXnf()
+        lineXopinion = {}
+        # line x opinion
+        source = self.get_source("line_opinion")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        lineXopinion.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        lineXopinion.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        lineXopinion.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"lineXopinion": lineXopinion})
 
-        self.top3_sum_zXnf_kendalltau, self.top3_sum_zXnf_ndcg = self.get_top3_sum_zXnf()
-        self.top5_sum_zXnf_kendalltau, self.top5_sum_zXnf_ndcg = self.get_top5_sum_zXnf()
-        self.top20_sum_zXnf_kendalltau, self.top20_sum_zXnf_ndcg = self.get_top20_sum_zXnf()
-        self.top50_sum_zXnf_kendalltau, self.top50_sum_zXnf_ndcg = self.get_top50_sum_zXnf()
-        self.top100_sum_zXnf_kendalltau, self.top100_sum_zXnf_ndcg = self.get_top100_sum_zXnf()
-        self.top_all_sum_zXnf_kendalltau, self.top_all_sum_zXnf_ndcg = self.get_top_all_sum_zXnf()
-        #  self.top5_kendalltau, self.top5_ndcg = self.get_top5()
-        #  self.top50_kendalltau, self.top50_ndcg = self.get_top50()
-        #  self.top100_kendalltau, self.top100_ndcg = self.get_top100()
+        word2vecXopinion = {}
+        # word2vec x opinion
+        source = self.get_source("word2vec_opinion")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        word2vecXopinion.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        word2vecXopinion.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        word2vecXopinion.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"word2vecXopinion": word2vecXopinion})
 
-        self.render()
+        lineXstar1 = {}
+        # line x star1
+        source = self.get_source("line_star1")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        lineXstar1.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        lineXstar1.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        lineXstar1.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"lineXstar1": lineXstar1})
+
+        word2vecXstar1 = {}
+        # word2vec x star1
+        source = self.get_source("word2vec_star1")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        word2vecXstar1.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        word2vecXstar1.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        word2vecXstar1.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"word2vecXstar1": word2vecXstar1})
+
+        lineXstar2 = {}
+        # line x star2
+        source = self.get_source("line_star2")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        lineXstar2.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        lineXstar2.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        lineXstar2.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"lineXstar2": lineXstar2})
+
+        word2vecXstar2 = {}
+        # word2vec x star2
+        source = self.get_source("word2vec_star2")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        word2vecXstar2.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        word2vecXstar2.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        word2vecXstar2.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"word2vecXstar2": word2vecXstar2})
+
+        lineXstar3 = {}
+        # line x star3
+        source = self.get_source("line_star3")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        lineXstar3.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        lineXstar3.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        lineXstar3.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"lineXstar3": lineXstar3})
+
+        word2vecXstar3 = {}
+        # word2vec x star3
+        source = self.get_source("word2vec_star3")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        word2vecXstar3.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        word2vecXstar3.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        word2vecXstar3.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"word2vecXstar3": word2vecXstar3})
+
+        lineXstar4 = {}
+        # line x star4
+        source = self.get_source("line_star4")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        lineXstar4.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        lineXstar4.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        lineXstar4.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"lineXstar4": lineXstar4})
+
+        word2vecXstar4 = {}
+        # word2vec x star4
+        source = self.get_source("word2vec_star4")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        word2vecXstar4.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        word2vecXstar4.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        word2vecXstar4.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"word2vecXstar4": word2vecXstar4})
+
+        lineXstar5 = {}
+        # line x star5
+        source = self.get_source("line_star5")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        lineXstar5.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        lineXstar5.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        lineXstar5.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"lineXstar5": lineXstar5})
+
+        word2vecXstar5 = {}
+        # word2vec x star5
+        source = self.get_source("word2vec_star5")
+        kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        word2vecXstar5.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        word2vecXstar5.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        word2vecXstar5.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        result_dict.update({"word2vecXstar5": word2vecXstar5})
+
+        self.render(result_dict)
 
     def PrintException(self):
         exc_type, exc_obj, tb = sys.exc_info()
