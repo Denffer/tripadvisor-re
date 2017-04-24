@@ -9,7 +9,7 @@ class Baseline:
     """ This program calculate 3 baselines for comparison """
     def __init__(self):
         self.src_vectors200 = sys.argv[1]
-        self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.txt", self.src_vectors200).group(1)
+        self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)\.txt", self.src_vectors200).group(1)
         self.src_cooccur = "data/glove/cooccur/" + self.filename + ".txt"
         self.src_frontend = "data/frontend_reviews/" + self.filename + "/"
         self.src_opinion_lexicon = "data/lexicon/processed_opinion_positive_lexicon.json"
