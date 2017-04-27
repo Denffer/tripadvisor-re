@@ -13,7 +13,13 @@ class MakeStarsLexicon:
     def __init__(self):
         """ initialize values """
         self.src = sys.argv[1]  # input -> data/line/norm_vectors200/starred_corpus.txt
-        self.src_pos_tagged = "data/lexicon/processed_pos_tagged_lexicon.json"
+
+        if sys.argv[2] == "pos_tagged":
+            self.src_lexicon = "data/lexicon/processed_pos_tagged_lexicon.json"
+        elif sys.argv[2] == "opinion":
+            self.src_lexicon = "data/lexicon/processed_opinion_positive.json"
+        else:
+            raise
 
         self.dst = "data/lexicon/"
 
@@ -49,23 +55,23 @@ class MakeStarsLexicon:
         f_src.close()
         print "\n" + "-"*70
 
-    def get_processed_pos_tagged_lexicon(self):
-	""" open processed_pos_tagged_lexicon.json and load dictionaries """
+    def get_lexicon(self):
+	""" get processed_opinion_positive.json or processed_pos_tagged_lexicon.json and load dictionaries """
 
-        print "(2) Loading data from " + "\033[1m" + self.src_pos_tagged + "\033[0m"
-        with open(self.src_pos_tagged, 'r') as f:
-            pos_tagged_lexicon = json.load(f)
+        print "(2) Loading data from " + "\033[1m" + self.src_lexicon + "\033[0m"
+        with open(self.src_lexicon, 'r') as f:
+            lexicon = json.load(f)
 
         index = 0
-        length = len(pos_tagged_lexicon)
+        length = len(lexicon)
         print "Building sentiment_word_dicts and vectors200 ..."
-        for word_dict in pos_tagged_lexicon:
+        for word_dict in lexicon:
             index += 1
             """ E.g. word_dict = {"index": 1, "count": 3, "stemmed_word": "good", "word": ["good"]} """
             for key, value in self.unique_words.iteritems():
                 if word_dict["stemmed_word"] == key:
                     self.sentiment_word_dicts.append(word_dict)
-                    self.vectors200.append(self.vectors200[value])
+                    #self.vectors200.append(self.vectors200[value])
 
             sys.stdout.write("\rStatus: %s / %s"%(index, length))
             sys.stdout.flush()
@@ -79,9 +85,10 @@ class MakeStarsLexicon:
         star_cnt = 0 # loop 1_star to 5_star
         for query in self.queries:
             cos_sim_list = []
-            for index in xrange(len(self.sentiment_word_dicts)):
+            for word_dict in self.sentiment_word_dicts:
+                word = word_dict["stemmed_word"]
                 # cosine_similarity ranges from -1 ~ 1
-                cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.vectors200[index]))
+                cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.vectors200[self.unique_words[word]]))
 
             print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
 
@@ -135,7 +142,7 @@ class MakeStarsLexicon:
     def run(self):
         """ run the entire program """
         self.get_source()
-        self.get_processed_pos_tagged_lexicon()
+        self.get_lexicon()
         self.create_dirs()
         self.get_topN_sentiment_words()
         print "Done"
