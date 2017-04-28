@@ -15,6 +15,7 @@ class Word2Vec:
 
         self.verbose = 1
         self.window_size = 3
+        self.min_count = 10
         self.dimension = 200
 
     def get_corpus(self):
@@ -45,7 +46,7 @@ class Word2Vec:
 
         #print '-'*80
         print "Running Word2Vec on", self.src
-        model = gensim.models.Word2Vec(sentences, min_count=20, size = self.dimension, window = self.window_size, workers=4)
+        model = gensim.models.Word2Vec(sentences, min_count=10, size = self.dimension, window = self.window_size, workers=4)
         unique_words = list(model.vocab.keys())
 
         vectors200 = []
