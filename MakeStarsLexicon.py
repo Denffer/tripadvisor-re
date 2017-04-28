@@ -14,78 +14,73 @@ class MakeStarsLexicon:
         """ initialize values """
         self.src = sys.argv[1]  # input -> data/line/norm_vectors200/starred_corpus.txt
 
-        if sys.argv[2] == "pos_tagged":
-            self.src_lexicon = "data/lexicon/processed_pos_tagged_lexicon.json"
-        elif sys.argv[2] == "opinion":
-            self.src_lexicon = "data/lexicon/processed_opinion_positive.json"
-        else:
-            raise
-
-        self.dst = "data/lexicon/"
+        self.src_opinion_positive = "data/lexicon/processed_opinion_positive.json"
+        self.src_opinion_negative = "data/lexicon/processed_opinion_negative.json"
+        self.src_pos_tagged = "data/lexicon/processed_pos_tagged_lexicon.json"
+        self.dst_opinion_positive = "data/lexicon/opinion_positive_stars/"
+        self.dst_opinion_negative = "data/lexicon/opinion_negative_stars/"
+        self.dst_pos_tagged = "data/lexicon/pos_tagged_stars/"
 
         self.topN = 500
         self.queries = {"1_star":1, "2_star":2, "3_star":3, "4_star":4, "5_star":5}
-        self.vocab_size = 0
-        self.dimension_size = 0
+        self.vocab_size, self.dimension_size = 0, 0
 
 	self.unique_words = {}
-        self.sentiment_word_dicts = []
         self.vectors200 = []
 
     def get_source(self):
 	""" first call readline() to read the first line of vectors200 file to get vocab_size and dimension_size """
 
-        print "(1) Loading data from " + "\033[1m" + self.src + "\033[0m"
+        print "Loading data from " + "\033[1m" + self.src + "\033[0m"
 
         f_src = open(self.src, "r")
         vocab_size, dimension_size = f_src.readline().split(' ')
-        self.vocab_size = int(vocab_size)
-        self.dimension_size = int(dimension_size)
 
         print "Building index ..."
-        for index in range(0, self.vocab_size):
+        for index in range(0, int(vocab_size)):
             line = f_src.readline().split(' ')
             # {"good":1, "attraciton":2, "Tokyo": 3}
             self.unique_words[line[0]]=index
             self.vectors200.append([float(i) for i in line[1:-1]])
 
-            sys.stdout.write("\rStatus: %s / %s"%(index+1, self.vocab_size))
+            sys.stdout.write("\rStatus: %s / %s"%(index+1, int(vocab_size)))
             sys.stdout.flush()
 
         f_src.close()
         print "\n" + "-"*70
 
-    def get_lexicon(self):
-	""" get processed_opinion_positive.json or processed_pos_tagged_lexicon.json and load dictionaries """
+    def get_lexicon(self, source, source_type):
+	""" get processed_opinion_positive.json or processed_pos_tagged_lexicon and load dictionaries """
 
-        print "(2) Loading data from " + "\033[1m" + self.src_lexicon + "\033[0m"
-        with open(self.src_lexicon, 'r') as f:
+        print "Loading data from " + "\033[1m" + source + "\033[0m"
+        with open(source, 'r') as f:
             lexicon = json.load(f)
 
+        sentiment_word_dicts = []
         index = 0
         length = len(lexicon)
-        print "Building sentiment_word_dicts and vectors200 ..."
+        print "Building", source_type, "sentiment_word_dicts and vectors200 ..."
         for word_dict in lexicon:
             index += 1
             """ E.g. word_dict = {"index": 1, "count": 3, "stemmed_word": "good", "word": ["good"]} """
             for key, value in self.unique_words.iteritems():
                 if word_dict["stemmed_word"] == key:
-                    self.sentiment_word_dicts.append(word_dict)
-                    #self.vectors200.append(self.vectors200[value])
+                    sentiment_word_dicts.append(word_dict)
 
             sys.stdout.write("\rStatus: %s / %s"%(index, length))
             sys.stdout.flush()
 
         print "\n" + "-"*70
+        return sentiment_word_dicts
 
-    def get_topN_sentiment_words(self):
+    def get_topN_sentiment_words(self, sentiment_word_dicts, source_type):
         """ (1) calculate cosine similarity (2) get topN nearest sentiment_words """
 
-        print "(3) Calculating " + "\033[1m" + "Cosine Similarity" + "\033[0m" + " between queries and every " + "\033[1m" + "sentiment" + "\033[0m" + " word" + "\n" + "-"*50
+        print "Calculating " + "\033[1m" + "Cosine Similarity" + "\033[0m" + " between queries and every " + "\033[1m" + "sentiment" + "\033[0m" + " word in" + source_type + "\n" + "-"*50
         star_cnt = 0 # loop 1_star to 5_star
         for query in self.queries:
             cos_sim_list = []
-            for word_dict in self.sentiment_word_dicts:
+            for word_dict in sentiment_word_dicts:
                 word = word_dict["stemmed_word"]
                 # cosine_similarity ranges from -1 ~ 1
                 cos_sim_list.append(1-spatial.distance.cosine(self.vectors200[self.unique_words[query]], self.vectors200[self.unique_words[word]]))
@@ -94,19 +89,19 @@ class MakeStarsLexicon:
 
             sorted_index = sorted(range(len(cos_sim_list)), key=lambda k: cos_sim_list[k], reverse=True)
             topN_sentiment_words = []
-            s = self.sentiment_word_dicts
+            s = sentiment_word_dicts
             for i, index in enumerate(sorted_index):
                 if i < self.topN:
                     sentiment_word = {"cos_sim": cos_sim_list[index], "count": s[index]["count"], "stemmed_word": s[index]["stemmed_word"], "word": s[index]["word"]}
                     topN_sentiment_words.append(sentiment_word)
 
-            self.render(query, topN_sentiment_words)
+            self.render(query, topN_sentiment_words, source_type)
 
 
-    def render(self, query, topN_sentiment_words):
+    def render(self, query, topN_sentiment_words, source_type):
         """ save every sentiment_word_dict in sentiment_word_dicts for 1_star ~ 5_star """
 
-        print "Constructing", "\033[1m" + str(query) + "\033[0m", "lexicon"
+        print "Constructing", "\033[1m" + str(query) + "\033[0m", "lexicon for", source_type
 
         query_ordered_dict = OrderedDict()
         query_ordered_dict["query"] = str(query)
@@ -125,26 +120,41 @@ class MakeStarsLexicon:
 
         query_ordered_dict["topN_sentiment_words"] = ordered_topN_sentiment_words
 
-        print "Saving lexicon to", str(self.dst) + "\033[1m" + str(query) + ".json" + "\033[0m"
-        f = open(self.dst + str(query) + ".json", "w")
+        print "Saving lexicon to data/lexicon/", source_type + "_stars/" + "\033[1m" + str(query) + ".json" + "\033[0m"
+        f = open("data/lexicon/" + source_type + "_stars/" + str(query) + ".json", "w")
         f.write(json.dumps(query_ordered_dict, indent = 4, cls=NoIndentEncoder))
         print "-"*50
 
-
     def create_dirs(self):
         """ create the directory if not exist"""
-        dir1 = os.path.dirname(self.dst)
+        dir1 = os.path.dirname(self.dst_opinion_positive)
+        dir2 = os.path.dirname(self.dst_opinion_negative)
+        dir3 = os.path.dirname(self.dst_pos_tagged)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1
             os.makedirs(dir1)
+        if not os.path.exists(dir2):
+            print "Creating directory: " + dir2
+            os.makedirs(dir2)
+        if not os.path.exists(dir3):
+            print "Creating directory: " + dir3
+            os.makedirs(dir3)
 
     def run(self):
         """ run the entire program """
         self.get_source()
-        self.get_lexicon()
+
+        opinion_positive_sentiment_words = self.get_lexicon(self.src_opinion_positive, "opinion_positive")
+        opinion_negative_sentiment_words = self.get_lexicon(self.src_opinion_negative, "opinion_negative")
+        pos_tagged_sentiment_words = self.get_lexicon(self.src_pos_tagged, "pos_tagged")
+
         self.create_dirs()
-        self.get_topN_sentiment_words()
+
+        self.get_topN_sentiment_words( opinion_positive_sentiment_words, "opinion_positive")
+        self.get_topN_sentiment_words( opinion_negative_sentiment_words, "opinion_negative")
+        self.get_topN_sentiment_words( pos_tagged_sentiment_words, "pos_tagged")
+
         print "Done"
 
 class NoIndent(object):
