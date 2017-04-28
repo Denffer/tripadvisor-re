@@ -10,9 +10,11 @@ class Log:
 
     def __init__(self):
         self.src_fr = "data/frontend_reviews/"
-        #self.src_ss = "data/sentiment_statistics/"
+        self.src_opinion_positive = "data/lexicon/processed_opinion_positive.json"
+        self.src_opinion_negative = "data/lexicon/processed_opinion_negative.json"
 
         self.frontend_reviews = []
+        self.positive_sentiment_count, self.negative_sentiment_count = 0, 0
         self.dst_log_dir = "data/"
         self.dst_log = "data/log.txt"
 
@@ -33,6 +35,42 @@ class Log:
             else:
                 print "No file is found"
             print "-"*80
+
+    def get_processed_opinion_positive(self):
+        """ Get positive_counts from data/lexicon/processed_opinion_positive.json """
+
+        with open(self.src_opinion_positive, "r") as f:
+            opinion_positive = json.load(f)
+
+        print "Loading data from", self.src_opinion_positive
+        index = 0
+        length = len(opinion_positive)
+        for word_dict in opinion_positive:
+            index += 1
+            self.positive_sentiment_count += int(word_dict["count"])
+
+        sys.stdout.write("\rStatus: %s / %s"%(index, length))
+        sys.stdout.flush()
+
+        print "\n" + "-"*80
+
+    def get_processed_opinion_negative(self):
+        """ Get negative_counts from data/lexicon/processed_opinion_negative.json """
+
+        with open(self.src_opinion_negative, "r") as f:
+            opinion_negative = json.load(f)
+
+        print "Loading data from", self.src_opinion_negative
+        index = 0
+        length = len(opinion_negative)
+        for word_dict in opinion_negative:
+            index += 1
+            self.negative_sentiment_count += int(word_dict["count"])
+
+        sys.stdout.write("\rStatus: %s / %s"%(index, length))
+        sys.stdout.flush()
+
+        print "\n" + "-"*80
 
     def render(self):
         """ save avg_words_count_per_review & avg_sentiment_count_per_review in data/log.txt """
@@ -75,7 +113,18 @@ class Log:
             log_file.write("\nAverage word count per review: " + str(avg_word_count))
             log_file.write("\nAverage nearest opinion_sentiment distance: " + str(avg_nearest_opinion_sentiment_distance))
             log_file.write("\nAverage nearest pos_tagged_sentiment distance: " + str(avg_nearest_pos_tagged_sentiment_distance))
+            log_file.write("\nTotal positive sentiment count: " + str(self.positive_sentiment_count))
+            log_file.write("\nTotal negative sentiment count: " + str(self.negative_sentiment_count))
 
+    def run(self):
+        """ run the entire program """
+        self.create_dirs()
+        self.get_frontend_reviews()
+        self.get_processed_opinion_positive()
+        self.get_processed_opinion_negative()
+        self.render()
+
+        print "Done"
 
     def create_dirs(self):
         """ create the directory if not exist"""
@@ -113,7 +162,5 @@ class NoIndentEncoder(json.JSONEncoder):
 
 if __name__ == '__main__':
     log = Log()
-    log.create_dirs()
-    log.get_frontend_reviews()
-    log.render()
+    log.run()
 
