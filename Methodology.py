@@ -23,11 +23,7 @@ class Methodology:
         self.threshold = 0
         #self.threshold = float(argv2)
         self.src_opinion = "data/lexicon/processed_opinion_positive.json"
-        self.src_1star = "data/lexicon/1_star.json"
-        self.src_2star = "data/lexicon/2_star.json"
-        self.src_3star = "data/lexicon/3_star.json"
-        self.src_4star = "data/lexicon/4_star.json"
-        self.src_5star = "data/lexicon/5_star.json"
+        self.src_star = "data/lexicon/opinion_positive_stars/"
         self.src_fr = "data/frontend_reviews/" + self.location + "/"
         self.src_processed_ss = "data/processed_sentiment_statistics/"
 
@@ -222,8 +218,6 @@ class Methodology:
             # cosine_similarity ranges from -1 ~ 1
             for index in xrange(len(sentiment_words)):
                 try:
-                    #print embeddings[unique_words[query]]
-                    #print sentiment_words_embeddings[unique_words[query]]
                     cos_sim_list.append(1-spatial.distance.cosine(embeddings[unique_words[query]], sentiment_words_embeddings[index]))
                 except:
                     # No match
@@ -695,7 +689,7 @@ class Methodology:
         self.renderRanking(entities, "word2vec", "opinion")
 
         # (2) 5_star
-        star5_sentiment_words, star5_sentiment_embeddings = self.get_star_sentiment(self.src_5star, line_unique_words, line_embeddings)
+        star5_sentiment_words, star5_sentiment_embeddings = self.get_star_sentiment(self.src_star+"5_star.json", line_unique_words, line_embeddings)
         # line x 5_star
         entities = self.get_topN_sentiment_words("star", line_unique_words, line_embeddings, star5_sentiment_words, star5_sentiment_embeddings)
         self.renderDistance(entities, "line", "star5")
@@ -706,7 +700,7 @@ class Methodology:
         self.renderRanking(entities, "word2vec", "star5")
 
         # (3) 4_star
-        star4_sentiment_words, star4_sentiment_embeddings = self.get_star_sentiment(self.src_4star, line_unique_words, line_embeddings)
+        star4_sentiment_words, star4_sentiment_embeddings = self.get_star_sentiment(self.src_star+"4_star.json", line_unique_words, line_embeddings)
         # line x 4_star
         entities = self.get_topN_sentiment_words("star", line_unique_words, line_embeddings, star4_sentiment_words, star4_sentiment_embeddings)
         self.renderDistance(entities, "line", "star4")
@@ -717,7 +711,7 @@ class Methodology:
         self.renderRanking(entities, "word2vec", "star4")
 
         # (4) 3_star
-        star3_sentiment_words, star3_sentiment_embeddings = self.get_star_sentiment(self.src_3star, line_unique_words, line_embeddings)
+        star3_sentiment_words, star3_sentiment_embeddings = self.get_star_sentiment(self.src_star+"3_star.json", line_unique_words, line_embeddings)
         # line x 3_star
         entities = self.get_topN_sentiment_words("star", line_unique_words, line_embeddings, star3_sentiment_words, star3_sentiment_embeddings)
         self.renderDistance(entities, "line", "star3")
@@ -728,7 +722,7 @@ class Methodology:
         self.renderRanking(entities, "word2vec", "star3")
 
         # (5) 2_star
-        star2_sentiment_words, star2_sentiment_embeddings = self.get_star_sentiment(self.src_2star, line_unique_words, line_embeddings)
+        star2_sentiment_words, star2_sentiment_embeddings = self.get_star_sentiment(self.src_star+"2_star.json", line_unique_words, line_embeddings)
         # line x 2_star
         entities = self.get_topN_sentiment_words("star", line_unique_words, line_embeddings, star2_sentiment_words, star2_sentiment_embeddings)
         self.renderDistance(entities, "line", "star2")
@@ -739,7 +733,7 @@ class Methodology:
         self.renderRanking(entities, "word2vec", "star2")
 
         # (1) 1_star
-        star1_sentiment_words, star1_sentiment_embeddings = self.get_star_sentiment(self.src_1star, line_unique_words, line_embeddings)
+        star1_sentiment_words, star1_sentiment_embeddings = self.get_star_sentiment(self.src_star+"1_star.json", line_unique_words, line_embeddings)
         # line x 1_star
         entities = self.get_topN_sentiment_words("star", line_unique_words, line_embeddings, star1_sentiment_words, star1_sentiment_embeddings)
         self.renderDistance(entities, "line", "star1")
