@@ -268,8 +268,8 @@ class MakeLexicons:
 
     def run(self):
         self.create_dir()
-        print "(1) Making Opinion_Lexicon" + "\n" + "-"*80
-        self.render_opinion_lexicon()
+        #print "(1) Making Opinion_Lexicon" + "\n" + "-"*80
+        #self.render_opinion_lexicon()
         print "(2) Making Pos_Tagged_Lexicon" + "\n" + "-"*80
         self.get_attractions()
         self.render_pos_lexicon()

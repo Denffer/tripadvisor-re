@@ -596,7 +596,7 @@ class ReviewProcess:
 
         frontend_orderedDict["reviews"] = review_ordered_dict_list
 
-        frontend_json = open(self.dst_frontend + self.entity["location"].replace("-","_") + "/" + self.filename + ".json", "w+")
+        frontend_json = open(self.dst_frontend + self.entity["location"] + "/" + self.filename + ".json", "w+")
         frontend_json.write(json.dumps( frontend_orderedDict, indent = 4, cls=NoIndentEncoder))
         frontend_json.close()
 
