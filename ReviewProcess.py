@@ -14,7 +14,7 @@ class ReviewProcess:
     """
 
     def __init__(self):
-        self.verbose = 0
+        self.verbose = 1
 
         self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
         self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+\_.*).json", self.src).group(1)
@@ -557,7 +557,7 @@ class ReviewProcess:
 
         if self.verbose:
             print "\n" + "-"*80 + "\n" + "Saving json files"
-        self.create_dirs(self.entity["location"].replace("-","_") + "/")
+        self.create_dirs(self.entity["location"] + "/")
 
         """ (1) save location_*.json in ./frontend_reviews """
         frontend_orderedDict = OrderedDict()
