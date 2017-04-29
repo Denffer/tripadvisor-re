@@ -46,7 +46,7 @@ class Merge:
                             corpus.append(file.read())
 
                 if str(f) != ".DS_Store":
-                    filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\_", file_list[0]).group(1)
+                    filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)\_", file_list[0]).group(1)
                     filename = filename + ".txt"
                     self.render_corpus(corpus, filename)
 
