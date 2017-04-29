@@ -39,7 +39,7 @@ class Methodology:
         self.entity_location_dict = {}
         self.entity_name_dict = {}
 
-        self.verbose = 0
+        self.verbose = 1
 
     def get_line_source(self):
 	""" first call readline() to read thefirst line of vectors200 file to get vocab_size and dimension_size """
@@ -251,9 +251,9 @@ class Methodology:
                     #print "ya"
                 #print word_dict
 
-            #print word_dict_list
+            # print word_dict_list
             cos_sim_list = [float(word_dict["cos_sim"]) for word_dict in word_dict_list if float(word_dict["cos_sim"]) >= self.threshold]
-            #print cos_sim_list
+            # print cos_sim_list
             sum_cosine_score = sum(cos_sim_list)
 
             # (1) top3 avg
@@ -397,8 +397,7 @@ class Methodology:
                                 json_data = json.load(file)
                             locational_sentiment_statistics = json_data
                         else:
-                            #print "No match"
-                            pass
+                            raise Exception("No target_file: " + target_filename + " is found")
             else:
                 print "No file is found"
 
