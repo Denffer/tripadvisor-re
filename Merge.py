@@ -183,7 +183,7 @@ class Merge:
         ## positive
         if list_type == "locational":
             print "Merging locational opinion_sentiment_statistics' positive counts"
-            location = opinion_statistics_list[0]["location"].replace("-","_")
+            location = opinion_statistics_list[0]["location"]
         elif list_type == "overall":
             print "Merging overall opinion_sentiment_statistics' positive counts"
         else:
@@ -337,7 +337,7 @@ class Merge:
 
         if list_type == "locational":
             print "Merging locational pos_tagged_sentiment_statistics' counts"
-            location = pos_tagged_statistics_list[0]["location"].replace("-","_")
+            location = pos_tagged_statistics_list[0]["location"]
         elif list_type == "overall":
             print "Merging overall pos_tagged_sentiment_statistics' counts"
         else:
