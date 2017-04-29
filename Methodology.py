@@ -211,6 +211,9 @@ class Methodology:
         if self.verbose:
             print "Calculating Cosine Similarity between queries and every sentiment word in opinion_lexicon"
 
+        # this get the locational sentiment_statistics # E.g., Amsterdam
+        sentiment_statistics = self.get_locational_sentiment_statistics(sentiment_type)
+
         processed_entities = []
         for query in self.queries:
             cos_sim_list = []
@@ -227,9 +230,6 @@ class Methodology:
                 print "Generating top" + str(self.topN) + " sentiment words with " + "\033[1m" + query + "\033[0m"
             # sorting indices # indices is the plural form of index
             sorted_indices = sorted(range(len(cos_sim_list)), key=lambda k: cos_sim_list[k], reverse=True)
-
-            # this get the locational sentiment_statistics # E.g., Amsterdam
-            sentiment_statistics = self.get_locational_sentiment_statistics(sentiment_type)
 
             word_dict_list = []
             for i, index in enumerate(sorted_indices):
@@ -357,8 +357,8 @@ class Methodology:
                 "top_all_sum_z_scoreXnorm_frequency_score": top_all_sum_zXnf
                 })
 
-            if self.verbose:
-                print "-"*70
+        if self.verbose:
+            print "-"*70
 
         return processed_entities
 
