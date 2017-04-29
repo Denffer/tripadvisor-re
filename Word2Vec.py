@@ -14,7 +14,7 @@ class Word2Vec:
             self.dst_v200 = "data/word2vec/" + self.filename + ".txt"
 
         self.verbose = 1
-        self.window_size = 3
+        self.window_size = 2
         self.min_count = 10
         self.dimension = 200
 
