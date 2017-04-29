@@ -8,7 +8,7 @@ import pprint
 class Baseline:
     """ This program calculate 3 baselines for comparison """
     def __init__(self):
-        self.src_vectors200 = sys.argv[1]
+        self.src_vectors200 = sys.argv[1] #data/line/norm_vectors200/Amsterdam.txt
         self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)\.txt", self.src_vectors200).group(1)
         self.src_cooccur = "data/glove/cooccur/" + self.filename + ".txt"
         self.src_frontend = "data/frontend_reviews/" + self.filename + "/"
@@ -22,10 +22,14 @@ class Baseline:
         self.cooccur_matrix = np.zeros(shape=(1,1))
         self.baseline1, self.baseline2, self.baseline3 = [], [], []
 
+        self.verbose = 0
+
     def get_unique_words(self):
         """ get a dictionary of all unique words """
 
-        print "Loading data from:", "\033[1m" + self.src_vectors200 + "\033[0m"
+        if self.verbose:
+            print "Loading data from:", "\033[1m" + self.src_vectors200 + "\033[0m"
+
         with open(self.src_vectors200) as f:
             next(f)
             index = 0
@@ -37,7 +41,9 @@ class Baseline:
 
     def get_cooccurrence_matrix(self):
         """ get cooccur_matrix """
-        print "Constructing cooccurrence matrix"
+
+        if self.verbose:
+            print "Constructing cooccurrence matrix"
 
         cooccur_lines = []
         with open(self.src_cooccur) as f:
@@ -58,21 +64,26 @@ class Baseline:
             else:
                 pass
 
-            sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
-            sys.stdout.flush()
-        print ""
+            if self.verbose:
+                sys.stdout.write("\rStatus: %s / %s"%(cnt, length))
+                sys.stdout.flush()
+
+        if self.verbose:
+            print ""
 
     def get_entities(self):
         """ extract (1) entity_name (2) entity_mentioned_count (3) reranked_ranking (4) original_ranking """
 
-        print "Loading entity_names from: " + self.src_frontend
+        if self.verbose:
+            print "Loading entity_names from: " + self.src_frontend
         for dirpath, dir_list, file_list in os.walk(self.src_frontend):
-            print "Walking into directory: " + str(dirpath)
+            if self.verbose:
+                print "Walking into directory: " + str(dirpath)
 
             # in case there is a goddamn .DS_Store file
             if len(file_list) > 0:
-                print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
-
+                if self.verbose:
+                    print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
                 file_cnt = 0
                 length = len(file_list)
                 for f in file_list:
@@ -82,7 +93,8 @@ class Baseline:
                         break
                     else:
                         file_cnt += 1
-                        print "Merging " + str(dirpath) + str(f)
+                        if self.verbose:
+                            print "Merging " + str(dirpath) + str(f)
                         with open(dirpath + f) as file:
                             entity = json.load(file)
                             # entity_al => entity append location E.g. Happy-Temple_Bangkok
@@ -96,9 +108,10 @@ class Baseline:
                                 "reranked_ranking": reranked_ranking, "original_ranking": original_ranking})
             else:
                 print "No file is found"
-                print "-"*80
-
-        print "-"*80
+                if self.verbose:
+                    print "-"*80
+        if self.verbose:
+            print "-"*80
 
     def get_opinion_lexicon(self):
         """ get all sentiment_words for baseline2 """
@@ -117,7 +130,8 @@ class Baseline:
     def get_baseline1(self):
         """ baseline1 ranks the entities by the frequency of entity_mentioned_count """
 
-        print "Processing Baseline1 ..."
+        if self.verbose:
+            print "Processing Baseline1 ..."
         self.entities = sorted(self.entities, key=lambda k: k['entity_mentioned_count'], reverse = True)
 
         ranking_by_mentioned_count = 0
@@ -128,7 +142,8 @@ class Baseline:
     def get_baseline2(self):
         """ baseline2 ranks the entities by the sum of entity_cooccur_opinion_sentiment_words """
 
-        print "Processing Baseline2 ..."
+        if self.verbose:
+            print "Processing Baseline2 ..."
         sentiment_indices = []
         for sentiment_dict in self.opinion_sentiment_words:
             try:
@@ -160,7 +175,8 @@ class Baseline:
     def get_baseline3(self):
         """ baseline3 ranks the entities by the sum of entity_cooccur_pos_tagged_sentiment_words """
 
-        print "Processing Baseline3 ..."
+        if self.verbose:
+            print "Processing Baseline3 ..."
         sentiment_indices = []
         for sentiment_dict in self.pos_tagged_sentiment_words:
             try:
@@ -192,7 +208,8 @@ class Baseline:
     def get_baseline4(self):
         """ baseline4 ranks the entities by the cosine_similarity between entity_cooccur_matrix_row and opinion_sentiment_words_cooccur_matrix_row """
 
-        print "Processing Baseline4 ..."
+        if self.verbose:
+            print "Processing Baseline4 ..."
         sentiment_matrix_rows = []
         for sentiment_dict in self.opinion_sentiment_words:
             try:
@@ -226,7 +243,8 @@ class Baseline:
     def get_baseline5(self):
         """ baseline5 ranks the entities by the cosine_similarity between entity_cooccur_matrix_row and pos_tagged_sentiment_words_cooccur_matrix_row """
 
-        print "Processing Baseline5 ..."
+        if self.verbose:
+            print "Processing Baseline5 ..."
         sentiment_matrix_rows = []
         for sentiment_dict in self.pos_tagged_sentiment_words:
             try:
@@ -262,7 +280,8 @@ class Baseline:
         dir1 = os.path.dirname(self.dst)
 
         if not os.path.exists(dir1):
-            print "Creating directory:", dst1
+            if self.verbose:
+                print "Creating directory:", dst1
             os.makedirs(dir1)
 
     def render(self):
@@ -314,7 +333,8 @@ class Baseline:
         print "Writing to " + "\033[1m" + str(self.dst) + "baseline.json" + "\033[0m"
         f = open(self.dst + "baseline.json", "w")
         f.write(json.dumps(baseline_ordered_dict, indent = 4))
-        print "Done"
+        if self.verbose:
+            print "Done"
 
     def PrintException(self):
         exc_type, exc_obj, tb = sys.exc_info()
