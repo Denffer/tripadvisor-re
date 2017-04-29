@@ -654,7 +654,8 @@ class Methodology:
         print "Writing data to " + "\033[1m" + str(self.dst_ranking) + embedding_type + "_" + sentiment_type + ".json \033[0m"
         f = open(self.dst_ranking + embedding_type + "_" + sentiment_type + ".json", "w")
         f.write(json.dumps(entity_ordered_dict, indent = 4, cls=NoIndentEncoder))
-        print "-"*80
+        if self.verbose:
+            print "-"*80
 
     def create_dirs(self):
         """ create the directory if not exist"""
@@ -716,7 +717,8 @@ class Methodology:
         self.renderDistance(entities, "line", "star4")
         self.renderRanking(entities, "line", "star4")
         # word2vec x 4_star
-        print "\033[1m word2vec x 4_star \033[0m"
+        if self.verbose:
+            print "\033[1m word2vec x 4_star \033[0m"
         entities = self.get_topN_sentiment_words("star", word2vec_unique_words, word2vec_embeddings, star4_sentiment_words, star4_sentiment_embeddings)
         self.renderDistance(entities, "word2vec", "star4")
         self.renderRanking(entities, "word2vec", "star4")
