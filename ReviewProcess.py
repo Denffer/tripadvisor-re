@@ -604,7 +604,7 @@ class ReviewProcess:
             print self.filename, "'s frontend is complete"
 
         """ (2) save location_*.txt in ./backend_reviews/location/ """
-        backend_txt = open(self.dst_backend +"/"+ self.entity["location"].replace("-","_") +"/"+ self.filename + ".txt", "w+")
+        backend_txt = open(self.dst_backend +"/"+ self.entity["location"] +"/"+ self.filename + ".txt", "w+")
         for review in self.backend_reviews:
             backend_txt.write(review.encode("utf-8") + '\n')
         backend_txt.close()
@@ -613,7 +613,7 @@ class ReviewProcess:
             print self.filename, "'s backend is complete"
 
         """ (3) save location_*.txt in ./starred_backend_reviews/location/ """
-        stars_txt_file = open(self.dst_starred +"/"+ self.entity["location"].replace("-","_") +"/"+ self.filename + ".txt", "w+")
+        stars_txt_file = open(self.dst_starred +"/"+ self.entity["location"] +"/"+ self.filename + ".txt", "w+")
         for review in self.starred_backend_reviews:
             stars_txt_file.write(review.encode("utf-8") + '\n')
         stars_txt_file.close()
@@ -622,7 +622,7 @@ class ReviewProcess:
             print self.filename, "'s starred_backend is complete"
 
         """ (4) save location_*.json in ./hybrid_reviews/location/ """
-        hybrid_json_file = open(self.dst_hybrid +"/"+ self.entity["location"].replace("-","_") +"/"+ self.filename + ".json", "w+")
+        hybrid_json_file = open(self.dst_hybrid +"/"+ self.entity["location"] +"/"+ self.filename + ".json", "w+")
 
         cnt = 0
         hybrid_ordered_dict_list = []
@@ -650,7 +650,7 @@ class ReviewProcess:
         orderedDict["avg_opinion_negative_count"] = self.avg_opinion_negative_count
         orderedDict["sentiment_statistics"] = self.opinion_sentiment_statistics
 
-        opinion_sentiment_json = open(self.dst_sentiment_statistics + self.entity["location"].replace("-","_") + "/opinion/" + self.filename + ".json", "w+")
+        opinion_sentiment_json = open(self.dst_sentiment_statistics + self.entity["location"] + "/opinion/" + self.filename + ".json", "w+")
         opinion_sentiment_json.write(json.dumps(orderedDict, indent = 4, cls=NoIndentEncoder))
         opinion_sentiment_json.close()
 
@@ -665,7 +665,7 @@ class ReviewProcess:
         orderedDict["avg_pos_tagged_sentiment_count"] = self.avg_pos_tagged_sentiment_count
         orderedDict["sentiment_statistics"] = self.pos_tagged_sentiment_statistics
 
-        opinion_sentiment_json = open(self.dst_sentiment_statistics + self.entity["location"].replace("-","_") + "/pos_tagged/" + self.filename + ".json", "w+")
+        opinion_sentiment_json = open(self.dst_sentiment_statistics + self.entity["location"] + "/pos_tagged/" + self.filename + ".json", "w+")
         opinion_sentiment_json.write(json.dumps(orderedDict, indent = 4, cls=NoIndentEncoder))
         opinion_sentiment_json.close()
 
