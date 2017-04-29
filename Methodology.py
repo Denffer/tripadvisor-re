@@ -390,14 +390,16 @@ class Methodology:
                         print "Removing " + dirpath + str(f)
                         os.remove(dirpath + f)
                         break
+                    elif target_filename in f:
+                        print "Loading locational_sentiment_sentiment_statistics from " + dirpath + str(f)
+                        with open(dirpath + "/" + f) as file:
+                            json_data = json.load(file)
+                        locational_sentiment_statistics = json_data
                     else:
-                        if target_filename in f:
-                            # print "Loading locational_sentiment_sentiment_statistics from " + dirpath + str(f)
-                            with open(dirpath + "/" + f) as file:
-                                json_data = json.load(file)
-                            locational_sentiment_statistics = json_data
-                        else:
-                            raise Exception("No target_file: " + target_filename + " is found")
+                        pass
+
+                if len(locational_sentiment_statistics) == 0:
+                    raise Exception("No target_file: " + target_filename + " is found")
             else:
                 print "No file is found"
 
