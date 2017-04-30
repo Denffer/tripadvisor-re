@@ -9,16 +9,20 @@ class ToExcel:
     """
 
     def __init__(self):
-        self.src = sys.argv[1]
+        self.src = "data/result"
         self.dst_name = "Reranked_NDCG_Results.xlsx"
         #self.topN = int(sys.argv[2])
         self.dst_dir = "data/excel/"
         self.locations = []
 
         self.workbook = xlsxwriter.Workbook(self.dst_dir + self.dst_name)
+        self.worksheets = []
         self.worksheet1 = self.workbook.add_worksheet('ndcg@5')
+        self.worksheets.append(self.worksheet1)
         self.worksheet2 = self.workbook.add_worksheet('ndcg@10')
+        self.worksheets.append(self.worksheet2)
         self.worksheet3 = self.workbook.add_worksheet('ndcg@20')
+        self.worksheets.append(self.worksheet3)
 
         self.title_format = self.workbook.add_format({'bold': True, 'align': 'center'})
         self.location_format = self.workbook.add_format({'align': 'center'})
@@ -54,7 +58,6 @@ class ToExcel:
     def filter(self):
       """ filter topN if necessary """
       self.locations = sorted(self.locations, key=itemgetter('ndcg5_list'), reverse=True)[:self.topN]
-      self.locations = sorted(self.locations, key=itemgetter('ndcg10_list'), reverse=True)[:self.topN]
       # print self.locations
 
     def process_json_data(self, json_data):
@@ -62,100 +65,91 @@ class ToExcel:
 
         ndcg5_list = [
                 json_data["lineXopinion_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXopinion_top_all_sum_zXnf_ndcg@5"],
                 json_data["lineXopinion_top_all_avg_ndcg@5"],
-
                 json_data["lineXstar5_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXstar5_top_all_sum_zXnf_ndcg@5"],
                 json_data["lineXstar5_top_all_avg_ndcg@5"],
-
                 json_data["lineXstar4_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXstar4_top_all_sum_zXnf_ndcg@5"],
                 json_data["lineXstar4_top_all_avg_ndcg@5"],
-
                 json_data["lineXstar3_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXstar3_top_all_sum_zXnf_ndcg@5"],
                 json_data["lineXstar3_top_all_avg_ndcg@5"],
-
                 json_data["lineXstar2_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXstar2_top_all_sum_zXnf_ndcg@5"],
                 json_data["lineXstar2_top_all_avg_ndcg@5"],
-
                 json_data["lineXstar1_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXstar1_top_all_sum_zXnf_ndcg@5"],
                 json_data["lineXstar1_top_all_avg_ndcg@5"],
-
+                json_data["word2vecXopinion_top_all_sum_cXnf_ndcg@5"],
+                json_data["word2vecXopinion_top_all_avg_ndcg@5"],
+                json_data["word2vecXstar5_top_all_sum_cXnf_ndcg@5"],
+                json_data["word2vecXstar5_top_all_avg_ndcg@5"],
                 json_data["b1_ndcg@5"],
-                json_data["b2_ndcg@5"]]
+                json_data["b2_ndcg@5"],
+                json_data["b3_ndcg@5"]]
 
         ndcg10_list = [
                 json_data["lineXopinion_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXopinion_top_all_sum_zXnf_ndcg@10"],
                 json_data["lineXopinion_top_all_avg_ndcg@10"],
                 json_data["lineXstar5_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXstar5_top_all_sum_zXnf_ndcg@10"],
                 json_data["lineXstar5_top_all_avg_ndcg@10"],
                 json_data["lineXstar4_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXstar4_top_all_sum_zXnf_ndcg@10"],
                 json_data["lineXstar4_top_all_avg_ndcg@10"],
                 json_data["lineXstar3_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXstar3_top_all_sum_zXnf_ndcg@10"],
                 json_data["lineXstar3_top_all_avg_ndcg@10"],
                 json_data["lineXstar2_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXstar2_top_all_sum_zXnf_ndcg@10"],
                 json_data["lineXstar2_top_all_avg_ndcg@10"],
                 json_data["lineXstar1_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXstar1_top_all_sum_zXnf_ndcg@10"],
                 json_data["lineXstar1_top_all_avg_ndcg@10"],
+                json_data["word2vecXopinion_top_all_sum_cXnf_ndcg@10"],
+                json_data["word2vecXopinion_top_all_avg_ndcg@10"],
+                json_data["word2vecXstar5_top_all_sum_cXnf_ndcg@10"],
+                json_data["word2vecXstar5_top_all_avg_ndcg@10"],
                 json_data["b1_ndcg@10"],
-                json_data["b2_ndcg@10"]]
+                json_data["b2_ndcg@10"],
+                json_data["b3_ndcg@10"]]
 
         ndcg20_list = [
                 json_data["lineXopinion_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXopinion_top_all_sum_zXnf_ndcg@20"],
                 json_data["lineXopinion_top_all_avg_ndcg@20"],
                 json_data["lineXstar5_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXstar5_top_all_sum_zXnf_ndcg@20"],
                 json_data["lineXstar5_top_all_avg_ndcg@20"],
                 json_data["lineXstar4_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXstar4_top_all_sum_zXnf_ndcg@20"],
                 json_data["lineXstar4_top_all_avg_ndcg@20"],
                 json_data["lineXstar3_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXstar3_top_all_sum_zXnf_ndcg@20"],
                 json_data["lineXstar3_top_all_avg_ndcg@20"],
                 json_data["lineXstar2_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXstar2_top_all_sum_zXnf_ndcg@20"],
                 json_data["lineXstar2_top_all_avg_ndcg@20"],
                 json_data["lineXstar1_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXstar1_top_all_sum_zXnf_ndcg@20"],
                 json_data["lineXstar1_top_all_avg_ndcg@20"],
+                json_data["word2vecXopinion_top_all_sum_cXnf_ndcg@20"],
+                json_data["word2vecXopinion_top_all_avg_ndcg@20"],
+                json_data["word2vecXstar5_top_all_sum_cXnf_ndcg@20"],
+                json_data["word2vecXstar5_top_all_avg_ndcg@20"],
                 json_data["b1_ndcg@20"],
-                json_data["b2_ndcg@20"]]
+                json_data["b2_ndcg@20"],
+                json_data["b3_ndcg@20"]]
 
         kendalltau_list = [
                 json_data["lineXopinion_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXopinion_top_all_sum_zXnf_kendalltau"],
                 json_data["lineXopinion_top_all_avg_kendalltau"],
                 json_data["lineXstar5_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXstar5_top_all_sum_zXnf_kendalltau"],
                 json_data["lineXstar5_top_all_avg_kendalltau"],
                 json_data["lineXstar4_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXstar4_top_all_sum_zXnf_kendalltau"],
                 json_data["lineXstar4_top_all_avg_kendalltau"],
                 json_data["lineXstar3_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXstar3_top_all_sum_zXnf_kendalltau"],
                 json_data["lineXstar3_top_all_avg_kendalltau"],
                 json_data["lineXstar2_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXstar2_top_all_sum_zXnf_kendalltau"],
                 json_data["lineXstar2_top_all_avg_kendalltau"],
                 json_data["lineXstar1_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXstar1_top_all_sum_zXnf_kendalltau"],
                 json_data["lineXstar1_top_all_avg_kendalltau"],
+                json_data["word2vecXopinion_top_all_sum_cXnf_kendalltau"],
+                json_data["word2vecXopinion_top_all_avg_kendalltau"],
+                json_data["word2vecXstar5_top_all_sum_cXnf_kendalltau"],
+                json_data["word2vecXstar5_top_all_avg_kendalltau"],
                 json_data["b1_kendalltau"],
-                json_data["b2_kendalltau"]]
+                json_data["b2_kendalltau"],
+                json_data["b3_kendalltau"]]
 
         # decide how many columns
-        self.methodology_length = len(ndcg5_list)
+        self.column_num = len(ndcg5_list)
+        #print self.column_num
         return ndcg5_list, ndcg10_list, ndcg20_list, kendalltau_list
 
     def customize_column_width(self):
@@ -171,93 +165,47 @@ class ToExcel:
             location_name_length_list.append(len(location_name))
 
         # first column list out all the location
-        self.worksheet1.set_column(0, 0, max(location_name_length_list))
-        self.worksheet2.set_column(0, 0, max(location_name_length_list))
-        self.worksheet3.set_column(0, 0, max(location_name_length_list))
-        # second parameter depends on how many methodology to compare
-        self.worksheet1.set_column(1, self.methodology_length, 14)
-        self.worksheet2.set_column(1, self.methodology_length, 14)
-        self.worksheet3.set_column(1, self.methodology_length, 14)
+        for worksheet in self.worksheets:
+            worksheet.set_column(0, 0, max(location_name_length_list))
+            worksheet.set_column(1, self.column_num, 16)
 
-    def write_ndcg(self):
+    def write_excel(self):
+        """ render output to data/excel/ """
 
-        print "Writing " + "\033[1m" + self.worksheet1.name + "\033[0m" + " & " + "\033[1m" + self.worksheet2.name + "\033[0m" + " & " + "\033[1m" + self.worksheet3.name + "\033[0m"
-         # Write data headers.
-        self.worksheet1.write('A1', 'NDCG@5', self.title_format)
-        self.worksheet1.write('B1', 'lineXopinion_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet1.write('C1', 'lineXopinion_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet1.write('D1', 'lineXopinion_Avg_Cosine', self.title_format)
-        self.worksheet1.write('E1', 'lineXstar5_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet1.write('F1', 'lineXstar5_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet1.write('G1', 'lineXstar5_Avg_Cosine', self.title_format)
-        self.worksheet1.write('H1', 'lineXstar4_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet1.write('I1', 'lineXstar4_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet1.write('J1', 'lineXstar4_Avg_Cosine', self.title_format)
-        self.worksheet1.write('K1', 'lineXstar3_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet1.write('L1', 'lineXstar3_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet1.write('M1', 'lineXstar3_Avg_Cosine', self.title_format)
-        self.worksheet1.write('N1', 'lineXstar2_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet1.write('O1', 'lineXstar2_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet1.write('P1', 'lineXstar2_Avg_Cosine', self.title_format)
-        self.worksheet1.write('Q1', 'lineXstar1_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet1.write('R1', 'lineXstar1_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet1.write('S1', 'lineXstar1_Avg_Cosine', self.title_format)
-        self.worksheet1.write('T1', 'Baseline1', self.title_format)
-        self.worksheet1.write('U1', 'Baseline2', self.title_format)
+        index = ["A1","B1","C1","D1","E1","F1","G1","H1","I1","J1","K1","L1","M1","N1","O1","P1","Q1","R1","S1","T1"]
+        ndcg_N = ["5","10","20"]
+        # loop through worksheet1~3
+        for worksheet, n in zip(self.worksheets, ndcg_N):
+            print "Writing " + "\033[1m" + worksheet.name + "\033[0m"
 
-         # Write data headers.
-        self.worksheet2.write('A1', 'NDCG@10', self.title_format)
-        self.worksheet2.write('B1', 'lineXopinion_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet2.write('C1', 'lineXopinion_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet2.write('D1', 'lineXopinion_Avg_Cosine', self.title_format)
-        self.worksheet2.write('E1', 'lineXstar5_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet2.write('F1', 'lineXstar5_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet2.write('G1', 'lineXstar5_Avg_Cosine', self.title_format)
-        self.worksheet2.write('H1', 'lineXstar4_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet2.write('I1', 'lineXstar4_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet2.write('J1', 'lineXstar4_Avg_Cosine', self.title_format)
-        self.worksheet2.write('K1', 'lineXstar3_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet2.write('L1', 'lineXstar3_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet2.write('M1', 'lineXstar3_Avg_Cosine', self.title_format)
-        self.worksheet2.write('N1', 'lineXstar2_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet2.write('O1', 'lineXstar2_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet2.write('P1', 'lineXstar2_Avg_Cosine', self.title_format)
-        self.worksheet2.write('Q1', 'lineXstar1_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet2.write('R1', 'lineXstar1_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet2.write('S1', 'lineXstar1_Avg_Cosine', self.title_format)
-        self.worksheet2.write('T1', 'Baseline1', self.title_format)
-        self.worksheet2.write('U1', 'Baseline2', self.title_format)
-
-         # Write data headers.
-        self.worksheet3.write('A1', 'NDCG@20', self.title_format)
-        self.worksheet3.write('B1', 'lineXopinion_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet3.write('C1', 'lineXopinion_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet3.write('D1', 'lineXopinion_Avg_Cosine', self.title_format)
-        self.worksheet3.write('E1', 'lineXstar5_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet3.write('F1', 'lineXstar5_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet3.write('G1', 'lineXstar5_Avg_Cosine', self.title_format)
-        self.worksheet3.write('H1', 'lineXstar4_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet3.write('I1', 'lineXstar4_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet3.write('J1', 'lineXstar4_Avg_Cosine', self.title_format)
-        self.worksheet3.write('K1', 'lineXstar3_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet3.write('L1', 'lineXstar3_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet3.write('M1', 'lineXstar3_Avg_Cosine', self.title_format)
-        self.worksheet3.write('N1', 'lineXstar2_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet3.write('O1', 'lineXstar2_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet3.write('P1', 'lineXstar2_Avg_Cosine', self.title_format)
-        self.worksheet3.write('Q1', 'lineXstar1_Sum_cXnf_Cosine', self.title_format)
-        self.worksheet3.write('R1', 'lineXstar1_Sum_zXnf_Cosine', self.title_format)
-        self.worksheet3.write('S1', 'lineXstar1_Avg_Cosine', self.title_format)
-        self.worksheet3.write('T1', 'Baseline1', self.title_format)
-        self.worksheet3.write('U1', 'Baseline2', self.title_format)
+            # Write data headers.
+            worksheet.write(index[0], 'NDCG@'+n, self.title_format)
+            worksheet.write(index[1], 'lineXopinion_cXnf', self.title_format)
+            worksheet.write(index[2], 'lineXopinion_Avg', self.title_format)
+            worksheet.write(index[3], 'lineXstar5_cXnf', self.title_format)
+            worksheet.write(index[4], 'lineXstar5_Avg', self.title_format)
+            worksheet.write(index[5], 'lineXstar4_cXnf', self.title_format)
+            worksheet.write(index[6], 'lineXstar4_Avg', self.title_format)
+            worksheet.write(index[7], 'lineXstar3_cXnf', self.title_format)
+            worksheet.write(index[8], 'lineXstar3_Avg', self.title_format)
+            worksheet.write(index[9], 'lineXstar2_cXnf', self.title_format)
+            worksheet.write(index[10], 'lineXstar2_Avg', self.title_format)
+            worksheet.write(index[11], 'lineXstar1_cXnf', self.title_format)
+            worksheet.write(index[12], 'lineXstar1_Avg', self.title_format)
+            worksheet.write(index[13], 'word2vecXopinion_cXnf', self.title_format)
+            worksheet.write(index[14], 'word2vecXopinion_Avg', self.title_format)
+            worksheet.write(index[15], 'word2vecXstar5_cXnf', self.title_format)
+            worksheet.write(index[16], 'word2vecXstar5_Avg', self.title_format)
+            worksheet.write(index[17], 'Baseline1', self.title_format)
+            worksheet.write(index[18], 'Baseline2', self.title_format)
+            worksheet.write(index[19], 'Baseline3', self.title_format)
 
         # Put data into the worksheet.
         row = 0
         for location in self.locations:
             row += 1
-            self.worksheet1.write(row, 0, location['location_name'], self.location_format)
-            self.worksheet2.write(row, 0, location['location_name'], self.location_format)
-            self.worksheet3.write(row, 0, location['location_name'], self.location_format)
+            for worksheet in self.worksheets:
+                worksheet.write(row, 0, location['location_name'], self.location_format)
             column = 0
             for ndcg5, ndcg10, ndcg20 in zip(location['ndcg5_list'], location['ndcg10_list'], location['ndcg20_list']):
                 column += 1
@@ -276,71 +224,27 @@ class ToExcel:
                 else:
                     self.worksheet3.write(row, column, ndcg20, self.num_format)
 
-        self.worksheet1.write(row+1, 0, "Average", self.title_format)
-        self.worksheet1.write(row+1, 1, '=AVERAGE(B2:B'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 2, '=AVERAGE(C2:C'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 3, '=AVERAGE(D2:D'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 4, '=AVERAGE(E2:E'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 5, '=AVERAGE(F2:F'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 6, '=AVERAGE(G2:G'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 7, '=AVERAGE(H2:H'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 8, '=AVERAGE(I2:I'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 12, '=AVERAGE(M2:M'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 13, '=AVERAGE(N2:N'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 14, '=AVERAGE(O2:O'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 15, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 16, '=AVERAGE(Q2:Q'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 17, '=AVERAGE(R2:R'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 18, '=AVERAGE(S2:S'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 19, '=AVERAGE(T1:T'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet1.write(row+1, 20, '=AVERAGE(U2:U'+ str(len(self.locations)+1) +')', self.avg_num_format)
-
-        self.worksheet2.write(row+1, 0, "Average", self.title_format)
-        self.worksheet2.write(row+1, 1, '=AVERAGE(B2:B'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 2, '=AVERAGE(C2:C'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 3, '=AVERAGE(D2:D'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 4, '=AVERAGE(E2:E'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 5, '=AVERAGE(F2:F'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 6, '=AVERAGE(G2:G'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 7, '=AVERAGE(H2:H'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 8, '=AVERAGE(I2:I'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 12, '=AVERAGE(M2:M'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 13, '=AVERAGE(N2:N'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 14, '=AVERAGE(O2:O'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 15, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 16, '=AVERAGE(Q2:Q'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 17, '=AVERAGE(R2:R'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 18, '=AVERAGE(S2:S'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 19, '=AVERAGE(T2:T'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet2.write(row+1, 20, '=AVERAGE(U2:U'+ str(len(self.locations)+1) +')', self.avg_num_format)
-
-        self.worksheet3.write(row+1, 0, "Average", self.title_format)
-        self.worksheet3.write(row+1, 1, '=AVERAGE(B2:B'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 2, '=AVERAGE(C2:C'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 3, '=AVERAGE(D2:D'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 4, '=AVERAGE(E2:E'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 5, '=AVERAGE(F2:F'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 6, '=AVERAGE(G2:G'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 7, '=AVERAGE(H2:H'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 8, '=AVERAGE(I2:I'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 12, '=AVERAGE(M2:M'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 13, '=AVERAGE(N2:N'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 14, '=AVERAGE(O2:O'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 15, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 16, '=AVERAGE(Q2:Q'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 17, '=AVERAGE(R2:R'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 18, '=AVERAGE(S2:S'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 19, '=AVERAGE(T2:T'+ str(len(self.locations)+1) +')', self.avg_num_format)
-        self.worksheet3.write(row+1, 20, '=AVERAGE(U2:U'+ str(len(self.locations)+1) +')', self.avg_num_format)
+        for worksheet in self.worksheets:
+            worksheet.write(row+1, 0, "Average", self.title_format)
+            worksheet.write(row+1, 1, '=AVERAGE(B2:B'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 2, '=AVERAGE(C2:C'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 3, '=AVERAGE(D2:D'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 4, '=AVERAGE(E2:E'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 5, '=AVERAGE(F2:F'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 6, '=AVERAGE(G2:G'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 7, '=AVERAGE(H2:H'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 8, '=AVERAGE(I2:I'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 12, '=AVERAGE(M2:M'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 13, '=AVERAGE(N2:N'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 14, '=AVERAGE(O2:O'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 15, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 16, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 17, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 18, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            worksheet.write(row+1, 19, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
 
         print "-"*80 + "\nSaving " + "\033[1m" + str(self.dst_name) + "\033[0m" + " in " + str(self.dst_dir)
         self.workbook.close()
@@ -357,7 +261,7 @@ class ToExcel:
         self.get_source()
         self.customize_column_width()
         #self.filter()
-        self.write_ndcg()
+        self.write_excel()
 
         print "Done"
 
