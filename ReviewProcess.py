@@ -7,7 +7,7 @@ from nltk.stem.snowball import SnowballStemmer
 from nltk.corpus import stopwords
 
 class ReviewProcess:
-    """ This program aims to transform all data in json files in data/reranked_reviews/ into
+    """ This program aims to transform all data in json files in data/reviews/ into
         (1) backend_reviews.txt in 'data/backend_reviews/'
         (2) location_*.json in 'data/frontend_reviews/'
         (3) sentiment_statistics_location_*.json in the 'data/statistics/'
