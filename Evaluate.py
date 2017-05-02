@@ -13,10 +13,10 @@ class Evaluate:
     """
 
     def __init__(self):
-        # sample argv input: data/ranking/New_York_City/ reranked | data/ranking/New_York_City original
+        # sample argv input: data/ranking/New-York-City/ reranked | data/ranking/New-York-City original
         self.src = sys.argv[1]
         self.order = sys.argv[2]
-        self.filename = re.search("data\/ranking\/([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)", self.src).group(1) # E.g. New_York_City
+        self.filename = re.search("data\/ranking\/([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)", self.src).group(1) # E.g., New-York-City
         self.dst = "data/results/"
 
         self.methodology_data = []
