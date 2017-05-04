@@ -14,7 +14,7 @@ class ReviewProcess:
     """
 
     def __init__(self):
-        self.verbose = 1
+        self.verbose = 0
 
         self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
         self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+\_.*).json", self.src).group(1)
