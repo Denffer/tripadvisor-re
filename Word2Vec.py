@@ -6,17 +6,18 @@ class Word2Vec:
         """ initalize paths """
 
         self.src = sys.argv[1]
-        if "starred_corpus" in self.src:
-            self.filename = "starred_corpus"
-            self.dst_v200 = "data/word2vec/starred/" + self.filename + ".txt"
-        else:
-            self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+).txt", self.src).group(1)
-            self.dst_v200 = "data/word2vec/" + self.filename + ".txt"
-
         self.verbose = 1
         self.window_size = 2
-        self.min_count = 10
+        self.min_count = 30
         self.dimension = 200
+        self.workers = 20
+
+        if "starred_corpus" in self.src:
+            self.filename = "starred_corpus"
+            self.dst_v200 = "data/word2vec/starred/w" + str(self.window_size) + "m" + str(self.min_count) + "_" + self.filename + ".txt"
+        else:
+            self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+).txt", self.src).group(1)
+            self.dst_v200 = "data/word2vec/w" + str(self.window_size) + "m" + str(self.min_count) + "_vectors200/" + self.filename + ".txt"
 
     def get_corpus(self):
         """ get reviews in corpus """
@@ -46,7 +47,7 @@ class Word2Vec:
 
         #print '-'*80
         print "Running Word2Vec on", self.src
-        model = gensim.models.Word2Vec(sentences, min_count=10, size = self.dimension, window = self.window_size, workers=4)
+        model = gensim.models.Word2Vec(sentences, min_count=self.min_count, size = self.dimension, window = self.window_size, workers=self.workers)
         unique_words = list(model.vocab.keys())
 
         vectors200 = []
