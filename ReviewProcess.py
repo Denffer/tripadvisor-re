@@ -14,7 +14,7 @@ class ReviewProcess:
     """
 
     def __init__(self):
-        self.verbose = 0
+        self.verbose = 1
 
         self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
         self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+\_.*).json", self.src).group(1)
@@ -67,7 +67,7 @@ class ReviewProcess:
             print "-"*80
             print "Generating entity_regexr"
 
-        entity_regexr = self.entity_name
+        entity_regexr = self.entity_name.replace("&","and").replace(self.entity["location"], "").strip()
         entity_regexr = entity_regexr.split()
         if entity_regexr[-1] == "tours":
             entity_regexr[0] = "\\s(the\\s|this\\s|" + entity_regexr[0]
@@ -85,7 +85,10 @@ class ReviewProcess:
             entity_regexr[0] = "\\s(the\\s|this\\s|" + entity_regexr[0]
 
             for i in xrange(len(entity_regexr)-1):
-                entity_regexr[i] += "\\s"
+                if entity_regexr[i][-1] == "s":
+                    entity_regexr[i] += "(s)?\\s"
+                else:
+                    entity_regexr[i] += "\\s"
             for i in xrange(len(entity_regexr)-2):
                 entity_regexr[i] += "|"
 
@@ -105,7 +108,8 @@ class ReviewProcess:
             print "-"*80 + "\n" + "Generating entity_al"
 
         location = self.entity["location"]
-        entity_al = self.entity_name
+        #entity_al = self.entity_name
+        entity_al = self.entity_name.replace("&","and").replace(self.entity["location"], "").strip()
         self.entity_al = " " + entity_al.replace(" ", "-") + "_" + location.replace(" ", "-") + " "
 
         if self.verbose:
@@ -116,7 +120,8 @@ class ReviewProcess:
         if self.verbose:
             print "-"*80 + "\n" + "Generating entity_marked"
 
-        entity_marked = self.entity_name
+        #entity_marked = self.entity_name
+        entity_marked = self.entity_name.replace("&","and").replace(self.entity["location"], "").strip()
         entity_marked = entity_marked.replace(" ","-")
         self.entity_marked = " <mark>" + entity_marked + "</mark> "
 
