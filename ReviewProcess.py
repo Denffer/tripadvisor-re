@@ -67,7 +67,7 @@ class ReviewProcess:
             print "-"*80
             print "Generating entity_regexr"
 
-        entity_regexr = self.entity_name.replace(self.entity["location"], "").strip()
+        self.entity_regexr = self.entity_name
         entity_regexr = entity_regexr.split()
         if entity_regexr[-1] == "tours":
             entity_regexr[0] = "\\s(the\\s|this\\s|" + entity_regexr[0]
@@ -107,9 +107,7 @@ class ReviewProcess:
         if self.verbose:
             print "-"*80 + "\n" + "Generating entity_al"
 
-        location = self.entity["location"]
-        #entity_al = self.entity_name
-        entity_al = self.entity_name.replace(self.entity["location"], "").strip()
+        entity_al = self.entity_name
         self.entity_al = " " + entity_al.replace(" ", "-") + "_" + location.replace(" ", "-") + " "
 
         if self.verbose:
@@ -121,7 +119,7 @@ class ReviewProcess:
             print "-"*80 + "\n" + "Generating entity_marked"
 
         #entity_marked = self.entity_name
-        entity_marked = self.entity_name.replace(self.entity["location"], "").strip()
+        entity_marked = self.entity_name
         entity_marked = entity_marked.replace(" ","-")
         self.entity_marked = " <mark>" + entity_marked + "</mark> "
 
