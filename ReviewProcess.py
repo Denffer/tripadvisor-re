@@ -14,7 +14,7 @@ class ReviewProcess:
     """
 
     def __init__(self):
-        self.verbose = 0
+        self.verbose = 1
 
         self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
         self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+\_.*).json", self.src).group(1)
@@ -56,7 +56,7 @@ class ReviewProcess:
     def get_entity_name(self):
         """ get entity_name from entity_dict """
 
-        self.entity_name = self.entity["entity_name"].replace("-"," ")
+        self.entity_name = self.entity["entity_name"].replace("-"," ").replace("&","and")
 
         if self.verbose:
             print "This is entity: " + "\033[1m" + self.entity_name + "\033[0m"
@@ -67,7 +67,7 @@ class ReviewProcess:
             print "-"*80
             print "Generating entity_regexr"
 
-        entity_regexr = self.entity_name.replace("&","and").replace(self.entity["location"], "").strip()
+        entity_regexr = self.entity_name.replace(self.entity["location"], "").strip()
         entity_regexr = entity_regexr.split()
         if entity_regexr[-1] == "tours":
             entity_regexr[0] = "\\s(the\\s|this\\s|" + entity_regexr[0]
@@ -109,7 +109,7 @@ class ReviewProcess:
 
         location = self.entity["location"]
         #entity_al = self.entity_name
-        entity_al = self.entity_name.replace("&","and").replace(self.entity["location"], "").strip()
+        entity_al = self.entity_name.replace(self.entity["location"], "").strip()
         self.entity_al = " " + entity_al.replace(" ", "-") + "_" + location.replace(" ", "-") + " "
 
         if self.verbose:
@@ -121,7 +121,7 @@ class ReviewProcess:
             print "-"*80 + "\n" + "Generating entity_marked"
 
         #entity_marked = self.entity_name
-        entity_marked = self.entity_name.replace("&","and").replace(self.entity["location"], "").strip()
+        entity_marked = self.entity_name.replace(self.entity["location"], "").strip()
         entity_marked = entity_marked.replace(" ","-")
         self.entity_marked = " <mark>" + entity_marked + "</mark> "
 
@@ -567,7 +567,7 @@ class ReviewProcess:
         """ (1) save location_*.json in ./frontend_reviews """
         frontend_orderedDict = OrderedDict()
         frontend_orderedDict["location"] = self.entity["location"]
-        frontend_orderedDict["entity_name"] = self.entity["entity_name"]
+        frontend_orderedDict["entity_name"] = self.entity_name.replace(" ","-")
         frontend_orderedDict["avg_rating_stars"] = self.entity["avg_rating_stars"]
         frontend_orderedDict["reranked_ranking"] = self.entity["reranked_ranking"]
         frontend_orderedDict["original_ranking"] = self.entity["original_ranking"]
