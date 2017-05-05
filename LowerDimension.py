@@ -13,12 +13,12 @@ class LowerDimension:
         self.pca_dimension = 100
 
         self.unique_words = []
+        self.verbose = 0
 
     def get_vectors200(self):
         """ append every crawled business_list into source """
 
         print "Loading data from:", "\033[1m" + sys.argv[1] + "\033[0m"
-
 
         vectors200 = []
         with open(self.src_f) as f:
@@ -38,7 +38,8 @@ class LowerDimension:
         """ (1) get vectors200 (2) perform reduction to N dimension by pca """
         vectors200 = self.get_vectors200()
 
-        print "Reducing vectors200 to vectors" + self.pca_dimension + " by PCA"
+        if self.verbose:
+            print "Reducing vectors200 to vectors" + str(self.pca_dimension) + " by PCA"
         pca = decomposition.PCA(n_components = self.pca_dimension)
         pca.fit(vectors200)
         vectorsN = pca.transform(vectors200)
@@ -49,7 +50,8 @@ class LowerDimension:
         """ (1) get vectorsN (2) perform reduction to 2 dimension by tsne """
         vectorsN = self.get_vectorsN()
 
-        print "Reducing vectors" + self.pca_dimension +" to vectors2 by tSNE"
+        if self.verbose:
+            print "Reducing vectors" + str(self.pca_dimension) +" to vectors2 by tSNE"
         X = np.array(vectorsN)
         model = TSNE(n_components=2, random_state=0)
         np.set_printoptions(suppress=True)
@@ -62,8 +64,8 @@ class LowerDimension:
 
         vectors2 = self.get_vectors2()
 
-        filename = re.findall("[a-z|.]+\_*[a-z|.]+\_*[a-z|.]+\.txt", str(self.src_f))
-        filename = filename[0][:-4] + ".json"
+        filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)\.txt", str(self.src_f)).group(1)
+        filename = filename + ".json"
         print "Writing data to: " + str(self.dst) + "\033[1m" + str(filename) + "\033[0m"
 
         # f = open(self.dst+"/"+filename, 'w+')
@@ -82,7 +84,6 @@ class LowerDimension:
 
         f = open(self.dst+"/"+filename, 'w+')
         f.write(json.dumps(v2_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
-        print "Done " + str(self.dst) + "\033[1m" + str(filename) + "\033[0m"
 
 class NoIndent(object):
     def __init__(self, value):
