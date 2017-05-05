@@ -8,8 +8,8 @@ class Plot:
         self.src = sys.argv[1]
         self.src_rankings = sys.argv[2]
         self.dst_o = "data/graphic_output/"
-        self.src_ss = "data/lexicon/enhanced_lexicon.json"
-        self.filename = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)\.json", self.src).group(1)
+        self.src_ss = "data/lexicon/processed_opinion_positive.json"
+        self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)\.json", self.src).group(1)
 
         self.json_data = []
         self.unique_words = []
@@ -43,7 +43,7 @@ class Plot:
         with open(self.src_ss) as f:
             lexicon = json.load(f)
 
-        self.positive = lexicon["positive"]["extreme_positive"]
+        self.positive = lexicon
 
     def get_rankings(self):
         """ load attraction_name from data/ranking/ and store it to a list """
