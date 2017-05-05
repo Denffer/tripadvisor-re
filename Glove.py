@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from argparse import ArgumentParser
-import codecs, itertools, logging, os.path, msgpack, re, sys
+import codecs, itertools, logging, os.path, msgpack, re, sys, os
 from collections import Counter
 from functools import partial
 from math import log
@@ -10,8 +10,7 @@ import numpy as np
 from scipy import sparse
 
 logger = logging.getLogger("glove")
-dst_vocab = "data/glove/vocab/"
-dst_cooccur = "data/glove/cooccur/"
+dst_dir = "data/glove/"
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -331,16 +330,16 @@ def save_model(W, path):
 
     logger.info("Saved vectors to %s", path)
 
-def create_dirs():
+def create_dirs(window_size, min_count):
     """ create the directory if not exist"""
-    dir1 = os.path.dirname(dst_vocab)
-    dir2 = os.path.dirname(dst_cooccur)
+    dir1 = os.path.dirname(dst_dir+"w"+window_size+"m"+min_count+"_vocab/")
+    dir2 = os.path.dirname(dst_dir+"w"+window_size+"m"+min_count+"_cooccur/")
 
     if not os.path.exists(dir1):
-        print "Creating directory: " + "\033[1m" + dir1 + "\033[0m"
+        print "Creating directory: " + "\033[1m" + dir1 + "/" + "\033[0m"
         os.makedirs(dir1)
     if not os.path.exists(dir2):
-        print "Creating directory: " + "\033[1m" + dir2 + "\033[0m"
+        print "Creating directory: " + "\033[1m" + dir2 + "/" + "\033[0m"
         os.makedirs(dir2)
 
 def main(arguments):
@@ -350,7 +349,7 @@ def main(arguments):
     filename = filename[0]
     print "Running Glove on: " + "\033[1m" + filename + "\033[0m"
 
-    create_dirs()
+    create_dirs(str(arguments.window_size), str(arguments.min_count))
 
     corpus = arguments.corpus
 
@@ -358,10 +357,11 @@ def main(arguments):
     vocab = get_or_build(arguments.vocab_path, build_vocab, corpus)
     logger.info("Vocab has %i elements.\n", len(vocab))
 
+    dst_vocab = dst_dir+"w"+str(arguments.window_size)+"m"+str(arguments.min_count)+"_vocab/"
     print "Saving txt file to: " + dst_vocab + "\033[1m" + filename + "\033[0m"
     inv_vocab={}
     string = ""
-    with open(dst_vocab+"/"+filename, 'w') as fp:
+    with open(dst_vocab+filename, 'w') as fp:
         for key, value in vocab.items():
             fp.write('%s %s\n' % (value[0], key))
             inv_vocab[value[0]]=key
@@ -374,8 +374,9 @@ def main(arguments):
                                  window_size=arguments.window_size,
                                  min_count=arguments.min_count)
 
+    dst_cooccur = dst_dir+"w"+str(arguments.window_size)+"m"+str(arguments.min_count)+"_cooccur/"
     print "Saving txt file to: " + dst_cooccur + "\033[1m" + filename + "\033[0m"
-    with open(dst_cooccur+"/"+filename, 'w') as fp:
+    with open(dst_cooccur+filename, 'w') as fp:
         fp.write('\n'.join('%s %s %s' % (inv_vocab[x[0]], inv_vocab[x[1]], x[2]) for x in cooccurrences))
 
 if __name__ == '__main__':
