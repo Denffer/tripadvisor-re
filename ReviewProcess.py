@@ -14,7 +14,7 @@ class ReviewProcess:
     """
 
     def __init__(self):
-        self.verbose = 1
+        self.verbose = 0
 
         self.src = sys.argv[1]  # E.g. data/reranked_reviews/bangkok_3.json
         self.filename = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+\_.*).json", self.src).group(1)
@@ -56,7 +56,7 @@ class ReviewProcess:
     def get_entity_name(self):
         """ get entity_name from entity_dict """
 
-        self.entity_name = self.entity["entity_name"].replace("-"," ").replace("&","and")
+        self.entity_name = self.entity["entity_name"].replace("-"," ").replace("&","and").replace(" "+self.entity["location"],"")
 
         if self.verbose:
             print "This is entity: " + "\033[1m" + self.entity_name + "\033[0m"
@@ -67,7 +67,7 @@ class ReviewProcess:
             print "-"*80
             print "Generating entity_regexr"
 
-        self.entity_regexr = self.entity_name
+        entity_regexr = self.entity_name
         entity_regexr = entity_regexr.split()
         if entity_regexr[-1] == "tours":
             entity_regexr[0] = "\\s(the\\s|this\\s|" + entity_regexr[0]
@@ -108,6 +108,7 @@ class ReviewProcess:
             print "-"*80 + "\n" + "Generating entity_al"
 
         entity_al = self.entity_name
+        location = self.entity["location"]
         self.entity_al = " " + entity_al.replace(" ", "-") + "_" + location.replace(" ", "-") + " "
 
         if self.verbose:
@@ -118,7 +119,6 @@ class ReviewProcess:
         if self.verbose:
             print "-"*80 + "\n" + "Generating entity_marked"
 
-        #entity_marked = self.entity_name
         entity_marked = self.entity_name
         entity_marked = entity_marked.replace(" ","-")
         self.entity_marked = " <mark>" + entity_marked + "</mark> "
@@ -691,7 +691,7 @@ class ReviewProcess:
         self.get_pos_tagged_lexicon()
         self.get_avg_nearest_opinion_sentiment_distance()
         self.get_avg_nearest_pos_tagged_sentiment_distance()
-        #self.get_hybrid_reviews()
+        self.get_hybrid_reviews()
         self.get_opinion_sentiment_statistics()
         self.get_pos_tagged_sentiment_statistics()
         self.render()
