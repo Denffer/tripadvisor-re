@@ -18,7 +18,7 @@ class Methodology:
     def __init__(self, argv1, argv2):
         self.src_line = argv1 # E.g., data/line/norm_vectors200/Amsterdam.txt
         self.location = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)\.txt", self.src_line).group(1)
-        self.src_word2vec = "data/word2vec/" + self.location + ".txt"
+        self.src_word2vec = "data/word2vec/vectors200/" + self.location + ".txt"
 
         self.threshold = 0
         #self.threshold = float(argv2)
