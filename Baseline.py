@@ -22,7 +22,7 @@ class Baseline:
         self.cooccur_matrix = np.zeros(shape=(1,1))
         self.baseline1, self.baseline2, self.baseline3 = [], [], []
 
-        self.verbose = 0
+        self.verbose = 1
 
     def get_unique_words(self):
         """ get a dictionary of all unique words """
