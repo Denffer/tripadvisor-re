@@ -298,7 +298,7 @@ class ReviewProcess:
         review_length = len(self.clean_reviews)
         for review_dict, review, clean_review in zip(self.entity["reviews"], self.backend_reviews, self.clean_reviews):
             review_cnt += 1
-            self.hybrid_reviews.append({"title": review_dict["title"], "review": review, "clean_review": clean_review})
+            self.hybrid_reviews.append({"review": review, "clean_review": clean_review})
 
             if self.verbose:
                 sys.stdout.write("\rStatus: %s / %s"%(review_cnt, review_length))
@@ -633,7 +633,6 @@ class ReviewProcess:
             cnt += 1
             hybrid_orderedDict = OrderedDict()
             hybrid_orderedDict["index"] = cnt
-            hybrid_orderedDict["title"] = review_dict["title"].encode("utf-8")
             hybrid_orderedDict["processed_review"] = review_dict["review"].encode("utf-8")
             hybrid_orderedDict["clean_review"] = review_dict["clean_review"].encode("utf-8")
             hybrid_ordered_dict_list.append(hybrid_orderedDict)
