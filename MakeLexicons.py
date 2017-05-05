@@ -21,7 +21,7 @@ class MakeLexicons:
         self.pos_tagged_statistics = {}
         #self.pos_tags = ["JJ","JJR", "JJS", "RB","VBG","VBN"]
         self.pos_tags = ["JJ","JJR", "JJS"]
-        self.frequency_threshold = 20
+        self.frequency_threshold = 100
 
         self.stemmer = SnowballStemmer("english")
         self.stopwords = set(stopwords.words('english'))
