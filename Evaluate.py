@@ -115,6 +115,8 @@ class Evaluate:
             baseline_rankings.append(attraction_dict[parameter])
 
         kendalltau = self.get_kendalltau(rankings, baseline_rankings)
+        print "rankings:", rankings
+        print "baseline_rankings:", baseline_rankings
         ndcg = self.get_ndcg(rankings, baseline_rankings)
 
         print "-"*80
@@ -138,7 +140,7 @@ class Evaluate:
         kendalltau = self.get_kendalltau(rankings, computed_rankings)
         ndcg = self.get_ndcg(rankings, computed_rankings)
 
-        print "-"*80
+        #print "-"*80
         return kendalltau, ndcg
 
     def get_topN_sum_cXnf(self, source, n):
@@ -159,7 +161,7 @@ class Evaluate:
         kendalltau = self.get_kendalltau(rankings, computed_rankings)
         ndcg = self.get_ndcg(rankings, computed_rankings)
 
-        print "-"*80
+        #print "-"*80
         return kendalltau, ndcg
 
     def get_topN_sum_zXnf(self, source, n):
@@ -180,14 +182,14 @@ class Evaluate:
         kendalltau = self.get_kendalltau(rankings, computed_rankings)
         ndcg = self.get_ndcg(rankings, computed_rankings)
 
-        print "-"*80
+        #print "-"*80
         return kendalltau, ndcg
 
     def get_kendalltau(self, ground_truth_rankings, comparing_rankings):
         """ get kendalltau for two input lists """
 
-        print "Ground_Truth_Rankings:", ground_truth_rankings
-        print "Comparing_Rankings:", comparing_rankings
+        #print "Ground_Truth_Rankings:", ground_truth_rankings
+        #print "Comparing_Rankings:", comparing_rankings
 
         g = []
         for r1, r2 in zip(ground_truth_rankings, comparing_rankings):
@@ -204,19 +206,19 @@ class Evaluate:
 
         ground_truth_g = [4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1]
         #print "Ground Truth G:", ground_truth_g
-        print "G:", g
+        #print "G:", g
 
         kendalltau = scipy.stats.kendalltau(ground_truth_rankings, comparing_rankings).correlation
-        print kendalltau
-        print "-"*30
+        #print kendalltau
+        #print "-"*30
         return kendalltau
 
     def get_ndcg(self, ground_truth_rankings, comparing_rankings):
         """ get ndcg for two input lists """
 
-        print "Computing NDCG ..."
-        print "Ground_Truth_Rankings:", ground_truth_rankings
-        print "Comparing_Rankings:", comparing_rankings
+        #print "Computing NDCG ..."
+        #print "Ground_Truth_Rankings:", ground_truth_rankings
+        #print "Comparing_Rankings:", comparing_rankings
 
         g = []
         for r1, r2 in zip(ground_truth_rankings, comparing_rankings):
@@ -233,12 +235,12 @@ class Evaluate:
 
         ground_truth_g = [4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1]
         #print "Ground Truth G:", ground_truth_g
-        print "G:", g
+        #print "G:", g
         try:
             ndcg = map(div, self.get_dcg(g), self.get_dcg(sorted(g, reverse=True)))
         except:
             ndcg = [0]*20
-        print "NDCG:", ndcg
+        #print "NDCG:", ndcg
 
         return ndcg
 
@@ -307,145 +309,147 @@ class Evaluate:
         # baseline
         source = self.get_baseline_source("baseline")
         baseline1_kendalltau, baseline1_ndcg = self.get_baselineN(source, "ranking_by_mentioned_count")
+        print baseline1_kendalltau, baseline1_ndcg
         baselines.update({"baseline1_kendalltau": baseline1_kendalltau, "baseline1_ndcg": baseline1_ndcg})
         baseline2_kendalltau, baseline2_ndcg = self.get_baselineN(source, "ranking_by_opinion_cooccur_sum")
+        print baseline2_kendalltau, baseline2_ndcg
         baselines.update({"baseline2_kendalltau": baseline2_kendalltau, "baseline2_ndcg": baseline2_ndcg})
         baseline3_kendalltau, baseline3_ndcg = self.get_baselineN(source, "ranking_by_pos_tagged_cooccur_sum")
         baselines.update({"baseline3_kendalltau": baseline3_kendalltau, "baseline3_ndcg": baseline3_ndcg})
         result_dict.update({"baselines": baselines})
 
-        lineXopinion = {}
-        # line x opinion
-        source = self.get_source("line_opinion")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        lineXopinion.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        lineXopinion.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        lineXopinion.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"lineXopinion": lineXopinion})
-
-        word2vecXopinion = {}
-        # word2vec x opinion
-        source = self.get_source("word2vec_opinion")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        word2vecXopinion.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        word2vecXopinion.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        word2vecXopinion.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"word2vecXopinion": word2vecXopinion})
-
-        lineXstar1 = {}
-        # line x star1
-        source = self.get_source("line_star1")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        lineXstar1.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        lineXstar1.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        lineXstar1.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"lineXstar1": lineXstar1})
-
-        word2vecXstar1 = {}
-        # word2vec x star1
-        source = self.get_source("word2vec_star1")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        word2vecXstar1.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        word2vecXstar1.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        word2vecXstar1.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"word2vecXstar1": word2vecXstar1})
-
-        lineXstar2 = {}
-        # line x star2
-        source = self.get_source("line_star2")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        lineXstar2.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        lineXstar2.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        lineXstar2.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"lineXstar2": lineXstar2})
-
-        word2vecXstar2 = {}
-        # word2vec x star2
-        source = self.get_source("word2vec_star2")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        word2vecXstar2.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        word2vecXstar2.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        word2vecXstar2.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"word2vecXstar2": word2vecXstar2})
-
-        lineXstar3 = {}
-        # line x star3
-        source = self.get_source("line_star3")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        lineXstar3.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        lineXstar3.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        lineXstar3.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"lineXstar3": lineXstar3})
-
-        word2vecXstar3 = {}
-        # word2vec x star3
-        source = self.get_source("word2vec_star3")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        word2vecXstar3.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        word2vecXstar3.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        word2vecXstar3.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"word2vecXstar3": word2vecXstar3})
-
-        lineXstar4 = {}
-        # line x star4
-        source = self.get_source("line_star4")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        lineXstar4.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        lineXstar4.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        lineXstar4.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"lineXstar4": lineXstar4})
-
-        word2vecXstar4 = {}
-        # word2vec x star4
-        source = self.get_source("word2vec_star4")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        word2vecXstar4.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        word2vecXstar4.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        word2vecXstar4.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"word2vecXstar4": word2vecXstar4})
-
-        lineXstar5 = {}
-        # line x star5
-        source = self.get_source("line_star5")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        lineXstar5.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        lineXstar5.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        lineXstar5.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"lineXstar5": lineXstar5})
-
-        word2vecXstar5 = {}
-        # word2vec x star5
-        source = self.get_source("word2vec_star5")
-        kendalltau, ndcg = self.get_topN_avg(source, "_all")
-        word2vecXstar5.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
-        word2vecXstar5.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
-        kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
-        word2vecXstar5.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
-        result_dict.update({"word2vecXstar5": word2vecXstar5})
-
+        #  lineXopinion = {}
+        #  line x opinion
+        #  source = self.get_source("line_opinion")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  lineXopinion.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  lineXopinion.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  lineXopinion.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"lineXopinion": lineXopinion})
+        #
+        #  word2vecXopinion = {}
+        #  word2vec x opinion
+        #  source = self.get_source("word2vec_opinion")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  word2vecXopinion.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  word2vecXopinion.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  word2vecXopinion.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"word2vecXopinion": word2vecXopinion})
+        #
+        #  lineXstar1 = {}
+        #  line x star1
+        #  source = self.get_source("line_star1")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  lineXstar1.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  lineXstar1.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  lineXstar1.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"lineXstar1": lineXstar1})
+        #
+        #  word2vecXstar1 = {}
+        #  word2vec x star1
+        #  source = self.get_source("word2vec_star1")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  word2vecXstar1.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  word2vecXstar1.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  word2vecXstar1.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"word2vecXstar1": word2vecXstar1})
+        #
+        #  lineXstar2 = {}
+        #  line x star2
+        #  source = self.get_source("line_star2")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  lineXstar2.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  lineXstar2.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  lineXstar2.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"lineXstar2": lineXstar2})
+        #
+        #  word2vecXstar2 = {}
+        #  word2vec x star2
+        #  source = self.get_source("word2vec_star2")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  word2vecXstar2.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  word2vecXstar2.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  word2vecXstar2.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"word2vecXstar2": word2vecXstar2})
+        #
+        #  lineXstar3 = {}
+        #  line x star3
+        #  source = self.get_source("line_star3")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  lineXstar3.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  lineXstar3.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  lineXstar3.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"lineXstar3": lineXstar3})
+        #
+        #  word2vecXstar3 = {}
+        #  word2vec x star3
+        #  source = self.get_source("word2vec_star3")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  word2vecXstar3.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  word2vecXstar3.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  word2vecXstar3.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"word2vecXstar3": word2vecXstar3})
+        #
+        #  lineXstar4 = {}
+        #  line x star4
+        #  source = self.get_source("line_star4")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  lineXstar4.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  lineXstar4.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  lineXstar4.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"lineXstar4": lineXstar4})
+        #
+        #  word2vecXstar4 = {}
+        #  word2vec x star4
+        #  source = self.get_source("word2vec_star4")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  word2vecXstar4.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  word2vecXstar4.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  word2vecXstar4.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"word2vecXstar4": word2vecXstar4})
+        #
+        #  lineXstar5 = {}
+        #  line x star5
+        #  source = self.get_source("line_star5")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  lineXstar5.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  lineXstar5.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  lineXstar5.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"lineXstar5": lineXstar5})
+        #
+        #  word2vecXstar5 = {}
+        #  word2vec x star5
+        #  source = self.get_source("word2vec_star5")
+        #  kendalltau, ndcg = self.get_topN_avg(source, "_all")
+        #  word2vecXstar5.update({"top_all_avg_kendalltau": kendalltau, "top_all_avg_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_cXnf(source, "_all")
+        #  word2vecXstar5.update({"top_all_sum_cXnf_kendalltau": kendalltau, "top_all_sum_cXnf_ndcg": ndcg})
+        #  kendalltau, ndcg = self.get_topN_sum_zXnf(source, "_all")
+        #  word2vecXstar5.update({"top_all_sum_zXnf_kendalltau": kendalltau, "top_all_sum_zXnf_ndcg": ndcg})
+        #  result_dict.update({"word2vecXstar5": word2vecXstar5})
+        #
         self.render(result_dict)
 
     def PrintException(self):

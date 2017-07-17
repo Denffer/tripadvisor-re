@@ -1,21 +1,22 @@
 import xlsxwriter
-import os, json, re, sys
+import os, json, re, sys, matplotlib
 from operator import itemgetter
+import matplotlib.pyplot as plt
 
 class ToExcel:
     """ This program aims to
-        (1) take data/results/location as input
-        (2) render into data/excel/
+        (1) write data into data/excel/Reranked_NDCG_Results.xlsx
+        (2) plot data into data/graphic_output/Reranked_NDCG_Result.png
     """
 
     def __init__(self):
         self.src = "data/result"
-        self.dst_name = "Reranked_NDCG_Results.xlsx"
+        self.dst_name = "Reranked_NDCG_Results"
         #self.topN = int(sys.argv[2])
-        self.dst_dir = "data/excel/"
+        self.dst_excel = "data/excel/"
         self.locations = []
 
-        self.workbook = xlsxwriter.Workbook(self.dst_dir + self.dst_name)
+        self.workbook = xlsxwriter.Workbook(self.dst_excel + self.dst_name + ".xlsx")
         self.worksheets = []
         self.worksheet1 = self.workbook.add_worksheet('ndcg@5')
         self.worksheets.append(self.worksheet1)
@@ -45,11 +46,11 @@ class ToExcel:
                         os.remove(dirpath + "/" +f)
                     else:
                         print "Appending " + "\033[1m" + str(f) + "\033[0m" + " into source"
-                        location_name = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+).json", f).group(1)
+                        location_name = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+).json", f).group(1)
                         with open(dirpath +"/"+ f) as file:
                             json_data = json.load(file)
                             ndcg5_list, ndcg10_list, ndcg20_list , kendalltau_list = self.process_json_data(json_data)
-                            self.locations.append({'location_name':location_name, 'ndcg5_list': ndcg5_list, 'ndcg10_list': ndcg10_list, 'ndcg20_list': ndcg20_list})
+                            self.locations.append({'location_name': location_name, 'ndcg5_list': ndcg5_list, 'ndcg10_list': ndcg10_list, 'ndcg20_list': ndcg20_list})
 
             else:
                 print "No file is found"
@@ -65,84 +66,84 @@ class ToExcel:
 
         ndcg5_list = [
                 json_data["lineXopinion_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXopinion_top_all_avg_ndcg@5"],
+                #json_data["lineXopinion_top_all_avg_ndcg@5"],
                 json_data["lineXstar5_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXstar5_top_all_avg_ndcg@5"],
+                #json_data["lineXstar5_top_all_avg_ndcg@5"],
                 json_data["lineXstar4_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXstar4_top_all_avg_ndcg@5"],
+                #json_data["lineXstar4_top_all_avg_ndcg@5"],
                 json_data["lineXstar3_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXstar3_top_all_avg_ndcg@5"],
+                #json_data["lineXstar3_top_all_avg_ndcg@5"],
                 json_data["lineXstar2_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXstar2_top_all_avg_ndcg@5"],
+                #json_data["lineXstar2_top_all_avg_ndcg@5"],
                 json_data["lineXstar1_top_all_sum_cXnf_ndcg@5"],
-                json_data["lineXstar1_top_all_avg_ndcg@5"],
+                #json_data["lineXstar1_top_all_avg_ndcg@5"],
                 json_data["word2vecXopinion_top_all_sum_cXnf_ndcg@5"],
-                json_data["word2vecXopinion_top_all_avg_ndcg@5"],
+                #json_data["word2vecXopinion_top_all_avg_ndcg@5"],
                 json_data["word2vecXstar5_top_all_sum_cXnf_ndcg@5"],
-                json_data["word2vecXstar5_top_all_avg_ndcg@5"],
+                #json_data["word2vecXstar5_top_all_avg_ndcg@5"],
                 json_data["b1_ndcg@5"],
                 json_data["b2_ndcg@5"],
                 json_data["b3_ndcg@5"]]
 
         ndcg10_list = [
                 json_data["lineXopinion_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXopinion_top_all_avg_ndcg@10"],
+                #json_data["lineXopinion_top_all_avg_ndcg@10"],
                 json_data["lineXstar5_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXstar5_top_all_avg_ndcg@10"],
+                #json_data["lineXstar5_top_all_avg_ndcg@10"],
                 json_data["lineXstar4_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXstar4_top_all_avg_ndcg@10"],
+                #json_data["lineXstar4_top_all_avg_ndcg@10"],
                 json_data["lineXstar3_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXstar3_top_all_avg_ndcg@10"],
+                #json_data["lineXstar3_top_all_avg_ndcg@10"],
                 json_data["lineXstar2_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXstar2_top_all_avg_ndcg@10"],
+                #json_data["lineXstar2_top_all_avg_ndcg@10"],
                 json_data["lineXstar1_top_all_sum_cXnf_ndcg@10"],
-                json_data["lineXstar1_top_all_avg_ndcg@10"],
+                #json_data["lineXstar1_top_all_avg_ndcg@10"],
                 json_data["word2vecXopinion_top_all_sum_cXnf_ndcg@10"],
-                json_data["word2vecXopinion_top_all_avg_ndcg@10"],
+                #json_data["word2vecXopinion_top_all_avg_ndcg@10"],
                 json_data["word2vecXstar5_top_all_sum_cXnf_ndcg@10"],
-                json_data["word2vecXstar5_top_all_avg_ndcg@10"],
+                #json_data["word2vecXstar5_top_all_avg_ndcg@10"],
                 json_data["b1_ndcg@10"],
                 json_data["b2_ndcg@10"],
                 json_data["b3_ndcg@10"]]
 
         ndcg20_list = [
                 json_data["lineXopinion_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXopinion_top_all_avg_ndcg@20"],
+                #json_data["lineXopinion_top_all_avg_ndcg@20"],
                 json_data["lineXstar5_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXstar5_top_all_avg_ndcg@20"],
+                #json_data["lineXstar5_top_all_avg_ndcg@20"],
                 json_data["lineXstar4_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXstar4_top_all_avg_ndcg@20"],
+                #json_data["lineXstar4_top_all_avg_ndcg@20"],
                 json_data["lineXstar3_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXstar3_top_all_avg_ndcg@20"],
+                #json_data["lineXstar3_top_all_avg_ndcg@20"],
                 json_data["lineXstar2_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXstar2_top_all_avg_ndcg@20"],
+                #json_data["lineXstar2_top_all_avg_ndcg@20"],
                 json_data["lineXstar1_top_all_sum_cXnf_ndcg@20"],
-                json_data["lineXstar1_top_all_avg_ndcg@20"],
+                #json_data["lineXstar1_top_all_avg_ndcg@20"],
                 json_data["word2vecXopinion_top_all_sum_cXnf_ndcg@20"],
-                json_data["word2vecXopinion_top_all_avg_ndcg@20"],
+                #json_data["word2vecXopinion_top_all_avg_ndcg@20"],
                 json_data["word2vecXstar5_top_all_sum_cXnf_ndcg@20"],
-                json_data["word2vecXstar5_top_all_avg_ndcg@20"],
+                #json_data["word2vecXstar5_top_all_avg_ndcg@20"],
                 json_data["b1_ndcg@20"],
                 json_data["b2_ndcg@20"],
                 json_data["b3_ndcg@20"]]
 
         kendalltau_list = [
                 json_data["lineXopinion_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXopinion_top_all_avg_kendalltau"],
+                #json_data["lineXopinion_top_all_avg_kendalltau"],
                 json_data["lineXstar5_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXstar5_top_all_avg_kendalltau"],
+                #json_data["lineXstar5_top_all_avg_kendalltau"],
                 json_data["lineXstar4_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXstar4_top_all_avg_kendalltau"],
+                #json_data["lineXstar4_top_all_avg_kendalltau"],
                 json_data["lineXstar3_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXstar3_top_all_avg_kendalltau"],
+                #json_data["lineXstar3_top_all_avg_kendalltau"],
                 json_data["lineXstar2_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXstar2_top_all_avg_kendalltau"],
+                #json_data["lineXstar2_top_all_avg_kendalltau"],
                 json_data["lineXstar1_top_all_sum_cXnf_kendalltau"],
-                json_data["lineXstar1_top_all_avg_kendalltau"],
+                #json_data["lineXstar1_top_all_avg_kendalltau"],
                 json_data["word2vecXopinion_top_all_sum_cXnf_kendalltau"],
-                json_data["word2vecXopinion_top_all_avg_kendalltau"],
+                #json_data["word2vecXopinion_top_all_avg_kendalltau"],
                 json_data["word2vecXstar5_top_all_sum_cXnf_kendalltau"],
-                json_data["word2vecXstar5_top_all_avg_kendalltau"],
+                #json_data["word2vecXstar5_top_all_avg_kendalltau"],
                 json_data["b1_kendalltau"],
                 json_data["b2_kendalltau"],
                 json_data["b3_kendalltau"]]
@@ -158,6 +159,7 @@ class ToExcel:
         print "Customizing width of columns ..."
         location_names = []
         for location in self.locations:
+            print location['location_name']
             location_names.append(location['location_name'])
 
         location_name_length_list = []
@@ -181,24 +183,24 @@ class ToExcel:
             # Write data headers.
             worksheet.write(index[0], 'NDCG@'+n, self.title_format)
             worksheet.write(index[1], 'lineXopinion_cXnf', self.title_format)
-            worksheet.write(index[2], 'lineXopinion_Avg', self.title_format)
-            worksheet.write(index[3], 'lineXstar5_cXnf', self.title_format)
-            worksheet.write(index[4], 'lineXstar5_Avg', self.title_format)
-            worksheet.write(index[5], 'lineXstar4_cXnf', self.title_format)
-            worksheet.write(index[6], 'lineXstar4_Avg', self.title_format)
-            worksheet.write(index[7], 'lineXstar3_cXnf', self.title_format)
-            worksheet.write(index[8], 'lineXstar3_Avg', self.title_format)
-            worksheet.write(index[9], 'lineXstar2_cXnf', self.title_format)
-            worksheet.write(index[10], 'lineXstar2_Avg', self.title_format)
-            worksheet.write(index[11], 'lineXstar1_cXnf', self.title_format)
-            worksheet.write(index[12], 'lineXstar1_Avg', self.title_format)
-            worksheet.write(index[13], 'word2vecXopinion_cXnf', self.title_format)
-            worksheet.write(index[14], 'word2vecXopinion_Avg', self.title_format)
-            worksheet.write(index[15], 'word2vecXstar5_cXnf', self.title_format)
-            worksheet.write(index[16], 'word2vecXstar5_Avg', self.title_format)
-            worksheet.write(index[17], 'Baseline1', self.title_format)
-            worksheet.write(index[18], 'Baseline2', self.title_format)
-            worksheet.write(index[19], 'Baseline3', self.title_format)
+            #  worksheet.write(index[2], 'lineXopinion_Avg', self.title_format)
+            worksheet.write(index[2], 'lineXstar5_cXnf', self.title_format)
+            #  worksheet.write(index[4], 'lineXstar5_Avg', self.title_format)
+            worksheet.write(index[3], 'lineXstar4_cXnf', self.title_format)
+            #  worksheet.write(index[6], 'lineXstar4_Avg', self.title_format)
+            worksheet.write(index[4], 'lineXstar3_cXnf', self.title_format)
+            #  worksheet.write(index[8], 'lineXstar3_Avg', self.title_format)
+            worksheet.write(index[5], 'lineXstar2_cXnf', self.title_format)
+            #  worksheet.write(index[10], 'lineXstar2_Avg', self.title_format)
+            worksheet.write(index[6], 'lineXstar1_cXnf', self.title_format)
+            #  worksheet.write(index[12], 'lineXstar1_Avg', self.title_format)
+            worksheet.write(index[7], 'word2vecXopinion_cXnf', self.title_format)
+            #  worksheet.write(index[14], 'word2vecXopinion_Avg', self.title_format)
+            worksheet.write(index[8], 'word2vecXstar5_cXnf', self.title_format)
+            #  worksheet.write(index[16], 'word2vecXstar5_Avg', self.title_format)
+            worksheet.write(index[9], 'Baseline1', self.title_format)
+            worksheet.write(index[10], 'Baseline2', self.title_format)
+            worksheet.write(index[11], 'Baseline3', self.title_format)
 
         # Put data into the worksheet.
         row = 0
@@ -237,21 +239,21 @@ class ToExcel:
             worksheet.write(row+1, 9, '=AVERAGE(J2:J'+ str(len(self.locations)+1) +')', self.avg_num_format)
             worksheet.write(row+1, 10, '=AVERAGE(K2:K'+ str(len(self.locations)+1) +')', self.avg_num_format)
             worksheet.write(row+1, 11, '=AVERAGE(L2:L'+ str(len(self.locations)+1) +')', self.avg_num_format)
-            worksheet.write(row+1, 12, '=AVERAGE(M2:M'+ str(len(self.locations)+1) +')', self.avg_num_format)
-            worksheet.write(row+1, 13, '=AVERAGE(N2:N'+ str(len(self.locations)+1) +')', self.avg_num_format)
-            worksheet.write(row+1, 14, '=AVERAGE(O2:O'+ str(len(self.locations)+1) +')', self.avg_num_format)
-            worksheet.write(row+1, 15, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
-            worksheet.write(row+1, 16, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
-            worksheet.write(row+1, 17, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
-            worksheet.write(row+1, 18, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
-            worksheet.write(row+1, 19, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            #  worksheet.write(row+1, 12, '=AVERAGE(M2:M'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            #  worksheet.write(row+1, 13, '=AVERAGE(N2:N'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            #  worksheet.write(row+1, 14, '=AVERAGE(O2:O'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            #  worksheet.write(row+1, 15, '=AVERAGE(P2:P'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            #  worksheet.write(row+1, 16, '=AVERAGE(Q2:Q'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            #  worksheet.write(row+1, 17, '=AVERAGE(R2:R'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            #  worksheet.write(row+1, 18, '=AVERAGE(S2:S'+ str(len(self.locations)+1) +')', self.avg_num_format)
+            #  worksheet.write(row+1, 19, '=AVERAGE(T2:T'+ str(len(self.locations)+1) +')', self.avg_num_format)
 
-        print "-"*80 + "\nSaving " + "\033[1m" + str(self.dst_name) + "\033[0m" + " in " + str(self.dst_dir)
+        print "-"*80 + "\nSaving " + "\033[1m" + self.dst_name + ".xlsx" + "\033[0m", "in", self.dst_excel
         self.workbook.close()
 
     def create_dir(self):
         """ create the directory if not exist"""
-        dir1 = os.path.dirname(self.dst_dir)
+        dir1 = os.path.dirname(self.dst_excel)
 
         if not os.path.exists(dir1):
             print "Creating directory: " + dir1

@@ -1,6 +1,6 @@
 data/
 workflow/
-Line/
+/* Line/ */
 RunLine.sh
 website/
 *.pyc

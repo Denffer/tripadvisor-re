@@ -12,7 +12,7 @@ class ToWebsite:
     def __init__(self):
         self.src_fr = "data/frontend_reviews/"
         self.src_vectors2 = "data/vectors2/"
-        self.src_lexicon = "data/lexicon/enhanced_lexicon.json"
+        self.src_lexicon = "data/lexicon/processed_opinion_positive.json"
         self.src_computed_rankings = "data/ranking/"
 
         self.dst_fr = "website/data/frontend_reviews/"
@@ -28,11 +28,11 @@ class ToWebsite:
         print "Loading data from: " + "\033[1m" + self.src_lexicon + "\033[0m"
         lexicon = json.load(open(self.src_lexicon))
 
-        self.lexicon = lexicon["positive"]["extreme_positive"]
+        self.lexicon = lexicon
+        print "-"*80
 
     def get_frontend_reviews(self):
         """ load data in data/frontend_reviews/ -> match -> insert -> save """
-        print "Starting to load: " + self.src_fr
         for dirpath, dir_list, file_list in os.walk(self.src_fr):
             print "Walking into directory: " + str(dirpath)
 
@@ -40,7 +40,7 @@ class ToWebsite:
             if len(file_list) > 0:
                 print "Files found: " + "\033[1m" + str(file_list) + "\033[0m"
 
-                location = re.search("([A-Za-z|.]+\_*[A-Za-z|.]+\_*[A-Za-z|.]+)_", file_list[0]).group(1) # E.g. New_York_City
+                location = re.search("([A-Za-z|.]+\-*[A-Za-z|.]+\-*[A-Za-z|.]+)", file_list[0]).group(1) # E.g. New_York_City
                 unique_words, vectors2 = self.get_vectors2(location)
                 computed_rankings = self.get_computed_rankings(location)
 
@@ -59,16 +59,16 @@ class ToWebsite:
                                 attraction = json.load(file)
                                 # store all location to self.locations
                                 # self.locations.append(attraction["attraction_name"])
-                                # look for attraction_name
-                                attraction_al = attraction["attraction_name"].lower() + "_" + attraction["location"].lower()
-                                #print attraction_al
-                                attraction_index = unique_words[attraction_al]
+                                entity_name = attraction["entity_name"].lower() + "_" + location.lower()
+                                # look for attraction_al
+                                attraction_index = unique_words[entity_name]
                                 attraction_vector2 = vectors2[attraction_index]
-                                attraction_computed_ranking = computed_rankings[attraction_al]
+                                attraction_computed_ranking = computed_rankings[attraction["entity_name"]]
                                 #print attraction_computed_ranking
                                 self.render_frontend(attraction, attraction_vector2, attraction_computed_ranking)
                             except:
-                                print "Error occurs on attraction. No Render"
+                                print "\nError occurs on attraction. No Render"
+                                raise
 
                 new_lexicon = []
                 for word_dict in self.lexicon:
@@ -84,7 +84,8 @@ class ToWebsite:
                 self.renderLexicon(new_lexicon , attraction["location"].replace("-","_"))
 
             else:
-                print "No file is found"
+                pass
+                # print "No file is found"
 
     def get_vectors2(self, location):
         """ first call readline() to read thefirst line of vectors2 file to get vocab_size and dimension_size """
@@ -130,15 +131,15 @@ class ToWebsite:
     #def normalize(self):
 
     def get_computed_rankings(self, location):
-        """ get computed rankings from data/ranking/location/location_Threshold0.0 """
+        """ get computed rankings from data/ranking/location/lineXopinion.json """
 
-        print "Loading data from: " + "\033[1m" + self.src_computed_rankings + location + "/" +location + "-Threshold0.0.json" +"\033[0m"
-        json_data = json.load(open(self.src_computed_rankings + location + "/" + location + "-Threshold0.0.json"))
+        print "Loading data from: " + "\033[1m" + self.src_computed_rankings + location + "/" + "line_opinion.json" +"\033[0m"
+        json_data = json.load(open(self.src_computed_rankings + location + "/" + "line_opinion.json"))
 
         computed_rankings = {}
-        for attraction_dict in json_data["CosineThreshold_Ranking"]:
+        for attraction_dict in json_data["Entity_Rankings"]:
             #computed_rankings[attraction_dict["attraction_name"]] = attraction_dict["computed_ranking"]
-            computed_rankings[attraction_dict["attraction_name"]] = attraction_dict["top_all_sum_cosineXnorm_frequency_score_ranking"]
+            computed_rankings[attraction_dict["entity_name"]] = attraction_dict["computed_ranking"]
         #print computed_rankings
         return computed_rankings
 
@@ -149,36 +150,38 @@ class ToWebsite:
         self.create_frontend_dir(location)
 
         if computed_ranking < 10:
-            print "Saving files to " + self.dst_fr + location + "/" + location + "_0" + str(computed_ranking) + ".json"
+            sys.stdout.write("\rSaving files to " + self.dst_fr + location + "/" + location + "_0" + str(computed_ranking) + ".json")
+            sys.stdout.flush()
         else:
-            print "Saving files to " + self.dst_fr + location + "/" + location + "_" + str(computed_ranking) + ".json"
+            sys.stdout.write("\rSaving files to " + self.dst_fr + location + "/" + location + "_" + str(computed_ranking) + ".json")
+            sys.stdout.flush()
 
         self.create_frontend_dir(attraction["location"].replace("-","_") + "/")
 
         """ (1) save location_*.json in ./website/frontend_reviews """
         frontend_orderedDict = OrderedDict()
         frontend_orderedDict["location"] = attraction["location"]
-        frontend_orderedDict["attraction_name"] = attraction["attraction_name"]
+        frontend_orderedDict["entity_name"] = attraction["entity_name"]
         frontend_orderedDict["vector2"] = NoIndent(vector2)
-        frontend_orderedDict["ranking_score"] = attraction["ranking_score"]
+        #frontend_orderedDict["ranking_score"] = attraction["ranking_score"]
         frontend_orderedDict["computed_ranking"] = computed_ranking
         frontend_orderedDict["original_ranking"] = int(attraction["original_ranking"])
         frontend_orderedDict["reranked_ranking"] = attraction["reranked_ranking"]
-        frontend_orderedDict["avg_rating"] = float(attraction["avg_rating"])
+        frontend_orderedDict["avg_rating"] = float(attraction["avg_rating_stars"])
 
         rating_stats_dict = OrderedDict()
         rating_stats_dict["excellent"] = attraction["rating_stats"]["excellent"]
-        rating_stats_dict["very good"] = attraction["rating_stats"]["very good"]
+        rating_stats_dict["very_good"] = attraction["rating_stats"]["very_good"]
         rating_stats_dict["average"] = attraction["rating_stats"]["average"]
         rating_stats_dict["poor"] = attraction["rating_stats"]["poor"]
         rating_stats_dict["terrible"] = attraction["rating_stats"]["terrible"]
         frontend_orderedDict["rating_stats"] = NoIndent(rating_stats_dict)
 
-        frontend_orderedDict["review_with_attraction_mentioned_count"] =  attraction["review_with_attraction_mentioned_count"]
-        frontend_orderedDict["total_attraction_name_mentioned_count"] = attraction["total_attraction_name_mentioned_count"]
-        frontend_orderedDict["avg_sentiment_counts"] = attraction["avg_sentiment_counts"]
-        frontend_orderedDict["avg_word_counts"] = attraction["avg_word_counts"]
-        frontend_orderedDict["avg_nearest_sentiment_distance"] = attraction["avg_nearest_sentiment_distance"]
+        frontend_orderedDict["review_count"] =  attraction["review_count"]
+        frontend_orderedDict["total_entity_count"] = attraction["total_entity_count"]
+        frontend_orderedDict["avg_sentiment_counts"] = attraction["avg_opinion_positive_count"]
+        frontend_orderedDict["avg_word_count"] = attraction["avg_word_count"]
+        frontend_orderedDict["avg_nearest_opinion_sentiment_distance"] = attraction["avg_nearesti_opinion_sentiment_distance"]
 
         review_ordered_dict_list = []
         for review_dict in attraction["reviews"]:
@@ -198,13 +201,13 @@ class ToWebsite:
         frontend_json.write(json.dumps( frontend_orderedDict, indent = 4, cls=NoIndentEncoder))
         frontend_json.close()
 
-        print "-"*80
+        #print "-"*80
 
     def renderLexicon(self, positive, location):
         """ put keys in order and render json file """
 
         self.create_lexicon_dir()
-        print "Saving data to:", "\033[1m" + self.dst_lexicon + location + ".json" + "\033[0m"
+        print "\nSaving data to:", "\033[1m" + self.dst_lexicon + location + ".json" + "\033[0m"
 
         cnt = 0
         length = len(positive)
@@ -221,7 +224,7 @@ class ToWebsite:
 
         f = open(self.dst_lexicon + location + ".json", 'w+')
         f.write( json.dumps( positive_ordered_dict_list, indent = 4, cls=NoIndentEncoder))
-        #print "Done"
+        print "-"*80
 
     def render_locations(self):
         """ generate a list containing all location names """
@@ -278,7 +281,8 @@ class ToWebsite:
                         os.remove(dirpath + "/" + f)
                     else:
                         file_cnt += 1
-                        print "Loading data from " + str(dirpath) + "/" + str(f)
+                        sys.stdout.write("\rLoading data from " + str(dirpath) + "/" + str(f))
+                        sys.stdout.flush()
                         with open(dirpath + "/" + f) as file:
                             try:
                                 attractions.append(json.load(file))
@@ -286,19 +290,19 @@ class ToWebsite:
                                 pass
                                 print "Error occurs on attraction. No Render"
 
-                print "-"*80
+                print "\n" + "-"*80
                 #  attractions1 = attractions[:]
                 #  attractions1 = sorted(attractions1, key=lambda k: k['computed_ranking'])[:5]
                 #  self.split_attraction(attractions1, "computed")
                 #  attractions2 = attractions[:]
                 #  attractions2 = sorted(attractions2, key=lambda k: k['reranked_ranking'])[:5]
                 #  self.split_attraction(attractions2, "reranked")
-                attractions3 = attractions[:]
-                attractions3 = sorted(attractions3, key=lambda k: k['original_ranking'])[:5]
-                self.split_attraction(attractions3, "original")
-                #  attractions4 = attractions[:]
-                #  attractions4 = sorted(attractions4, key=lambda k: k['review_with_attraction_mentioned_count'], reverse = True)[:5]
-                #  self.split_attraction(attractions4, "frequency")
+                #  attractions3 = attractions[:]
+                #  attractions3 = sorted(attractions3, key=lambda k: k['original_ranking'])[:5]
+                #  self.split_attraction(attractions3, "original")
+                attractions4 = attractions[:]
+                attractions4 = sorted(attractions4, key=lambda k: k['review_count'], reverse = True)[:5]
+                self.split_attraction(attractions4, "frequency")
 
 
     def split_attraction(self, attractions, ranking_type):
@@ -327,7 +331,7 @@ class ToWebsite:
                 #print attraction
                 self.render_split(rank, index, ranking_type, attraction)
 
-        print "-"*80
+        print "\n" + "-"*80
 
 
 
@@ -337,34 +341,36 @@ class ToWebsite:
         self.create_refined_frontend_dir(location, ranking_type)
 
         if index < 10:
-          print "Saving files to " + self.dst_rfr + location + "/" + ranking_type + "/" + location + "_0" + str(rank) + "_0" + str(index)+ ".json"
+            sys.stdout.write("\rSaving files to" + self.dst_rfr + location + "/" + ranking_type + "/" + location + "_0" + str(rank) + "_0" + str(index)+ ".json")
+            sys.stdout.flush()
         else:
-          print "Saving files to " + self.dst_rfr + location + "/" + ranking_type + "/" + location + "_0" + str(rank) + "_" + str(index)+ ".json"
+            sys.stdout.write("\rSaving files to " + self.dst_rfr + location + "/" + ranking_type + "/" + location + "_0" + str(rank) + "_" + str(index)+ ".json")
+            sys.stdout.flush()
 
         """ (1) save location_(01~05)_(01~10).json in ./website/refined_frontend_reviews/ """
         split_orderedDict = OrderedDict()
         split_orderedDict["location"] = attraction["location"]
-        split_orderedDict["attraction_name"] = attraction["attraction_name"]
+        split_orderedDict["attraction_name"] = attraction["entity_name"]
         split_orderedDict["vector2"] = NoIndent(attraction["vector2"])
-        split_orderedDict["ranking_score"] = attraction["ranking_score"]
+        #split_orderedDict["ranking_score"] = attraction["ranking_score"]
         split_orderedDict["computed_ranking"] = attraction["computed_ranking"]
         split_orderedDict["original_ranking"] = int(attraction["original_ranking"])
         split_orderedDict["reranked_ranking"] = attraction["reranked_ranking"]
-        split_orderedDict["frequency"] = attraction["review_with_attraction_mentioned_count"]
+        split_orderedDict["frequency"] = attraction["total_entity_count"]
         split_orderedDict["avg_rating"] = float(attraction["avg_rating"])
 
         rating_stats_dict = OrderedDict()
         rating_stats_dict["excellent"] = attraction["rating_stats"]["excellent"]
-        rating_stats_dict["very good"] = attraction["rating_stats"]["very good"]
+        rating_stats_dict["very_good"] = attraction["rating_stats"]["very_good"]
         rating_stats_dict["average"] = attraction["rating_stats"]["average"]
         rating_stats_dict["poor"] = attraction["rating_stats"]["poor"]
         rating_stats_dict["terrible"] = attraction["rating_stats"]["terrible"]
         split_orderedDict["rating_stats"] = NoIndent(rating_stats_dict)
 
-        split_orderedDict["review_with_attraction_mentioned_count"] =  attraction["review_with_attraction_mentioned_count"]
+        split_orderedDict["review_with_attraction_mentioned_count"] =  attraction["review_count"]
         split_orderedDict["avg_sentiment_counts"] = attraction["avg_sentiment_counts"]
-        split_orderedDict["avg_word_counts"] = attraction["avg_word_counts"]
-        split_orderedDict["avg_nearest_sentiment_distance"] = attraction["avg_nearest_sentiment_distance"]
+        split_orderedDict["avg_word_counts"] = attraction["avg_word_count"]
+        split_orderedDict["avg_nearest_sentiment_distance"] = attraction["avg_nearest_opinion_sentiment_distance"]
 
         review_ordered_dict_list = []
         #print "reviews_length", len(attraction["reviews"])

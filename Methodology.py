@@ -39,7 +39,7 @@ class Methodology:
         self.entity_location_dict = {}
         self.entity_name_dict = {}
 
-        self.verbose = 0
+        self.verbose = 1
 
     def get_line_source(self):
 	""" first call readline() to read thefirst line of vectors200 file to get vocab_size and dimension_size """
